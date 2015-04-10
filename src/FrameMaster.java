@@ -1,6 +1,9 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Event;
+import java.awt.event.ActionEvent;
+import java.io.File;
 
 import com.jogamp.opengl.DebugGL2;
 import com.jogamp.opengl.DebugGL3;
@@ -17,12 +20,18 @@ import static com.jogamp.opengl.GL.GL_DEPTH_BUFFER_BIT;
 import static com.jogamp.opengl.GL.GL_LINES;
 import static com.jogamp.opengl.GL2.*;
 
+import javax.rmi.CORBA.Util;
+import javax.swing.Action;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.filechooser.FileFilter;
+
+import jogamp.opengl.awt.Java2D;
 
 public class FrameMaster extends JFrame implements GLEventListener {
     private static final long serialVersionUID = 1L;
@@ -33,7 +42,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	
 	private boolean debug = true;
 	
-	private boolean stupidBoolean = false;
+	private boolean rendererNeedsNewPointCloud = false;
 	
     public FrameMaster() {
     	super("Very Good Honours Project");
@@ -86,12 +95,24 @@ public class FrameMaster extends JFrame implements GLEventListener {
         return buttonPanel;
     }
     
+    private void openDialog() {
+    	JFileChooser jfc = new JFileChooser();
+    	jfc.setAcceptAllFileFilterUsed(false);
+    	jfc.setFileFilter(new FileFilterFits());
+    	int returnVal = jfc.showOpenDialog(this);
+    	if (returnVal == JFileChooser.APPROVE_OPTION) {
+    		File file = jfc.getSelectedFile();
+    		loadFile(file.getAbsolutePath());
+    	}
+    }
+    
+
     private void loadFile(String fileName) {
     	this.pointCloud = new PointCloud(fileName);
     	this.pointCloud.readFits();
     	this.pointCloud.loadFloatBuffers();
 //    	this.pointCloud.createDummyFloatBuffers();
-    	this.stupidBoolean = true;
+    	this.rendererNeedsNewPointCloud = true;
     	
     }
     
@@ -99,7 +120,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu("File");
         JMenuItem loadItem = new JMenuItem("Load");
-        
+        loadItem.addActionListener(e -> this.openDialog());
         fileMenu.add(loadItem);
         menuBar.add(fileMenu);
         return menuBar;
@@ -108,9 +129,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
     @Override
     public void display(GLAutoDrawable drawable) {
     	
-    	if (this.stupidBoolean == true) {
+    	if (this.rendererNeedsNewPointCloud) {
     		this.renderer = new Renderer(this.pointCloud, this.gl);
-    		this.stupidBoolean = false;
+    		this.rendererNeedsNewPointCloud = false;
     	}
     	if (this.renderer != null) {
     		this.renderer.display();
