@@ -111,7 +111,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	this.pointCloud = new PointCloud(fileName);
     	this.pointCloud.readFits();
     	this.pointCloud.loadFloatBuffers();
-//    	this.pointCloud.createDummyFloatBuffers();
     	this.rendererNeedsNewPointCloud = true;
     	
     }
