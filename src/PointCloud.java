@@ -12,6 +12,7 @@ import java.util.Random;
 public class PointCloud {
 	public FloatBuffer vertexBuffer;
 	public FloatBuffer colorBuffer;
+	public FloatBuffer valueBuffer;
 	
 	public int width;
 	public int height;
@@ -24,11 +25,11 @@ public class PointCloud {
 	private float[][][] data;
 	private Fits fits;
 	
-	float boxWidth = 3.0f;
+	float boxWidth = 1.0f;
 	float boxHeight = boxWidth;
 	float boxDepth = boxWidth;
 
-	float boxOrigZ = 0.0f;
+	float boxOrigZ = -0.5f;
 	float boxOrigX = -0.5f * boxWidth;
 	float boxOrigY = -0.5f * boxHeight;
  
@@ -57,6 +58,8 @@ public class PointCloud {
 	public void loadFloatBuffers() {
 		float[] vertexData = new float[this.width * this.height * this.depth * 3];
 		float[] colData = new float[this.width * this.height * this.depth * 4];
+		float[] valueData = new float[this.width * this.height * this.depth];
+		
 		Random random = new Random(1);
 		int pts = 0;
 		int nanPts = 0;
@@ -84,6 +87,8 @@ public class PointCloud {
 						colData[pts * 4 + 1] = 1f;//value;
 						colData[pts * 4 + 2] = 1f;//value;
 						colData[pts * 4 + 3] = value;
+						
+						valueData[pts] = value;
 //						System.out.println("x:" + x + "y:" + y + "z:"+z);				
 						pts++;						
 					}
@@ -102,5 +107,9 @@ public class PointCloud {
 		this.colorBuffer = FloatBuffer.allocate(pts * 4);
 		this.colorBuffer.put(colData, 0, pts * 4);
 		this.colorBuffer.flip();
+		
+		this.valueBuffer = FloatBuffer.allocate(pts);
+		this.valueBuffer.put(valueData, 0, pts);
+		this.valueBuffer.flip();
 	}
 }

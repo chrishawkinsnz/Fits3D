@@ -46,14 +46,9 @@ public class ShaderHelper {
 			System.exit(1);
 		}
 		
-		
-		
         gl.glShaderSource(vertexShader, 1, new String[] { vertexShaderSource.toString() }, (int[]) null, 0);
-//		gl.glShaderSource(vertexShader,vertexShaderSource);
 		gl.glCompileShader(vertexShader);
 		checkLogInfo(gl, vertexShader, "vertex shader");
-
-		
 		
         gl.glShaderSource(fragmentShader, 1, new String[] { fragmentShaderSource.toString() }, (int[]) null, 0);
 		gl.glCompileShader(fragmentShader);
@@ -71,44 +66,6 @@ public class ShaderHelper {
 		return shaderProgram;
     }
     
-//    private static int programWithShaders(GL2 gl, String vertexShaderPath, String fragmentShaderPath) {
-//    	int shaderProgram = gl.glCreateProgram();
-//		int vertexShader = gl.glCreateShader(gl.GL_VERTEX_SHADER);
-//		int fragmentShader = gl.glCreateShader(gl.GL_FRAGMENT_SHADER);
-//		
-//		ShaderDemo.loadShader(vertexShader, vertexShaderPath);
-//		ShaderDemo.loadShader(fragmentShader, fragmentShaderPath);
-//		
-//		gl.glAttachShader(shaderProgram, vertexShader);
-//		gl.glAttachShader(shaderProgram, fragmentShader);
-//		
-//		gl.glLinkProgram(shaderProgram);
-//		gl.glValidateProgram(shaderProgram);
-//		
-//		return 0;
-//    }
-//    
-//    private static void loadShader(GL2 gl, int shader, String fileName) {
-//		//--read in the string
-//    	StringBuilder shaderSource = new StringBuilder();
-//    	try {
-//			BufferedReader reader = new BufferedReader(new FileReader(fileName));
-//			String line;
-//			while((line = reader.readLine()) != null) {
-//				shaderSource.append(line).append("\n");
-//			}
-//			reader.close();
-//		} catch (IOException e) {
-//			System.err.println("Somehting went wrong reading file at  '" + fileName + "'");
-//			quit();
-//		}
-//    	
-//    	//--compile shader source
-//        gl.glShaderSource(shader, 1, new String[] { shaderSource.toString() }, (int[]) null, 0);
-//		gl.glCompileShader(shader);		
-//    }
-    
-    
     private static void quit() {
 		System.exit(1);	
     }
@@ -125,7 +82,7 @@ public class ShaderHelper {
             byte[] log = new byte[logLength[0]];
             gl.glGetShaderInfoLog(programObject, logLength[0], (int[])null, 0, log, 0);
 
-            System.err.println("Error compiling the vertex shader: " + new String(log));
+            System.err.println("Error compiling " + shaderName +": " + new String(log));
             System.exit(1);
         }
     }
