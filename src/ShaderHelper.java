@@ -5,11 +5,12 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 import com.jogamp.opengl.GL2;
+import com.jogamp.opengl.GL3;
 
 
 public class ShaderHelper {
 
-    public static int programWithShaders2(GL2 gl, String vertexShaderPath, String fragmentShaderPath){
+    public static int programWithShaders2(GL3 gl, String vertexShaderPath, String fragmentShaderPath){
     	int shaderProgram = gl.glCreateProgram();
 		int vertexShader = gl.glCreateShader(gl.GL_VERTEX_SHADER);
 		int fragmentShader = gl.glCreateShader(gl.GL_FRAGMENT_SHADER);
@@ -57,7 +58,6 @@ public class ShaderHelper {
 		gl.glCompileShader(fragmentShader);
 		
 		ByteBuffer bb = ByteBuffer.allocate(1000);
-		checkLogInfo(gl, shaderProgram);
 		
 		
 		gl.glAttachShader(shaderProgram, vertexShader);
@@ -111,25 +111,4 @@ public class ShaderHelper {
 		System.exit(1);	
     }
     
-    private static void checkLogInfo(GL2 gl, int programObject) {
-        IntBuffer intValue = IntBuffer.allocate(1);
-        gl.glGetObjectParameterivARB(programObject, GL2.GL_OBJECT_INFO_LOG_LENGTH_ARB, intValue);
-
-        int lengthWithNull = intValue.get();
-
-        if (lengthWithNull <= 1) {
-            return;
-        }
-
-        ByteBuffer infoLog = ByteBuffer.allocate(lengthWithNull);
-
-        intValue.flip();
-        gl.glGetInfoLogARB(programObject, lengthWithNull, intValue, infoLog);
-
-        int actualLength = intValue.get();
-
-        byte[] infoBytes = new byte[actualLength];
-        infoLog.get(infoBytes);
-        System.out.println("GLSL Validation >> " + new String(infoBytes));
-    }
 }

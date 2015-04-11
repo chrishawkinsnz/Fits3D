@@ -6,11 +6,14 @@ import java.nio.FloatBuffer;
 import static com.jogamp.opengl.GL2.*;
 
 import com.jogamp.opengl.GL2;
+import com.jogamp.opengl.GL3;
+import com.jogamp.opengl.GL3bc;
+import com.jogamp.opengl.GL3.*;
 
 public class Renderer {
 	
 	private PointCloud pointCloud;
-	private GL2 gl;
+	private GL3bc gl;
 	
 	private int vertexVboid;
 	private int colorVboid;
@@ -21,7 +24,7 @@ public class Renderer {
 	
 	public float alphaFudge = 0.02f;
 
-	public Renderer(PointCloud pointCloud, GL2 gl){
+	public Renderer(PointCloud pointCloud, GL3bc gl){
 		this.pointCloud = pointCloud;
 		this.gl = gl;
 		System.out.println(gl);
@@ -32,7 +35,7 @@ public class Renderer {
 		this.vertexBufferData(this.vertexVboid, this.pointCloud.vertexBuffer);
 		this.vertexBufferData(this.colorVboid, this.pointCloud.colorBuffer);
 		
-		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "src/shaders/shader.vert", "src/shaders/shader.frag");
+//		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "src/shaders/shader.vert", "src/shaders/shader.frag");
 		this.alphaFudgeUniformLocation = gl.glGetUniformLocation(this.shaderProgram, "alphaFudge");
 	}	
 	
@@ -42,12 +45,13 @@ public class Renderer {
 		gl.glUseProgram(this.shaderProgram);
 		gl.glUniform1f(this.alphaFudgeUniformLocation, this.alphaFudge);
 
-		gl.glLoadIdentity();
+//		gl.glLoadIdentity();
 		if (this.spinning) {
 			theta += 1f;
 		}
 		
-		gl.glRotatef(theta, 0f, 1f, 0f);
+//		gl.glRotatef(theta, 0f, 1f, 0f);
+		
 //		gl.glRotatef(22.5f, 1f, 0f, 0f);
 		
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
