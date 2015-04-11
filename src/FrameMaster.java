@@ -18,6 +18,7 @@ import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.GLOffscreenAutoDrawable.FBO;
 import com.jogamp.opengl.awt.GLCanvas;
+import com.jogamp.opengl.math.Matrix4;
 import com.jogamp.opengl.util.FPSAnimator;
 
 import static com.jogamp.opengl.GL.GL_COLOR_BUFFER_BIT;
@@ -82,7 +83,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         canvas.requestFocusInWindow();
 
         this.animator = new FPSAnimator(canvas, 120);
-        this.animator.setUpdateFPSFrames(100,System.out);
+//        this.animator.setUpdateFPSFrames(100,System.out);
         this.animator.start();
 
 	}
@@ -151,12 +152,21 @@ public class FrameMaster extends JFrame implements GLEventListener {
     static float[] g_vertex_buffer_data = {
     	-1f, -1f, 0f,
     	 1f, -1f, 0f,
-    	 0f,  1f, 0f
+    	 0f,  1f, 0f,
+    	 
+     	 1f,  -1f, 0f,
+     	 3f,  -1f, 0f,
+   	 	 2f,  1f, 0f,
+    	 
+   	 	 2f,  1f, 0f,
+   	 	 0f,  1f, 0f,
+   	 	 1f,  3f, 0f,
     };
     
     FloatBuffer floatBuffer;
 	private int programID;
 	private int uniformId;
+	private int uniformIdMvp;
     
     @Override
     public void init(GLAutoDrawable drawable) {
@@ -173,7 +183,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 //    	vertexArrayId = ptr[0];
 //    	gl.glBindVertexArray(vertexArrayId);
     	
-    	this.floatBuffer = FloatBuffer.allocate(9);
+    	this.floatBuffer = FloatBuffer.allocate(g_vertex_buffer_data.length);
     	this.floatBuffer.put(g_vertex_buffer_data);
     	this.floatBuffer.flip();
     	
@@ -184,7 +194,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	
     	this.programID = ShaderHelper.programWithShaders2(gl, "src/shaders/shader2.vert", "src/shaders/shader2.frag");
     	this.uniformId = gl.glGetUniformLocation(this.programID, "f");
-    	
+    	this.uniformIdMvp = gl.glGetUniformLocation(this.programID, "mvp");
     	
 
 		
@@ -200,22 +210,34 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		
     }
 
-    
+    float theta = 0f;
   
 	
 	
     @Override
     public void display(GLAutoDrawable drawable) {
+    	theta += 0.1f;
+    	System.out.println(theta);
     	gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     	gl.glUseProgram(this.programID);
     	
     	gl.glUniform1f(this.uniformId, 0.0f);
     	
+    	Matrix4 m = new Matrix4();
+    	m.makePerspective(3.14159f/2f, 4f/3f, 0.1f, 100f);
+    	m.translate(0f, 0f, -5f);
+    	m.rotate(theta, 0f, 1f, 0f);
+    	m.scale((float)Math.sin(theta), (float)Math.cos(theta),1f);
+    	
+
+    	
+    	gl.glUniformMatrix4fv(this.uniformIdMvp, 1, false, m.getMatrix(), 0);
     	
     	gl.glEnableVertexAttribArray(0);
     	gl.glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     	gl.glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-    	gl.glDrawArrays(GL_TRIANGLES, 0, 3);
+    	gl.glDrawArrays(GL_TRIANGLES, 0, 9);
+    	
     	gl.glDisableVertexAttribArray(0);
     	
 

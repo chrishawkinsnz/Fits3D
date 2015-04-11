@@ -51,11 +51,13 @@ public class ShaderHelper {
         gl.glShaderSource(vertexShader, 1, new String[] { vertexShaderSource.toString() }, (int[]) null, 0);
 //		gl.glShaderSource(vertexShader,vertexShaderSource);
 		gl.glCompileShader(vertexShader);
+		checkLogInfo(gl, vertexShader, "vertex shader");
 
 		
 		
         gl.glShaderSource(fragmentShader, 1, new String[] { fragmentShaderSource.toString() }, (int[]) null, 0);
 		gl.glCompileShader(fragmentShader);
+		checkLogInfo(gl, fragmentShader, "fragment shader");
 		
 		ByteBuffer bb = ByteBuffer.allocate(1000);
 		
@@ -111,4 +113,20 @@ public class ShaderHelper {
 		System.exit(1);	
     }
     
+    private static void checkLogInfo(GL3 gl, int programObject, String shaderName) {
+    	
+    	int[] compiled = new int[1];
+        gl.glGetShaderiv(programObject, gl.GL_COMPILE_STATUS, compiled,0);
+        if(compiled[0]!=0){System.out.println("Horray! " +shaderName + " compiled");}
+        else {
+            int[] logLength = new int[1];
+            gl.glGetShaderiv(programObject, gl.GL_INFO_LOG_LENGTH, logLength, 0);
+
+            byte[] log = new byte[logLength[0]];
+            gl.glGetShaderInfoLog(programObject, logLength[0], (int[])null, 0, log, 0);
+
+            System.err.println("Error compiling the vertex shader: " + new String(log));
+            System.exit(1);
+        }
+    }
 }
