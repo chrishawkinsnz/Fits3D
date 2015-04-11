@@ -3,6 +3,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Event;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.io.File;
 import java.nio.FloatBuffer;
 
@@ -28,17 +30,21 @@ import static com.jogamp.opengl.GL2.*;
 
 import javax.rmi.CORBA.Util;
 import javax.swing.Action;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.plaf.basic.BasicBorders.RadioButtonBorder;
 
 import jogamp.opengl.awt.Java2D;
 
@@ -47,11 +53,16 @@ public class FrameMaster extends JFrame implements GLEventListener {
     private FPSAnimator animator;
 	private PointCloud pointCloud;
 	private Renderer renderer;
+	private Viewer viewer;
 	private GL3 gl;
 	
 	private boolean debug = false;
 	
+	private int lastX = -1;
+	private int lastY = -1;
+	
 	private boolean rendererNeedsNewPointCloud = false;
+	private MouseController mouseController;
 	
     public FrameMaster() {
     	super("Very Good Honours Project");
@@ -83,9 +94,13 @@ public class FrameMaster extends JFrame implements GLEventListener {
         canvas.requestFocusInWindow();
 
         this.animator = new FPSAnimator(canvas, 120);
-        this.animator.setUpdateFPSFrames(100,System.out);
+        this.animator.setUpdateFPSFrames(1, null);
         this.animator.start();
 
+        this.viewer = new Viewer();
+        this.mouseController = new MouseController(this.viewer);
+        canvas.addMouseMotionListener(this.mouseController);
+        canvas.addMouseListener(this.mouseController);
 	}
     
     private JPanel buttonBar(){
@@ -94,7 +109,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         buttonPanel.setMinimumSize(new Dimension(0, 128));
         
         JButton spinButton = new JButton("Spin");
-        spinButton.addActionListener(e -> this.renderer.toggleSpinning());
+        spinButton.addActionListener(e -> this.viewer.setSpining(!this.viewer.isSpinning()));
         buttonPanel.add(spinButton);
         
         
@@ -105,12 +120,29 @@ public class FrameMaster extends JFrame implements GLEventListener {
         JSlider slider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
         slider.addChangeListener((ChangeEvent ce) -> {
 			float proportion = (float)slider.getValue()/ (float)slider.getMaximum();
-//			float adjustedProportion = 0.5f + (-0.5f + proportion)*(-0.5f + proportion)*(-0.5f + proportion);
-//			System.out.println(adjustedProportion);
 
 			this.renderer.alphaFudge = proportion * 0.1f;
 		});
         buttonPanel.add(slider);
+        
+        JLabel projectionLabel = new JLabel("Projection:");
+        buttonPanel.add(projectionLabel);
+        
+        ButtonGroup projectionButtons = new ButtonGroup();
+        
+        JRadioButton perspectiveButton = new JRadioButton("Perspective");
+        perspectiveButton.addActionListener(e -> this.renderer.isOrthographic = false);
+        perspectiveButton.setSelected(true);
+        projectionButtons.add(perspectiveButton);
+        buttonPanel.add(perspectiveButton);
+        
+        JRadioButton orthographicButton = new JRadioButton("Orthographic");
+        orthographicButton.addActionListener(e -> this.renderer.isOrthographic = true);
+        projectionButtons.add(orthographicButton);
+        buttonPanel.add(orthographicButton);
+        
+        
+        
         return buttonPanel;
     }
     
@@ -196,13 +228,16 @@ public class FrameMaster extends JFrame implements GLEventListener {
 //    	exampleDisplay();
     	
     	if (this.rendererNeedsNewPointCloud) {
-    		this.renderer = new Renderer(this.pointCloud, this.gl);
+    		this.renderer = new Renderer(this.pointCloud, this.viewer, this.gl);
     		this.rendererNeedsNewPointCloud = false;
     	}
     	
     	if (this.renderer != null) {
     		this.renderer.display();
     	}
+    	
+    	float delta = (float)this.animator.getLastFPSUpdateTime() / 1000000000f;
+    	this.viewer.update(delta);
     	
     }
 

@@ -28,16 +28,19 @@ public class Renderer {
 	
 	public float alphaFudge = 0.02f;
 	
+	public boolean isOrthographic = false;
 	
 	private int vertexBuffer;
 	private int valueBuffer;
 	
 	private int uniformIdAlphaFudge;
 	private int uniformIdMvp;
+	private Viewer viewer;
 	
-	public Renderer(PointCloud pointCloud, GL3 gl){
+	public Renderer(PointCloud pointCloud, Viewer viewer, GL3 gl){
 		this.pointCloud = pointCloud;
 		this.gl = gl;
+		this.viewer = viewer;
 		
 		int[] ptr = new int[2];
 		
@@ -64,9 +67,6 @@ public class Renderer {
 	private float theta = 0f;
 	private int sumFrames;
 	public void display() {
-		if (this.spinning) {
-			theta += 0.03f;
-		}
 
 		
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -76,13 +76,20 @@ public class Renderer {
 		
 		//--make our model-view-projection matrix
     	Matrix4 m = new Matrix4();
-    	//    	m.makePerspective(3.14159f/2f, 4f/3f, 0.1f, 100f);
-    	m.makeOrtho(-3.2f, 3.2f, -2.4f, 2.4f, -6f, 6f);
+    	
+    	if (this.isOrthographic) {
+    		m.makeOrtho(-3.2f, 3.2f, -2.4f, 2.4f, -6f, 6f);	
+    	}
+    	else {
+    	  	m.makePerspective(3.14159f/2f, 4f/3f, 0.1f, 100f);	
+    	}
+    	
 
 
-    	m.translate(0f, 0f, -3f);
-    	m.rotate(1.1f, 1f, 0f, 0f);
-    	m.rotate(theta, 0f, 1f, 0f);
+    	m.translate(0f, 0f, -2f);
+    	
+    	m.rotate(this.viewer.getySpin(), 1f, 0f, 0f);
+    	m.rotate(this.viewer.getxSpin(), 0f, 1f, 0f);
     	
     	m.scale(3f, 3f, 3f);
     	
