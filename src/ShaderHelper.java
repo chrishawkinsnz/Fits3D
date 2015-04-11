@@ -7,7 +7,7 @@ import java.nio.IntBuffer;
 import com.jogamp.opengl.GL2;
 
 
-public class ShaderDemo {
+public class ShaderHelper {
 
     public static int programWithShaders2(GL2 gl, String vertexShaderPath, String fragmentShaderPath){
     	int shaderProgram = gl.glCreateProgram();

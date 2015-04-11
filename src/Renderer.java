@@ -32,11 +32,12 @@ public class Renderer {
 		this.vertexBufferData(this.vertexVboid, this.pointCloud.vertexBuffer);
 		this.vertexBufferData(this.colorVboid, this.pointCloud.colorBuffer);
 		
-		this.shaderProgram = ShaderDemo.programWithShaders2(gl, "src/shaders/shader.vert", "src/shaders/shader.frag");
+		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "src/shaders/shader.vert", "src/shaders/shader.frag");
 		this.alphaFudgeUniformLocation = gl.glGetUniformLocation(this.shaderProgram, "alphaFudge");
 	}	
 	
 	private float theta = 0f;
+	private int sumFrames;
 	public void display() {
 		gl.glUseProgram(this.shaderProgram);
 		gl.glUniform1f(this.alphaFudgeUniformLocation, this.alphaFudge);
@@ -60,7 +61,7 @@ public class Renderer {
 		
 	    gl.glDrawArrays(GL_POINTS, 0, this.pointCloud.validPts);
 		gl.glUseProgram(0);
-
+		
 		gl.glFlush();
 	}
 	
@@ -72,4 +73,5 @@ public class Renderer {
 	public void toggleSpinning() {
 		this.spinning = !this.spinning;
 	}
+
 }

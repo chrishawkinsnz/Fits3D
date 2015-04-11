@@ -29,6 +29,9 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
 import jogamp.opengl.awt.Java2D;
@@ -40,7 +43,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	private Renderer renderer;
 	private GL2 gl;
 	
-	private boolean debug = true;
+	private boolean debug = false;
 	
 	private boolean rendererNeedsNewPointCloud = false;
 	
@@ -73,7 +76,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
         canvas.requestFocusInWindow();
 
-        this.animator = new FPSAnimator(canvas, 60);
+        this.animator = new FPSAnimator(canvas, 120);
+        this.animator.setUpdateFPSFrames(100,System.out);
         this.animator.start();
 
 	}
@@ -92,6 +96,13 @@ public class FrameMaster extends JFrame implements GLEventListener {
         loadExampleButton.addActionListener(e -> this.loadFile("12CO_MEAN.fits"));
         buttonPanel.add(loadExampleButton);
         
+        JSlider slider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
+        slider.addChangeListener((ChangeEvent ce) -> {
+			float proportion = (float)slider.getValue()/ (float)slider.getMaximum();
+			float adjustedProportion = 0.2f + (0.5f + proportion)*(0.5f + proportion)*(0.5f + proportion);
+			this.renderer.alphaFudge = adjustedProportion * 0.01f;
+		});
+        buttonPanel.add(slider);
         return buttonPanel;
     }
     
