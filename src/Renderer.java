@@ -56,7 +56,7 @@ public class Renderer {
 		this.uniformIdAlphaFudge = gl.glGetUniformLocation(this.shaderProgram, "alphaFudge");
 		
     	gl.glEnable(GL_BLEND);
-		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 		gl.glBlendEquation(GL_FUNC_ADD);
 		gl.glDisable(GL_CULL_FACE);
 	}	
@@ -65,10 +65,9 @@ public class Renderer {
 	private int sumFrames;
 	public void display() {
 		if (this.spinning) {
-			theta += 0.01f;
+			theta += 0.03f;
 		}
-		gl.glEnable(GL_DEPTH_TEST);
-		gl.glDepthFunc(GL_LESS);
+
 		
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
@@ -77,9 +76,15 @@ public class Renderer {
 		
 		//--make our model-view-projection matrix
     	Matrix4 m = new Matrix4();
-    	m.makePerspective(3.14159f/2f, 4f/3f, 0.1f, 100f);
-    	m.translate(0f, 0f, -1f);
+    	//    	m.makePerspective(3.14159f/2f, 4f/3f, 0.1f, 100f);
+    	m.makeOrtho(-3.2f, 3.2f, -2.4f, 2.4f, -6f, 6f);
+
+
+    	m.translate(0f, 0f, -3f);
+    	m.rotate(1.1f, 1f, 0f, 0f);
     	m.rotate(theta, 0f, 1f, 0f);
+    	
+    	m.scale(3f, 3f, 3f);
     	
     	//--pass that matrix to the shader
     	gl.glUniformMatrix4fv(this.uniformIdMvp, 1, false, m.getMatrix(), 0);

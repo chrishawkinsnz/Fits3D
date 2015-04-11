@@ -105,9 +105,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
         JSlider slider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
         slider.addChangeListener((ChangeEvent ce) -> {
 			float proportion = (float)slider.getValue()/ (float)slider.getMaximum();
-			float adjustedProportion = 0.2f + (0.5f + proportion)*(0.5f + proportion)*(0.5f + proportion);
-			this.renderer.alphaFudge = adjustedProportion * 0.1f;
-			System.out.println(this.renderer.alphaFudge);
+//			float adjustedProportion = 0.5f + (-0.5f + proportion)*(-0.5f + proportion)*(-0.5f + proportion);
+//			System.out.println(adjustedProportion);
+
+			this.renderer.alphaFudge = proportion * 0.1f;
 		});
         buttonPanel.add(slider);
         return buttonPanel;
