@@ -81,12 +81,13 @@ public class Renderer {
     		m.makeOrtho(-3.2f, 3.2f, -2.4f, 2.4f, -6f, 6f);	
     	}
     	else {
-    	  	m.makePerspective(3.14159f/2f, 4f/3f, 0.1f, 100f);	
+    	  	m.makePerspective(3.14159f/2f, 4f/3f, 0.1f, 100f);
+    	  	m.translate(0f, 0f, -this.viewer.getRadius());
     	}
     	
 
 
-    	m.translate(0f, 0f, -2f);
+    	
     	
     	m.rotate(this.viewer.getySpin(), 1f, 0f, 0f);
     	m.rotate(this.viewer.getxSpin(), 0f, 1f, 0f);

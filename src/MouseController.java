@@ -1,10 +1,12 @@
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 
 
 
-public class MouseController implements MouseMotionListener, MouseListener {
+public class MouseController implements MouseMotionListener, MouseListener, MouseWheelListener {
 
 	private Viewer viewer;
 	
@@ -66,6 +68,13 @@ public class MouseController implements MouseMotionListener, MouseListener {
 	public void mouseExited(MouseEvent e) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public void mouseWheelMoved(MouseWheelEvent e) {
+		this.viewer.addRadiusAmount((float)e.getWheelRotation() *0.5f);
+		System.out.println("mouse wheel moved");
+		System.out.println(e);
 	}
 
 }

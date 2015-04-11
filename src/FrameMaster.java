@@ -101,6 +101,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         this.mouseController = new MouseController(this.viewer);
         canvas.addMouseMotionListener(this.mouseController);
         canvas.addMouseListener(this.mouseController);
+        canvas.addMouseWheelListener(this.mouseController);
 	}
     
     private JPanel buttonBar(){
