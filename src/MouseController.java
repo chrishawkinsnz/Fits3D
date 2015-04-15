@@ -69,7 +69,7 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
-		this.viewer.addRadiusAmount((float)e.getWheelRotation() *0.5f);
+		this.viewer.addRadiusAmount((float)e.getWheelRotation() *0.1f);
 	}
 
 }

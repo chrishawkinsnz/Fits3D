@@ -74,9 +74,8 @@ public class PointCloud {
 						float y = boxOrigY + yProportion * boxHeight;
 						float z = boxOrigZ + zProportion * boxDepth;
 
+						float fluff = random.nextFloat() *0.02f - 0.01f; //this is to stop awkward aligning of poitns
 
-						float fluff = random.nextFloat() *0.02f; //this is to stop awkward aligning of poitns
-						
 						vertexData[pts * 3 + 0] = x + fluff;
 						vertexData[pts * 3 + 1] = y + fluff;
 						vertexData[pts * 3 + 2] = z + fluff;

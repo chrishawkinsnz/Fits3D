@@ -42,8 +42,9 @@ public class Renderer {
 	public final float orthoOrigX = 0.0f;
 	public final float orthoOrigY = 0.0f;
 	
-	private int basePointWidthInPixels = 1;
-	private int basePointHeightInPixels = 1;
+	private float basePointWidthInPixels = 1;
+	private float basePointHeightInPixels = 1;
+	private int uniformIdPointArea;
 	
 	public Renderer(PointCloud pointCloud, Viewer viewer, GL3 gl){
 		this.pointCloud = pointCloud;
@@ -65,6 +66,7 @@ public class Renderer {
 		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "src/shaders/shader2.vert", "src/shaders/shader2.frag");
     	this.uniformIdMvp = gl.glGetUniformLocation(this.shaderProgram, "mvp");
 		this.uniformIdAlphaFudge = gl.glGetUniformLocation(this.shaderProgram, "alphaFudge");
+		this.uniformIdPointArea = gl.glGetUniformLocation(this.shaderProgram, "pointArea");
 		
     	gl.glEnable(GL_BLEND);
 		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE);
@@ -76,13 +78,10 @@ public class Renderer {
 	private int sumFrames;
 	private int width;
 	private int height;
+	
 	public void display() {
 
-		
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-
-		
 		gl.glUseProgram(this.shaderProgram);
 		gl.glUniform1f(this.uniformIdAlphaFudge, this.alphaFudge);
 		
@@ -93,13 +92,18 @@ public class Renderer {
     		m.makeOrtho(orthoOrigX - orthoWidth, orthoOrigX + orthoWidth, orthoOrigY - orthoHeight,orthoOrigY + orthoHeight, -6f, 6f);
     		float scale = 1.0f / this.viewer.getRadius();
     		m.scale(scale, scale, scale);
-			gl.glPointSize(Math.min(this.basePointHeightInPixels, this.basePointWidthInPixels) * scale) ;
+    		
+    		float ptSize = Math.min(this.basePointHeightInPixels, this.basePointWidthInPixels) * scale;
+    		float ptArea = 0.5f * ptSize * ptSize * (float)Math.PI;
+    		gl.glPointSize(Math.max(ptSize,1f));
+			gl.glUniform1f(this.uniformIdPointArea, ptArea);
+
     	}
+    	
     	else {
     	  	m.makePerspective(3.14159f/2f, 4f/3f, 0.1f, 100f);
     	  	m.translate(0f, 0f, -this.viewer.getRadius());
 			gl.glPointSize(1.0f);
-
     	}
     	
     	m.rotate(this.viewer.getySpin(), 1f, 0f, 0f);
@@ -138,8 +142,9 @@ public class Renderer {
 		if (this.pointCloud == null){
 			return;
 		}
-		
-		this.basePointWidthInPixels = this.width / this.pointCloud.width; 
-		this.basePointHeightInPixels = this.height / this.pointCloud.height;
+		System.out.println("width:" + this.pointCloud.width + "height:" + this.pointCloud.height);
+		this.basePointWidthInPixels = (float)this.width / (float)this.pointCloud.width; 
+		this.basePointHeightInPixels = (float)this.height / (float)this.pointCloud.height;
+		System.out.println("width:" + this.basePointWidthInPixels + "height:" + this.basePointHeightInPixels);
 	}
 }
