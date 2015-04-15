@@ -28,7 +28,7 @@ public class Renderer {
 	
 	public float alphaFudge = 0.02f;
 	
-	public boolean isOrthographic = false;
+	public boolean isOrthographic = true;
 	
 	private int vertexBuffer;
 	private int valueBuffer;

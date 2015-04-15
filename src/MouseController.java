@@ -17,27 +17,25 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 		this.viewer = viewer;
 	}
 	
-
-
-
 	@Override
 	public void mouseDragged(java.awt.event.MouseEvent e) {
 		System.out.println("drag");
 		int diffX = e.getX() - this.lastX;
 		int diffY = e.getY() - this.lastY;
 		
-		System.out.println("x: " + diffX + " y:" + diffY);
 		float fudge = 0.01f;
-		
-		this.lastX = e.getX();
-		this.lastY = e.getY();
 		
 		this.viewer.addxSpin(diffX * fudge);
 		this.viewer.addySpin(diffY * fudge);
+		
+		this.lastX = e.getX();
+		this.lastY = e.getY();
 	}
 
 	@Override
-	public void mouseMoved(java.awt.event.MouseEvent e) {}
+	public void mouseMoved(java.awt.event.MouseEvent e) {
+
+	}
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
@@ -66,15 +64,12 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 	@Override
 	public void mouseExited(MouseEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
 		this.viewer.addRadiusAmount((float)e.getWheelRotation() *0.5f);
-		System.out.println("mouse wheel moved");
-		System.out.println(e);
 	}
 
 }

@@ -133,12 +133,13 @@ public class FrameMaster extends JFrame implements GLEventListener {
         
         JRadioButton perspectiveButton = new JRadioButton("Perspective");
         perspectiveButton.addActionListener(e -> this.renderer.isOrthographic = false);
-        perspectiveButton.setSelected(true);
+        perspectiveButton.setSelected(false);
         projectionButtons.add(perspectiveButton);
         buttonPanel.add(perspectiveButton);
         
         JRadioButton orthographicButton = new JRadioButton("Orthographic");
         orthographicButton.addActionListener(e -> this.renderer.isOrthographic = true);
+        orthographicButton.setSelected(true);
         projectionButtons.add(orthographicButton);
         buttonPanel.add(orthographicButton);
         
