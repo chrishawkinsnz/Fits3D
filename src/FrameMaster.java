@@ -64,6 +64,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	private boolean rendererNeedsNewPointCloud = false;
 	private MouseController mouseController;
 	
+	private int drawableWidth = 0;
+	private int drawableHeight = 0;
+	
     public FrameMaster() {
     	super("Very Good Honours Project");
     	    	
@@ -71,7 +74,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         GLCapabilities capabilities = new GLCapabilities(profile);
 
         this.setName("Very Good Honours Project");
-        this.setMinimumSize(new Dimension(800, 600));
+        this.setMinimumSize(new Dimension(800, 900));
     	this.setLocationRelativeTo(null);
     	this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     	this.setVisible(true);
@@ -143,8 +146,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
         projectionButtons.add(orthographicButton);
         buttonPanel.add(orthographicButton);
         
-        
-        
         return buttonPanel;
     }
     
@@ -159,7 +160,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	}
     }
     
-
     private void loadFile(String fileName) {
     	this.pointCloud = new PointCloud(fileName);
     	this.pointCloud.readFits();
@@ -178,59 +178,23 @@ public class FrameMaster extends JFrame implements GLEventListener {
         return menuBar;
     }
     
-
     @Override
     public void dispose(GLAutoDrawable drawable) {
     }
     
-    private int vertexBuffer = 99;
-
-    static float[] g_vertex_buffer_data = {
-    	-2f, -1f, 0f,
-    	 0f, -1f, 0f,
-    	 -1f,  1f, 0f,
-    	 
-     	 0f,  -1f, 0f,
-     	 2f,  -1f, 0f,
-   	 	 1f,  1f, 0f,
-    	 
-   	 	 1f,  1f, 0f,
-   	 	 -1f,  1f, 0f,
-   	 	 0f,  3f, 0f,
-    };
-    
-    FloatBuffer floatBuffer;
-	private int programID;
-	private int uniformId;
-	private int uniformIdMvp;
-    
     @Override
     public void init(GLAutoDrawable drawable) {
-//    	exampleInit();
-
     	if (debug)
     		this.gl = new DebugGL3(drawable.getGL().getGL3());
     	else 
-    		this.gl = drawable.getGL().getGL3();
-    	
-    	
-    	
-//    	gl.glEnable(GL_BLEND);
-//		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//		gl.glBlendEquation(GL_FUNC_ADD);
-		
+    		this.gl = drawable.getGL().getGL3();	
     }
-
-    float theta = 0f;
     
-	
-	
     @Override
-    public void display(GLAutoDrawable drawable) {
-//    	exampleDisplay();
-    	
+    public void display(GLAutoDrawable drawable) {    	
     	if (this.rendererNeedsNewPointCloud) {
     		this.renderer = new Renderer(this.pointCloud, this.viewer, this.gl);
+    		this.renderer.informOfResolution(this.drawableWidth, this.drawableHeight);
     		this.rendererNeedsNewPointCloud = false;
     	}
     	
@@ -243,54 +207,18 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	
     }
 
-    
     @Override
     public void reshape(GLAutoDrawable drawable, int x, int y, int width,
             int height) {
+    	this.drawableHeight = height;
+    	this.drawableWidth = width;
+    	if (renderer!= null) {
+    		renderer.informOfResolution(width, height);
+    	}
     }
 
 	public void play() {
 		// TODO Auto-generated method stub
-		
 	}
 	
-	private void exampleInit() {
-    	int [] ptr = new int [1];
-    	
-    	this.floatBuffer = FloatBuffer.allocate(g_vertex_buffer_data.length);
-    	this.floatBuffer.put(g_vertex_buffer_data);
-    	this.floatBuffer.flip();
-    	
-    	gl.glGenBuffers(1, ptr, 0);
-    	this.vertexBuffer = ptr[0];
-    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBuffer);
-    	gl.glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_data.length * 4, this.floatBuffer, GL_STATIC_DRAW);
-    	
-    	this.programID = ShaderHelper.programWithShaders2(gl, "src/shaders/shader2.vert", "src/shaders/shader2.frag");
-    	this.uniformId = gl.glGetUniformLocation(this.programID, "f");
-    	this.uniformIdMvp = gl.glGetUniformLocation(this.programID, "mvp");
-    }
-    
-    private void exampleDisplay() {
-    	theta += 0.1f;
-    	System.out.println(theta);
-    	gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    	gl.glUseProgram(this.programID);
-    	
-    	gl.glUniform1f(this.uniformId, 0.0f);
-    	
-    	Matrix4 m = new Matrix4();
-    	m.makePerspective(3.14159f/2f, 4f/3f, 0.1f, 100f);
-    	m.translate(0f, 0f, -5f);
-    	m.rotate(theta, 0f, 1f, 0f);
-    	
-    	gl.glUniformMatrix4fv(this.uniformIdMvp, 1, false, m.getMatrix(), 0);
-    	
-    	gl.glEnableVertexAttribArray(0);
-    	gl.glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    	gl.glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-    	gl.glDrawArrays(GL_TRIANGLES, 0, 9);
-    	
-    	gl.glDisableVertexAttribArray(0);
-    }
 }

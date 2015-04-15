@@ -37,6 +37,14 @@ public class Renderer {
 	private int uniformIdMvp;
 	private Viewer viewer;
 	
+	public final float orthoHeight = 0.5f;
+	public final float orthoWidth = 0.5f;
+	public final float orthoOrigX = 0.0f;
+	public final float orthoOrigY = 0.0f;
+	
+	private int basePointWidthInPixels = 1;
+	private int basePointHeightInPixels = 1;
+	
 	public Renderer(PointCloud pointCloud, Viewer viewer, GL3 gl){
 		this.pointCloud = pointCloud;
 		this.gl = gl;
@@ -66,10 +74,14 @@ public class Renderer {
 	
 	private float theta = 0f;
 	private int sumFrames;
+	private int width;
+	private int height;
 	public void display() {
 
 		
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+
 		
 		gl.glUseProgram(this.shaderProgram);
 		gl.glUniform1f(this.uniformIdAlphaFudge, this.alphaFudge);
@@ -78,21 +90,20 @@ public class Renderer {
     	Matrix4 m = new Matrix4();
     	
     	if (this.isOrthographic) {
-    		m.makeOrtho(-3.2f, 3.2f, -2.4f, 2.4f, -6f, 6f);	
+    		m.makeOrtho(orthoOrigX - orthoWidth, orthoOrigX + orthoWidth, orthoOrigY - orthoHeight,orthoOrigY + orthoHeight, -6f, 6f);
+    		float scale = 1.0f / this.viewer.getRadius();
+    		m.scale(scale, scale, scale);
+			gl.glPointSize(Math.min(this.basePointHeightInPixels, this.basePointWidthInPixels) * scale) ;
     	}
     	else {
     	  	m.makePerspective(3.14159f/2f, 4f/3f, 0.1f, 100f);
     	  	m.translate(0f, 0f, -this.viewer.getRadius());
+			gl.glPointSize(1.0f);
+
     	}
-    	
-
-
-    	
     	
     	m.rotate(this.viewer.getySpin(), 1f, 0f, 0f);
     	m.rotate(this.viewer.getxSpin(), 0f, 1f, 0f);
-    	
-    	m.scale(3f, 3f, 3f);
     	
     	//--pass that matrix to the shader
     	gl.glUniformMatrix4fv(this.uniformIdMvp, 1, false, m.getMatrix(), 0);
@@ -113,9 +124,22 @@ public class Renderer {
 		gl.glFlush();
 	}
 	
-
 	public void toggleSpinning() {
 		this.spinning = !this.spinning;
 	}
 
+	public void informOfResolution(int width, int height) {
+		this.width = width;
+		this.height = height;
+		tryUpdatePointSize();
+	}
+	
+	private void tryUpdatePointSize() {
+		if (this.pointCloud == null){
+			return;
+		}
+		
+		this.basePointWidthInPixels = this.width / this.pointCloud.width; 
+		this.basePointHeightInPixels = this.height / this.pointCloud.height;
+	}
 }

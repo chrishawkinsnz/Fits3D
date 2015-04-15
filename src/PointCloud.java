@@ -28,7 +28,7 @@ public class PointCloud {
 	float boxHeight = boxWidth;
 	float boxDepth = boxWidth;
 
-	float boxOrigZ = -0.5f;
+	float boxOrigZ = -.5f;
 	float boxOrigX = -0.5f * boxWidth;
 	float boxOrigY = -0.5f * boxHeight;
  
