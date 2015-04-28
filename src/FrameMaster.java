@@ -72,7 +72,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
         canvas.requestFocusInWindow();
 
         this.animator = new FPSAnimator(canvas, 120);
-        this.animator.setUpdateFPSFrames(1, null);
+        this.animator.setUpdateFPSFrames(100, System.out);
+        
         this.animator.start();
 
         this.viewer = new Viewer();

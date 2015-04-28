@@ -140,8 +140,8 @@ public class Renderer {
 
 	
 	private float calculatePointRadiusInPixels() {
-		float pointWidth = (float)this.width* this.orthoWidth / (float)this.pointCloud.width; 
-		float pointHeight = (float)this.height* this.orthoHeight / (float)this.pointCloud.height;
+		float pointWidth = (float)this.width* this.orthoWidth / (float)this.pointCloud.bufferWidth; 
+		float pointHeight = (float)this.height* this.orthoHeight / (float)this.pointCloud.bufferHeight;
 		return pointWidth < pointHeight ? pointWidth : pointHeight;
 	}
 }
