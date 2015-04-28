@@ -72,7 +72,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         canvas.requestFocusInWindow();
 
         this.animator = new FPSAnimator(canvas, 120);
-        this.animator.setUpdateFPSFrames(100, System.out);
+        this.animator.setUpdateFPSFrames(100, null);
         
         this.animator.start();
 
@@ -136,7 +136,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	this.pointCloud.readFits();
     	this.pointCloud.loadFloatBuffers();
     	this.rendererNeedsNewPointCloud = true;
-    	
     }
     
     private JMenuBar menuBar() {

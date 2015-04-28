@@ -73,8 +73,7 @@ public class ShaderHelper {
     private static void checkLogInfo(GL3 gl, int programObject, String shaderName) {
     	int[] compiled = new int[1];
         gl.glGetShaderiv(programObject, gl.GL_COMPILE_STATUS, compiled,0);
-        if(compiled[0]!=0){System.out.println("Horray! " +shaderName + " compiled");}
-        else {
+        if(compiled[0]==0){
             int[] logLength = new int[1];
             gl.glGetShaderiv(programObject, gl.GL_INFO_LOG_LENGTH, logLength, 0);
 

@@ -47,62 +47,62 @@ public class PointCloud {
 	public PointCloud(String pathName) {
 		this.fileName = pathName;
 	}
-	
-	public void readFits() {
+	public void readFitsAtQualityLevel(float proportionOfPerfect) {
 		long t0 = System.currentTimeMillis();
 		try{
 			this.fits = new Fits(this.fileName);
 			this.hdu = (ImageHDU) this.fits.getHDU(0);
 //			this.data = (float [][][]) hdu.getKernel();
 			
-			
-			 
 			this.maxWidth = this.hdu.getAxes()[0];
 			this.maxHeight = this.hdu.getAxes()[1];
 			this.maxDepth = this.hdu.getAxes()[2];
 			
 			int realMaxWidth = this.hdu.getAxes()[0];
 			int realMaxHeight = this.hdu.getAxes()[1];
+			System.out.println(realMaxHeight);
 			int realMaxDepth = this.hdu.getAxes()[2];
 			
-			System.out.println("normal width:" + this.maxWidth);
-			int xStride = 14;
-			int xRemainder = this.maxWidth - xStride*(this.maxWidth/xStride);
-			System.out.println("Remainder:"+xRemainder);
-			this.maxWidth = this.maxWidth/xStride;
+			int stride = (int)(1.0f/proportionOfPerfect);
+			System.out.println("stride:"+stride);
 			
-			int yStride = 5;
-			int yRemainder = this.maxHeight - yStride*(this.maxHeight/yStride);
+			
+			int yRemainder = this.maxHeight - stride*(this.maxHeight/stride);
 			System.out.println("Remainder:"+yRemainder);
-			this.maxHeight = this.maxHeight/yStride;
 			
-//			int zStride = 10;
-//			this.maxDepth = this.maxDepth/zStride;
-//			
+			this.maxWidth = this.maxWidth/stride;
+			this.maxHeight = this.maxHeight/stride;
+			this.maxDepth = this.maxDepth/stride;
+			
 			this.data = new float[maxWidth][maxHeight][maxDepth];
 			
+			float[] storage = new float[realMaxDepth];
 			if (hdu.getData().reset()) {
 				ArrayDataInput adi = fits.getStream();
 				for (int x = 0; x < this.maxWidth; x ++) {
 					for (int y = 0; y < this.maxHeight; y ++) {
 						
-						adi.read(data[x][y]);
-						int linesToSkip = y==this.maxHeight-1 && yRemainder!=0 ? yRemainder : yStride -1;
-						adi.skipBytes(realMaxDepth * linesToSkip * 4);
-//						if (y == this.maxHeight-1 && yRemainder != 0) 
-//							adi.skipBytes(realMaxDepth * yRemainder * 4);		
-//						else 
-//							adi.skipBytes(realMaxDepth * (yStride - 1) * 4);
+						adi.read(storage, 0, storage.length);
+						for (int z = 0; z < this.maxDepth; z++) {
+							data[x][y][z] = storage[z * stride];
+						}
+						if (y==this.maxHeight-1 && yRemainder!=0) {
+							//is remainder zone
+							int linesToSkip = yRemainder + stride - 1;
+							adi.skipBytes(realMaxDepth * linesToSkip * 4 );
+						} else {
+							int linesToSkip = stride - 1;
+							adi.skipBytes(realMaxDepth * linesToSkip * 4);	
+						}
+						
+						
 						
 					}
 					
-					adi.skipBytes(realMaxDepth * realMaxHeight * (xStride - 1) * 4);
+					adi.skipBytes(realMaxDepth * realMaxHeight * (stride - 1) * 4);
 				}
 			}
-			
- 
-	
-			
+
 			System.out.println("fits file loaded " + this.maxWidth + " x " + this.maxHeight + " x " + this.maxDepth);
 		} catch (FitsException e) {
 			e.printStackTrace();
@@ -111,6 +111,66 @@ public class PointCloud {
 		}
 		long t1 = System.currentTimeMillis();
 		System.out.println("took "+(t1-t0) + " ms to read in data");
+	}
+	
+	
+	public void readFits() {
+		readFitsAtQualityLevel(0.2f);
+//		long t0 = System.currentTimeMillis();
+//		try{
+//			this.fits = new Fits(this.fileName);
+//			this.hdu = (ImageHDU) this.fits.getHDU(0);
+////			this.data = (float [][][]) hdu.getKernel();
+//			
+//			this.maxWidth = this.hdu.getAxes()[0];
+//			this.maxHeight = this.hdu.getAxes()[1];
+//			this.maxDepth = this.hdu.getAxes()[2];
+//			
+//			int realMaxWidth = this.hdu.getAxes()[0];
+//			int realMaxHeight = this.hdu.getAxes()[1];
+//			int realMaxDepth = this.hdu.getAxes()[2];
+//			
+//			System.out.println("normal width:" + this.maxWidth);
+//			int xStride = 14;
+//			int xRemainder = this.maxWidth - xStride*(this.maxWidth/xStride);
+//			System.out.println("Remainder:"+xRemainder);
+//			this.maxWidth = this.maxWidth/xStride;
+//			
+//			int yStride = 5;
+//			int yRemainder = this.maxHeight - yStride*(this.maxHeight/yStride);
+//			System.out.println("Remainder:"+yRemainder);
+//			this.maxHeight = this.maxHeight/yStride;
+//			
+//			int zStride = 10;
+//			int zRemainder = this.maxDepth - zStride * (this.maxDepth/zStride);
+//			System.out.println("Remainder:"+zRemainder);
+//			this.maxDepth = this.maxDepth/zStride;
+//			this.data = new float[maxWidth][maxHeight][maxDepth];
+//			
+//			float[] storage = new float[realMaxDepth];
+//			if (hdu.getData().reset()) {
+//				ArrayDataInput adi = fits.getStream();
+//				for (int x = 0; x < this.maxWidth; x ++) {
+//					for (int y = 0; y < this.maxHeight; y ++) {
+//						adi.read(storage);
+//						for (int z = 0; z < this.maxDepth; z++) {
+//							data[x][y][z] = storage[z * zStride];
+//						}
+//						int linesToSkip = y==this.maxHeight-1 && yRemainder!=0 ? yRemainder : yStride -1;
+//						adi.skipBytes(realMaxDepth * linesToSkip * 4);
+//					}
+//					adi.skipBytes(realMaxDepth * realMaxHeight * (xStride - 1) * 4);
+//				}
+//			}
+//
+//			System.out.println("fits file loaded " + this.maxWidth + " x " + this.maxHeight + " x " + this.maxDepth);
+//		} catch (FitsException e) {
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//		long t1 = System.currentTimeMillis();
+//		System.out.println("took "+(t1-t0) + " ms to read in data");
 	}
 	
 	public void loadFloatBuffersWithDimensions(int width, int height, int depth) {
