@@ -38,6 +38,7 @@ public class PointCloud {
 	}
 	
 	public void readFits() {
+		long t0 = System.currentTimeMillis();
 		try{
 			this.fits = new Fits(this.fileName);
 			ImageHDU hdu = (ImageHDU) this.fits.getHDU(0);
@@ -52,9 +53,12 @@ public class PointCloud {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		long t1 = System.currentTimeMillis();
+		System.out.println("took "+(t1-t0) + " ms to read in data");
 	}
 	
 	public void loadFloatBuffers() {
+		long t0 = System.currentTimeMillis();
 		float[] vertexData = new float[this.width * this.height * this.depth * 3];
 		float[] valueData = new float[this.width * this.height * this.depth];
 		
@@ -97,5 +101,7 @@ public class PointCloud {
 		this.valueBuffer = FloatBuffer.allocate(pts);
 		this.valueBuffer.put(valueData, 0, pts);
 		this.valueBuffer.flip();
+		long t1 = System.currentTimeMillis();
+		System.out.println("took "+(t1-t0) + " ms to read in data");
 	}
 }

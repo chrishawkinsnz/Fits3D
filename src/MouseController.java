@@ -19,7 +19,6 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 	
 	@Override
 	public void mouseDragged(java.awt.event.MouseEvent e) {
-		System.out.println("drag");
 		int diffX = e.getX() - this.lastX;
 		int diffY = e.getY() - this.lastY;
 		
@@ -33,39 +32,25 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 	}
 
 	@Override
-	public void mouseMoved(java.awt.event.MouseEvent e) {
-
-	}
+	public void mouseMoved(java.awt.event.MouseEvent e) {}
 
 	@Override
-	public void mouseClicked(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
+	public void mouseClicked(MouseEvent e) {}
 
 	@Override
 	public void mousePressed(MouseEvent e) {
-		System.out.println("pressed");
 		this.lastX = e.getX();
 		this.lastY = e.getY();		
 	}
 
 	@Override
-	public void mouseReleased(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
+	public void mouseReleased(MouseEvent e) {}
 
 	@Override
-	public void mouseEntered(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
+	public void mouseEntered(MouseEvent e) {}
 
 	@Override
-	public void mouseExited(MouseEvent e) {
-		
-	}
+	public void mouseExited(MouseEvent e) {}
 
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
