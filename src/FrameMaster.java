@@ -100,22 +100,23 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		});
         buttonPanel.add(slider);
         
-        JLabel projectionLabel = new JLabel("Projection:");
-        buttonPanel.add(projectionLabel);
+        JSlider sliderQuality = new JSlider(JSlider.HORIZONTAL,0,10,1);
+        sliderQuality.addChangeListener((ChangeEvent ce) -> {
+        	boolean isSliding = sliderQuality.getValueIsAdjusting();
+        	if (isSliding) {
+        		return;
+        	}
+        	float proportion = (float)sliderQuality.getValue()/ (float)sliderQuality.getMaximum();
+        	System.out.println("Proportion:" + proportion);
+        	this.pointCloud.readFitsAtQualityLevel(proportion);
+        	this.pointCloud.loadFloatBuffers();
+        	this.rendererNeedsNewPointCloud = true;        	
+        });
+        sliderQuality.setPaintTicks(true);
+        sliderQuality.setSnapToTicks(true);
         
-        ButtonGroup projectionButtons = new ButtonGroup();
+        buttonPanel.add(sliderQuality);
         
-        JRadioButton perspectiveButton = new JRadioButton("Perspective");
-        perspectiveButton.addActionListener(e -> this.renderer.isOrthographic = false);
-        perspectiveButton.setSelected(false);
-        projectionButtons.add(perspectiveButton);
-        buttonPanel.add(perspectiveButton);
-        
-        JRadioButton orthographicButton = new JRadioButton("Orthographic");
-        orthographicButton.addActionListener(e -> this.renderer.isOrthographic = true);
-        orthographicButton.setSelected(true);
-        projectionButtons.add(orthographicButton);
-        buttonPanel.add(orthographicButton);
         
         return buttonPanel;
     }
@@ -133,7 +134,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     
     private void loadFile(String fileName) {
     	this.pointCloud = new PointCloud(fileName);
-    	this.pointCloud.readFits();
+    	this.pointCloud.readFitsAtQualityLevel(0.1f);
     	this.pointCloud.loadFloatBuffers();
     	this.rendererNeedsNewPointCloud = true;
     }

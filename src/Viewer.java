@@ -46,7 +46,6 @@ public class Viewer {
 			return;
 		
 		this.radius += dist;
-		System.out.println(this.radius);
 	}
 	
 	public void update(float delta) {
