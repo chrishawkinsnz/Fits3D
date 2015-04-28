@@ -1,8 +1,13 @@
 import java.nio.FloatBuffer;
 
+import nom.tam.fits.Data;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.ImageHDU;
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.BufferedDataInputStream;
+import nom.tam.util.BufferedDataOutputStream;
 
 import java.io.IOException;
 import java.util.Random;
@@ -35,6 +40,8 @@ public class PointCloud {
 	float boxOrigZ = -.5f;
 	float boxOrigX = -0.5f * boxWidth;
 	float boxOrigY = -0.5f * boxHeight;
+
+	private ImageHDU hdu;
  
 	
 	public PointCloud(String pathName) {
@@ -45,11 +52,56 @@ public class PointCloud {
 		long t0 = System.currentTimeMillis();
 		try{
 			this.fits = new Fits(this.fileName);
-			ImageHDU hdu = (ImageHDU) this.fits.getHDU(0);
-			this.data = (float [][][]) hdu.getKernel();
-			this.maxWidth = data.length;
-			this.maxHeight = data[0].length;
-			this.maxDepth = data[0][0].length;
+			this.hdu = (ImageHDU) this.fits.getHDU(0);
+//			this.data = (float [][][]) hdu.getKernel();
+			
+			
+			 
+			this.maxWidth = this.hdu.getAxes()[0];
+			this.maxHeight = this.hdu.getAxes()[1];
+			this.maxDepth = this.hdu.getAxes()[2];
+			
+			int realMaxWidth = this.hdu.getAxes()[0];
+			int realMaxHeight = this.hdu.getAxes()[1];
+			int realMaxDepth = this.hdu.getAxes()[2];
+			
+			System.out.println("normal width:" + this.maxWidth);
+			int xStride = 14;
+			int xRemainder = this.maxWidth - xStride*(this.maxWidth/xStride);
+			System.out.println("Remainder:"+xRemainder);
+			this.maxWidth = this.maxWidth/xStride;
+			
+			int yStride = 5;
+			int yRemainder = this.maxHeight - yStride*(this.maxHeight/yStride);
+			System.out.println("Remainder:"+yRemainder);
+			this.maxHeight = this.maxHeight/yStride;
+			
+//			int zStride = 10;
+//			this.maxDepth = this.maxDepth/zStride;
+//			
+			this.data = new float[maxWidth][maxHeight][maxDepth];
+			
+			if (hdu.getData().reset()) {
+				ArrayDataInput adi = fits.getStream();
+				for (int x = 0; x < this.maxWidth; x ++) {
+					for (int y = 0; y < this.maxHeight; y ++) {
+						
+						adi.read(data[x][y]);
+						int linesToSkip = y==this.maxHeight-1 && yRemainder!=0 ? yRemainder : yStride -1;
+						adi.skipBytes(realMaxDepth * linesToSkip * 4);
+//						if (y == this.maxHeight-1 && yRemainder != 0) 
+//							adi.skipBytes(realMaxDepth * yRemainder * 4);		
+//						else 
+//							adi.skipBytes(realMaxDepth * (yStride - 1) * 4);
+						
+					}
+					
+					adi.skipBytes(realMaxDepth * realMaxHeight * (xStride - 1) * 4);
+				}
+			}
+			
+ 
+	
 			
 			System.out.println("fits file loaded " + this.maxWidth + " x " + this.maxHeight + " x " + this.maxDepth);
 		} catch (FitsException e) {
@@ -66,7 +118,7 @@ public class PointCloud {
 		float[] vertexData = new float[width * height * depth * 3];
 		float[] valueData = new float[width * height * depth];
 		
-		Random random = new Random(1);
+//		Random random = new Random(1);
 		float xStride = 1.0f/(float)width;
 		float yStride = 1.0f/(float)height;
 		float zStride = 1.0f/(float)depth;
@@ -115,7 +167,8 @@ public class PointCloud {
 	}
 	
 	public void loadFloatBuffers() {
-		loadFloatBuffersWithDimensions(20, 20, 20);
+//		loadFloatBuffersWithDimensions(20, 20, 20);
+		loadFloatBuffersWithDimensions(this.maxWidth, this.maxHeight, this.maxDepth);
 		
 		
 		
