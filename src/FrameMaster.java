@@ -1,35 +1,19 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Event;
-import java.awt.event.ActionEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 import java.io.File;
-import java.nio.FloatBuffer;
 
-import com.jogamp.opengl.DebugGL2;
 import com.jogamp.opengl.DebugGL3;
-import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GL3;
-import com.jogamp.opengl.GL3bc;
-import com.jogamp.opengl.GLArrayData;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLProfile;
-import com.jogamp.opengl.GLOffscreenAutoDrawable.FBO;
 import com.jogamp.opengl.awt.GLCanvas;
-import com.jogamp.opengl.math.Matrix4;
 import com.jogamp.opengl.util.FPSAnimator;
 
-import static com.jogamp.opengl.GL.GL_COLOR_BUFFER_BIT;
-import static com.jogamp.opengl.GL.GL_DEPTH_BUFFER_BIT;
-import static com.jogamp.opengl.GL.GL_LINES;
-import static com.jogamp.opengl.GL2.*;
 
-import javax.rmi.CORBA.Util;
-import javax.swing.Action;
+
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -42,11 +26,6 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.plaf.basic.BasicBorders.RadioButtonBorder;
-
-import jogamp.opengl.awt.Java2D;
 
 public class FrameMaster extends JFrame implements GLEventListener {
     private static final long serialVersionUID = 1L;
@@ -57,9 +36,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	private GL3 gl;
 	
 	private boolean debug = false;
-	
-	private int lastX = -1;
-	private int lastY = -1;
 	
 	private boolean rendererNeedsNewPointCloud = false;
 	private MouseController mouseController;
@@ -74,7 +50,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         GLCapabilities capabilities = new GLCapabilities(profile);
 
         this.setName("Very Good Honours Project");
-        this.setMinimumSize(new Dimension(800, 900));
+        this.setMinimumSize(new Dimension(700, 800));
     	this.setLocationRelativeTo(null);
     	this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     	this.setVisible(true);
@@ -87,7 +63,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
         JPanel buttonBar = buttonBar();
         this.add(buttonBar, BorderLayout.SOUTH);
-        
         
         JMenuBar menuBar = menuBar();
         this.setJMenuBar(menuBar);
@@ -111,11 +86,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
         JPanel buttonPanel = new JPanel();
         buttonPanel.setBackground(Color.orange);
         buttonPanel.setMinimumSize(new Dimension(0, 128));
-        
-        JButton spinButton = new JButton("Spin");
-        spinButton.addActionListener(e -> this.viewer.setSpining(!this.viewer.isSpinning()));
-        buttonPanel.add(spinButton);
-        
         
         JButton loadExampleButton = new JButton("Load Example");       
         loadExampleButton.addActionListener(e -> this.loadFile("12CO_MEAN.fits"));
@@ -200,11 +170,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	
     	if (this.renderer != null) {
     		this.renderer.display();
-    	}
-    	
-    	float delta = (float)this.animator.getLastFPSUpdateTime() / 1000000000f;
-    	this.viewer.update(delta);
-    	
+    	}    	
     }
 
     @Override

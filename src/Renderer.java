@@ -17,34 +17,43 @@ import com.jogamp.opengl.math.Matrix4;
 
 public class Renderer {
 	
-	private PointCloud pointCloud;
+	//--CONSTANTS
+	public final float orthoHeight = 1.0f;
+	public final float orthoWidth = 1.0f;
+	public final float orthoOrigX = 0.0f;
+	public final float orthoOrigY = 0.0f;
+	
+	
+	
+	
+	//--SETTINGS
+	public boolean isOrthographic = true;
+	public float alphaFudge = 0.02f;
+	private int width;
+	private int height;
+	
+	//--OPEN GL
 	private GL3 gl;
 	
-
-	private boolean spinning = false;
-	
+	//--OPEN GL HANDLES
 	private int shaderProgram;
-//	private int alphaFudgeUniformLocation;
-	
-	public float alphaFudge = 0.02f;
-	
-	public boolean isOrthographic = true;
 	
 	private int vertexBuffer;
 	private int valueBuffer;
 	
 	private int uniformIdAlphaFudge;
 	private int uniformIdMvp;
-	private Viewer viewer;
-	
-	public final float orthoHeight = 0.5f;
-	public final float orthoWidth = 0.5f;
-	public final float orthoOrigX = 0.0f;
-	public final float orthoOrigY = 0.0f;
-	
-	private float basePointWidthInPixels = 1;
-	private float basePointHeightInPixels = 1;
 	private int uniformIdPointArea;
+	
+	
+	
+	
+	//--MODEL STUFF
+	private Viewer viewer;
+	private PointCloud pointCloud;
+
+	
+	
 	
 	public Renderer(PointCloud pointCloud, Viewer viewer, GL3 gl){
 		this.pointCloud = pointCloud;
@@ -74,10 +83,8 @@ public class Renderer {
 		gl.glDisable(GL_CULL_FACE);
 	}	
 	
-	private float theta = 0f;
-	private int sumFrames;
-	private int width;
-	private int height;
+
+	
 	
 	public void display() {
 
@@ -85,7 +92,6 @@ public class Renderer {
 		gl.glUseProgram(this.shaderProgram);
 		gl.glUniform1f(this.uniformIdAlphaFudge, this.alphaFudge);
 		
-		//--make our model-view-projection matrix
     	Matrix4 m = new Matrix4();
     	
     	if (this.isOrthographic) {
@@ -93,13 +99,11 @@ public class Renderer {
     		float scale = 1.0f / this.viewer.getRadius();
     		m.scale(scale, scale, scale);
     		
-    		float ptSize = Math.min(this.basePointHeightInPixels, this.basePointWidthInPixels) * scale;
-    		float ptArea = 0.5f * ptSize * ptSize * (float)Math.PI;
-    		gl.glPointSize(Math.max(ptSize,1f));
+    		float pointRadius = this.calculatePointRadiusInPixels() * scale;
+    		float ptArea = 0.5f * pointRadius * pointRadius * (float)Math.PI;
+    		gl.glPointSize(Math.max(pointRadius,1f));
 			gl.glUniform1f(this.uniformIdPointArea, ptArea);
-
-    	}
-    	
+    	}	
     	else {
     	  	m.makePerspective(3.14159f/2f, 4f/3f, 0.1f, 100f);
     	  	m.translate(0f, 0f, -this.viewer.getRadius());
@@ -127,24 +131,17 @@ public class Renderer {
     	
 		gl.glFlush();
 	}
-	
-	public void toggleSpinning() {
-		this.spinning = !this.spinning;
-	}
 
+	
 	public void informOfResolution(int width, int height) {
 		this.width = width;
 		this.height = height;
-		tryUpdatePointSize();
 	}
+
 	
-	private void tryUpdatePointSize() {
-		if (this.pointCloud == null){
-			return;
-		}
-		System.out.println("width:" + this.pointCloud.width + "height:" + this.pointCloud.height);
-		this.basePointWidthInPixels = (float)this.width / (float)this.pointCloud.width; 
-		this.basePointHeightInPixels = (float)this.height / (float)this.pointCloud.height;
-		System.out.println("width:" + this.basePointWidthInPixels + "height:" + this.basePointHeightInPixels);
+	private float calculatePointRadiusInPixels() {
+		float pointWidth = (float)this.width* this.orthoWidth / (float)this.pointCloud.width; 
+		float pointHeight = (float)this.height* this.orthoHeight / (float)this.pointCloud.height;
+		return pointWidth < pointHeight ? pointWidth : pointHeight;
 	}
 }

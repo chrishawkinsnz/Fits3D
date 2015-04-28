@@ -5,11 +5,11 @@ import nom.tam.fits.FitsException;
 import nom.tam.fits.ImageHDU;
 
 import java.io.IOException;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.util.Random;
 
 public class PointCloud {
+	public final static boolean shouldFudge = false;
+	
 	public FloatBuffer vertexBuffer;
 	public FloatBuffer valueBuffer;
 	
@@ -60,7 +60,6 @@ public class PointCloud {
 		
 		Random random = new Random(1);
 		int pts = 0;
-		int nanPts = 0;
 		for (int zindex = 0; zindex < this.width; zindex++) {
 			for (int yindex = 0; yindex < this.height; yindex++) {
 				for (int xindex = 0; xindex < this.depth; xindex++) {						
@@ -75,7 +74,8 @@ public class PointCloud {
 						float z = boxOrigZ + zProportion * boxDepth;
 
 						float fluff = random.nextFloat() *0.02f - 0.01f; //this is to stop awkward aligning of poitns
-
+						if (shouldFudge == false) { fluff = 0.0f;}
+						
 						vertexData[pts * 3 + 0] = x + fluff;
 						vertexData[pts * 3 + 1] = y + fluff;
 						vertexData[pts * 3 + 2] = z + fluff;
@@ -83,12 +83,11 @@ public class PointCloud {
 						valueData[pts] = value;
 						pts++;						
 					}
-					else {
-						nanPts++;
-					}
+
 				}
 			}
 		}
+		
 		System.out.println("Number of Points: "+pts);
 		this.validPts = pts;
 		this.vertexBuffer = FloatBuffer.allocate(pts * 3);

@@ -34,15 +34,6 @@ public class Viewer {
 		this.xSpin += addition;
 	}
 	
-	public boolean isSpinning(){
-		return this.isSpinning;
-	}
-	
-	public void setSpining(boolean spinning) {
-		this.isSpinning = spinning;
-	}
-	
-	
 	public float getRadius() {
 		return this.radius;
 	}
@@ -59,8 +50,6 @@ public class Viewer {
 	}
 	
 	public void update(float delta) {
-		if (this.isSpinning) {
-			xSpin += delta * speed;
-		}
+
 	}
 }
