@@ -32,7 +32,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     private FPSAnimator animator;
 	private PointCloud pointCloud;
 	private Renderer renderer;
-	private Viewer viewer;
+	private WorldViewer viewer;
 	private GL3 gl;
 	
 	private boolean debug = false;
@@ -50,7 +50,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         GLCapabilities capabilities = new GLCapabilities(profile);
 
         this.setName("Very Good Honours Project");
-        this.setMinimumSize(new Dimension(700, 800));
+        this.setMinimumSize(new Dimension(800, 900));
     	this.setLocationRelativeTo(null);
     	this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     	this.setVisible(true);
@@ -76,7 +76,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         
         this.animator.start();
 
-        this.viewer = new Viewer();
+        this.viewer = new WorldViewer();
         this.mouseController = new MouseController(this.viewer);
         canvas.addMouseMotionListener(this.mouseController);
         canvas.addMouseListener(this.mouseController);

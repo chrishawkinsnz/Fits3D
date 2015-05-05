@@ -8,12 +8,12 @@ import java.awt.event.MouseWheelListener;
 
 public class MouseController implements MouseMotionListener, MouseListener, MouseWheelListener {
 
-	private Viewer viewer;
+	private WorldViewer viewer;
 	
-	int lastX = 0;
-	int lastY = 0;
+	private int lastX = 0;
+	private int lastY = 0;
 	
-	public MouseController(Viewer viewer) {
+	public MouseController(WorldViewer viewer) {
 		this.viewer = viewer;
 	}
 	

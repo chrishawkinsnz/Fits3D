@@ -32,30 +32,37 @@ public class Renderer {
 	private int width;
 	private int height;
 	
+	
+	
+	
 	//--OPEN GL
 	private GL3 gl;
+	
+	
+	
+	
 	
 	//--OPEN GL HANDLES
 	private int shaderProgram;
 	
-	private int vertexBuffer;
-	private int valueBuffer;
+	private int vertexBufferHandle;
+	private int valueBufferHandle;
 	
-	private int uniformIdAlphaFudge;
-	private int uniformIdMvp;
-	private int uniformIdPointArea;
+	private int uniformAlphaFudgeHandle;
+	private int uniformMvpHandle;
+	private int uniformPointAreaHandle;
 	
 	
 	
 	
 	//--MODEL STUFF
-	private Viewer viewer;
+	private WorldViewer viewer;
 	private PointCloud pointCloud;
 
 	
 	
 	
-	public Renderer(PointCloud pointCloud, Viewer viewer, GL3 gl){
+	public Renderer(PointCloud pointCloud, WorldViewer viewer, GL3 gl){
 		this.pointCloud = pointCloud;
 		this.gl = gl;
 		this.viewer = viewer;
@@ -64,18 +71,18 @@ public class Renderer {
 		
 	 	gl.glGenBuffers(2, ptr, 0);
 	 	
-    	this.vertexBuffer = ptr[0];
-    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBuffer);
+    	this.vertexBufferHandle = ptr[0];
+    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBufferHandle);
     	gl.glBufferData(GL_ARRAY_BUFFER, this.pointCloud.vertexBuffer.capacity() * 4, this.pointCloud.vertexBuffer, GL_STATIC_DRAW);
 		
-    	this.valueBuffer = ptr[1];
-    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.valueBuffer);
+    	this.valueBufferHandle = ptr[1];
+    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.valueBufferHandle);
     	gl.glBufferData(GL_ARRAY_BUFFER, this.pointCloud.valueBuffer.capacity() * 4, this.pointCloud.valueBuffer, GL_STATIC_DRAW);
     	
 		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "src/shaders/shader2.vert", "src/shaders/shader2.frag");
-    	this.uniformIdMvp = gl.glGetUniformLocation(this.shaderProgram, "mvp");
-		this.uniformIdAlphaFudge = gl.glGetUniformLocation(this.shaderProgram, "alphaFudge");
-		this.uniformIdPointArea = gl.glGetUniformLocation(this.shaderProgram, "pointArea");
+    	this.uniformMvpHandle = gl.glGetUniformLocation(this.shaderProgram, "mvp");
+		this.uniformAlphaFudgeHandle = gl.glGetUniformLocation(this.shaderProgram, "alphaFudge");
+		this.uniformPointAreaHandle = gl.glGetUniformLocation(this.shaderProgram, "pointArea");
 		
     	gl.glEnable(GL_BLEND);
 		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE);
@@ -90,7 +97,7 @@ public class Renderer {
 
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl.glUseProgram(this.shaderProgram);
-		gl.glUniform1f(this.uniformIdAlphaFudge, this.alphaFudge);
+		gl.glUniform1f(this.uniformAlphaFudgeHandle, this.alphaFudge);
 		
     	Matrix4 m = new Matrix4();
     	
@@ -102,7 +109,7 @@ public class Renderer {
     		float pointRadius = this.calculatePointRadiusInPixels() * scale;
     		float ptArea = 0.5f * pointRadius * pointRadius * (float)Math.PI;
     		gl.glPointSize(Math.max(pointRadius,1f));
-			gl.glUniform1f(this.uniformIdPointArea, ptArea);
+			gl.glUniform1f(this.uniformPointAreaHandle, ptArea);
     	}	
     	else {
     	  	m.makePerspective(3.14159f/2f, 4f/3f, 0.1f, 100f);
@@ -114,14 +121,14 @@ public class Renderer {
     	m.rotate(this.viewer.getxSpin(), 0f, 1f, 0f);
     	
     	//--pass that matrix to the shader
-    	gl.glUniformMatrix4fv(this.uniformIdMvp, 1, false, m.getMatrix(), 0);
+    	gl.glUniformMatrix4fv(this.uniformMvpHandle, 1, false, m.getMatrix(), 0);
 
     	gl.glEnableVertexAttribArray(0);
-    	gl.glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    	gl.glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
     	gl.glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
     	
     	gl.glEnableVertexAttribArray(1);
-    	gl.glBindBuffer(GL_ARRAY_BUFFER, valueBuffer);
+    	gl.glBindBuffer(GL_ARRAY_BUFFER, valueBufferHandle);
     	gl.glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
     	
     	gl.glDrawArrays(GL_POINTS, 0, this.pointCloud.validPts);
