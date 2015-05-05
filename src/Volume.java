@@ -1,5 +1,6 @@
 
 public class Volume {
+	public static final Volume unit = new Volume(Vector3.zeros, Vector3.ones);
 	
 	public final Vector3 origin;
 	public final Vector3 size;

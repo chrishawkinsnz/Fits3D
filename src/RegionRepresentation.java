@@ -27,8 +27,9 @@ public class RegionRepresentation {
 	 * 
 	 * @param fileName Filename of the original fits file
 	 * @param fidelity Fidelity of the represenation (1 being perfect, 0 being emtpy)
+	 * @param volume a volume cube indicating the area of the data to sample (full sample is == new volume(0,0,0,1,1,1));
 	 */
-	public RegionRepresentation(Fits fits, float fidelity) {
+	public RegionRepresentation(Fits fits, float fidelity, Volume volume) {
 		this.fidelity = fidelity;
 		if (fidelity >=1.0) {
 			isMaximumFidelity = true;
@@ -38,10 +39,7 @@ public class RegionRepresentation {
 		try{
 			ImageHDU hdu = (ImageHDU) fits.getHDU(0);
 			
-			int maxWidth = hdu.getAxes()[0];
-			int maxHeight = hdu.getAxes()[1];
-			int maxDepth = hdu.getAxes()[2];
-			
+
 			int sourceMaxWidth = hdu.getAxes()[0];
 			int sourceMaxHeight = hdu.getAxes()[1];
 			int sourceMaxDepth = hdu.getAxes()[2];
@@ -51,21 +49,32 @@ public class RegionRepresentation {
 			System.out.println("stride:"+stride);
 			
 			
-			int yRemainder = maxHeight - stride*(maxHeight/stride);
-			System.out.println("Remainder:"+yRemainder);
+			int sourceStartX = (int)(volume.x * sourceMaxWidth);
+			int sourceStartY = (int)(volume.y * sourceMaxHeight);
+			int sourceStartZ = (int)(volume.z * sourceMaxDepth);
 			
-			maxWidth = maxWidth/stride;
-			maxHeight = maxHeight/stride;
-			maxDepth = maxDepth/stride;
+			int sourceEndX = (int)((volume.x + volume.wd) * sourceMaxWidth);
+			int sourceEndY = (int)((volume.y + volume.ht) * sourceMaxHeight);
+			int sourceEndZ = (int)((volume.z + volume.dp) * sourceMaxDepth);
+			
+			int maxWidth = (sourceEndX - sourceStartX)/stride;
+			int maxHeight = (sourceEndY - sourceStartY)/stride;
+			int maxDepth = (sourceEndZ - sourceStartZ)/stride;
 			
 			this.numPtsX = maxWidth;
 			this.numPtsY = maxHeight;
 			this.numPtsZ = maxDepth;
+			
+			int yRemainder = sourceMaxHeight - stride*(sourceMaxHeight/stride);
+
 			this.data = new float[maxWidth][maxHeight][maxDepth];
 			
 			float[] storage = new float[sourceMaxDepth];
 			if (hdu.getData().reset()) {
 				ArrayDataInput adi = fits.getStream();
+				int planesToSkip = 0;
+				adi.skipBytes(sourceMaxDepth * sourceMaxHeight * (stride - 1) * 4);
+
 				for (int x = 0; x < maxWidth; x ++) {
 					for (int y = 0; y < maxHeight; y ++) {
 						

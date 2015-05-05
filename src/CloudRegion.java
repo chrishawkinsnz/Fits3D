@@ -22,7 +22,8 @@ public class CloudRegion {
 	public CloudRegion (Fits fits, Volume volume, float initialFidelity) {
 		this.volume = volume;
 		this.fits = fits;
-		RegionRepresentation initialRepresentation = new RegionRepresentation(fits, initialFidelity);
+		Volume v = new Volume(Vector3.zeros,0.8f,1.0f,1.0f);
+		RegionRepresentation initialRepresentation = new RegionRepresentation(fits, initialFidelity, v);
 		this.bestRepresentation = initialRepresentation;
 		this.currentRepresentation = initialRepresentation;
 	}

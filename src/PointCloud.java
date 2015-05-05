@@ -51,10 +51,15 @@ public class PointCloud {
 		try{
 			
 			this.fits = new Fits(this.fileName);
-			CloudRegion cr = new CloudRegion(fits, this.volume, proportionOfPerfect);
-			if (this.regions.isEmpty() == false) {
-				this.regions.remove(0);
+			Volume v = this.volume;
+			if (regions.size() > 0) {
+				v = new Volume(boxOrigX+ (2f * regions.size()), boxOrigY, boxOrigZ, boxWidth, boxHeight, boxDepth);
 			}
+			
+			CloudRegion cr = new CloudRegion(fits, v, proportionOfPerfect);
+//			if (this.regions.isEmpty() == false) {
+//				this.regions.remove(0);
+//			}
 			this.regions.add(cr);
 			
 		} catch (FitsException e) {

@@ -46,15 +46,16 @@ public class Renderer {
 	//--OPEN GL HANDLES
 	private int shaderProgram;
 	
-	private int vertexBufferHandle;
-	private int valueBufferHandle;
+//	private int vertexBufferHandle;
+//	private int valueBufferHandle;
 	
 	private int uniformAlphaFudgeHandle;
 	private int uniformMvpHandle;
 	private int uniformPointAreaHandle;
 	private int uniformColorHandle;
 	
-	
+	private int[] vertexBufferHandles;
+	private int[] valueBufferHandles;
 	
 	
 	//--MODEL STUFF
@@ -65,26 +66,32 @@ public class Renderer {
 	
 	
 	public Renderer(PointCloud pointCloud, WorldViewer viewer, GL3 gl){
+		int nRegions = pointCloud.regions().size();
 		this.pointCloud = pointCloud;
 		this.gl = gl;
 		this.viewer = viewer;
 		
-		int[] ptr = new int[2];
+		this.vertexBufferHandles = new int[nRegions];
+		this.valueBufferHandles = new int[nRegions];
 		
-	 	gl.glGenBuffers(2, ptr, 0);
-	 	
-    	this.vertexBufferHandle = ptr[0];
-    	CloudRegion region = this.pointCloud.regions().get(0);
-    	FloatBuffer vertBuffer = region.vertexBuffer();
-    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBufferHandle);
-    	gl.glBufferData(GL_ARRAY_BUFFER, vertBuffer.capacity() * 4, vertBuffer, GL_STATIC_DRAW);
-    	gl.glBufferData(GL_ARRAY_BUFFER, vertBuffer.capacity() * 4, vertBuffer, GL_STATIC_DRAW);
+		int[] ptr = new int[2 * pointCloud.regions().size()];
 		
-    	FloatBuffer valueBuffer = region.valueBuffer();
-    	this.valueBufferHandle = ptr[1];
-    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.valueBufferHandle);
-    	gl.glBufferData(GL_ARRAY_BUFFER, valueBuffer.capacity() * 4, valueBuffer, GL_STATIC_DRAW);
-    	
+		for (int i = 0; i < nRegions; i++) {
+		 	gl.glGenBuffers(2, ptr, 0);
+		 	
+//	    	this.vertexBufferHandle = ptr[0];
+		 	this.vertexBufferHandles[i] = ptr[0];
+	    	CloudRegion region = this.pointCloud.regions().get(0);
+	    	FloatBuffer vertBuffer = region.vertexBuffer();
+	    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBufferHandles[i]);
+	    	gl.glBufferData(GL_ARRAY_BUFFER, vertBuffer.capacity() * 4, vertBuffer, GL_STATIC_DRAW);
+	    	gl.glBufferData(GL_ARRAY_BUFFER, vertBuffer.capacity() * 4, vertBuffer, GL_STATIC_DRAW);
+			
+	    	FloatBuffer valueBuffer = region.valueBuffer();
+	    	this.valueBufferHandles[i] = ptr[1];
+	    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.valueBufferHandles[i]);
+	    	gl.glBufferData(GL_ARRAY_BUFFER, valueBuffer.capacity() * 4, valueBuffer, GL_STATIC_DRAW);
+		}
 		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "src/shaders/shader2.vert", "src/shaders/shader2.frag");
     	this.uniformMvpHandle = gl.glGetUniformLocation(this.shaderProgram, "mvp");
 		this.uniformAlphaFudgeHandle = gl.glGetUniformLocation(this.shaderProgram, "alphaFudge");
@@ -121,7 +128,7 @@ public class Renderer {
     		float baseScale = 1.0f / this.viewer.getRadius();
     		
     		
-    		float pointRadius = this.calculatePointRadiusInPixels() * baseScale * v.wd;
+    		float pointRadius = this.calculatePointRadiusInPixelsForRegionIndex(i) * baseScale * v.wd;
     		float ptArea = 0.5f * pointRadius * pointRadius * (float)Math.PI;
     		gl.glPointSize(Math.max(pointRadius,1f));
 			gl.glUniform1f(this.uniformPointAreaHandle, ptArea);
@@ -138,11 +145,11 @@ public class Renderer {
 	    	gl.glUniformMatrix4fv(this.uniformMvpHandle, 1, false, m.getMatrix(), 0);
 	
 	    	gl.glEnableVertexAttribArray(0);
-	    	gl.glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
+	    	gl.glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandles[i]);
 	    	gl.glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
 	    	
 	    	gl.glEnableVertexAttribArray(1);
-	    	gl.glBindBuffer(GL_ARRAY_BUFFER, valueBufferHandle);
+	    	gl.glBindBuffer(GL_ARRAY_BUFFER, valueBufferHandles[i]);
 	    	gl.glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
 	    	
 	    	gl.glDrawArrays(GL_POINTS, 0, cr.numberOfPoints());
@@ -160,8 +167,8 @@ public class Renderer {
 	}
 
 	
-	private float calculatePointRadiusInPixels() {
-		CloudRegion cr = this.pointCloud.regions().get(0);
+	private float calculatePointRadiusInPixelsForRegionIndex(int i) {
+		CloudRegion cr = this.pointCloud.regions().get(i);
 		float pointWidth = (float)this.width* this.orthoWidth / (float)cr.ptWidth(); 
 		float pointHeight = (float)this.height* this.orthoHeight / (float)cr.ptHeight();
 		return pointWidth < pointHeight ? pointWidth : pointHeight;
