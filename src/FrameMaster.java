@@ -50,7 +50,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         GLCapabilities capabilities = new GLCapabilities(profile);
 
         this.setName("Very Good Honours Project");
-        this.setMinimumSize(new Dimension(800, 900));
+        this.setMinimumSize(new Dimension(700, 800));
     	this.setLocationRelativeTo(null);
     	this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     	this.setVisible(true);
@@ -109,7 +109,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
         	float proportion = (float)sliderQuality.getValue()/ (float)sliderQuality.getMaximum();
         	System.out.println("Proportion:" + proportion);
         	this.pointCloud.readFitsAtQualityLevel(proportion);
-        	this.pointCloud.loadFloatBuffers();
         	this.rendererNeedsNewPointCloud = true;        	
         });
         sliderQuality.setPaintTicks(true);
@@ -135,7 +134,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
     private void loadFile(String fileName) {
     	this.pointCloud = new PointCloud(fileName);
     	this.pointCloud.readFitsAtQualityLevel(0.1f);
-    	this.pointCloud.loadFloatBuffers();
     	this.rendererNeedsNewPointCloud = true;
     }
     
