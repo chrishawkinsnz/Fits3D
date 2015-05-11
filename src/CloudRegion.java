@@ -14,6 +14,8 @@ public class CloudRegion {
 	public RegionRepresentation bestRepresentation;
 	public RegionRepresentation currentRepresentation;
 	
+	public final float depth;
+	
 	public final Volume volume;
 	private final Fits fits;
 	
@@ -21,8 +23,9 @@ public class CloudRegion {
 	
 	public CloudRegion (Fits fits, Volume volume, float initialFidelity) {
 		this.volume = volume;
+		this.depth = this.volume.origin.z + 0.5f * this.volume.dp;
 		this.fits = fits;
-		Volume v = new Volume(Vector3.zeros,0.8f,1.0f,1.0f);
+		Volume v = new Volume(Vector3.zeros,0.99f,1.0f,1.0f);
 		RegionRepresentation initialRepresentation = new RegionRepresentation(fits, initialFidelity, v);
 		this.bestRepresentation = initialRepresentation;
 		this.currentRepresentation = initialRepresentation;

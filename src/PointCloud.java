@@ -12,6 +12,8 @@ import nom.tam.util.BufferedDataOutputStream;
 import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
@@ -53,15 +55,12 @@ public class PointCloud {
 			this.fits = new Fits(this.fileName);
 			Volume v = this.volume;
 			if (regions.size() > 0) {
-				v = new Volume(boxOrigX+ (2f * regions.size()), boxOrigY, boxOrigZ, boxWidth, boxHeight, boxDepth);
+				v = new Volume(boxOrigX, boxOrigY, boxOrigZ + 2f * regions.size(), boxWidth, boxHeight, boxDepth);
 			}
 			
 			CloudRegion cr = new CloudRegion(fits, v, proportionOfPerfect);
-//			if (this.regions.isEmpty() == false) {
-//				this.regions.remove(0);
-//			}
-			this.regions.add(cr);
 			
+			this.addRegion(cr);
 		} catch (FitsException e) {
 			e.printStackTrace();
 		}
@@ -71,5 +70,14 @@ public class PointCloud {
 		return regions;
 	}
 	
+	public void addRegion (CloudRegion cr) {
+		this.regions.add(cr);
+		class RegionOrderer implements Comparator<CloudRegion> {
+			public int compare(CloudRegion a, CloudRegion b) {
+				return a.depth < b.depth ? -1 : 1;
+			}
+		}
+		Collections.sort(this.regions(), new RegionOrderer());
+	}
 
 }

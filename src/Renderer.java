@@ -7,6 +7,8 @@ import static com.jogamp.opengl.GL.GL_TRIANGLES;
 
 import java.awt.Color;
 import java.nio.FloatBuffer;
+import java.util.Collections;
+import java.util.Comparator;
 
 import static com.jogamp.opengl.GL2.*;
 
@@ -33,21 +35,13 @@ public class Renderer {
 	private int width;
 	private int height;
 	
-	
-	
-	
+
 	//--OPEN GL
 	private GL3 gl;
 	
 	
-	
-	
-	
 	//--OPEN GL HANDLES
 	private int shaderProgram;
-	
-//	private int vertexBufferHandle;
-//	private int valueBufferHandle;
 	
 	private int uniformAlphaFudgeHandle;
 	private int uniformMvpHandle;
@@ -62,9 +56,7 @@ public class Renderer {
 	private WorldViewer viewer;
 	private PointCloud pointCloud;
 
-	
-	
-	
+
 	public Renderer(PointCloud pointCloud, WorldViewer viewer, GL3 gl){
 		int nRegions = pointCloud.regions().size();
 		this.pointCloud = pointCloud;
@@ -104,19 +96,22 @@ public class Renderer {
 		gl.glDisable(GL_CULL_FACE);
 	}	
 	
-
-	
-	
 	public void display() {
-
-//		CloudRegion cr = this.pointCloud.regions().get(0);
-		
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl.glUseProgram(this.shaderProgram);
 		gl.glUniform1f(this.uniformAlphaFudgeHandle, this.alphaFudge);
 		
+		//--figure out if looking back to front
+		float pi = (float)Math.PI;
+		float spin = Math.abs(this.viewer.getxSpin() % (2f * pi));
+		boolean flippityFlop = spin > pi/2f && spin < 3f*pi/2f ;
+		
 		for (int i = 0; i < this.pointCloud.regions().size(); i++){
-			CloudRegion cr = this.pointCloud.regions().get(i);
+			int sliceIndex = i;
+			if (flippityFlop) {
+				sliceIndex = this.pointCloud.regions().size() - 1 - i;
+			}
+			CloudRegion cr = this.pointCloud.regions().get(sliceIndex);
 			Color col = CloudRegion.cols [i % CloudRegion.cols.length]; 
 			gl.glUniform4f(this.uniformColorHandle, col.getRed()/255, col.getGreen()/255, col.getBlue()/255, col.getAlpha()/255);
 	    	Matrix4 m = new Matrix4();
@@ -127,14 +122,11 @@ public class Renderer {
     		Volume v = cr.volume;
     		float baseScale = 1.0f / this.viewer.getRadius();
     		
-    		
-    		float pointRadius = this.calculatePointRadiusInPixelsForRegionIndex(i) * baseScale * v.wd;
+    		float pointRadius = this.calculatePointRadiusInPixelsForRegionIndex(sliceIndex) * baseScale * v.wd;
     		float ptArea = 0.5f * pointRadius * pointRadius * (float)Math.PI;
     		gl.glPointSize(Math.max(pointRadius,1f));
 			gl.glUniform1f(this.uniformPointAreaHandle, ptArea);
-	    		
-	    	
-	    	
+
 	    	m.rotate(this.viewer.getySpin(), 1f, 0f, 0f);
 	    	m.rotate(this.viewer.getxSpin(), 0f, 1f, 0f);
 	    	m.scale(baseScale, baseScale, baseScale);
@@ -145,11 +137,11 @@ public class Renderer {
 	    	gl.glUniformMatrix4fv(this.uniformMvpHandle, 1, false, m.getMatrix(), 0);
 	
 	    	gl.glEnableVertexAttribArray(0);
-	    	gl.glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandles[i]);
+	    	gl.glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandles[sliceIndex]);
 	    	gl.glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
 	    	
 	    	gl.glEnableVertexAttribArray(1);
-	    	gl.glBindBuffer(GL_ARRAY_BUFFER, valueBufferHandles[i]);
+	    	gl.glBindBuffer(GL_ARRAY_BUFFER, valueBufferHandles[sliceIndex]);
 	    	gl.glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
 	    	
 	    	gl.glDrawArrays(GL_POINTS, 0, cr.numberOfPoints());
