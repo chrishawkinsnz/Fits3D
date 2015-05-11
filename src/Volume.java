@@ -29,4 +29,8 @@ public class Volume {
 	public Volume (float x, float y, float z, float wd, float ht, float dp) {
 		this(new Vector3(x, y, z), new Vector3(wd, ht, dp));
 	}
+	
+	public static Volume unitVolume() {
+		return new Volume(Vector3.zeros, Vector3.ones);
+	}
 }

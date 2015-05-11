@@ -104,7 +104,8 @@ public class Renderer {
 		//--figure out if looking back to front
 		float pi = (float)Math.PI;
 		float spin = Math.abs(this.viewer.getxSpin() % (2f * pi));
-		boolean flippityFlop = spin > pi/2f && spin < 3f*pi/2f ;
+//		boolean flippityFlop = spin > pi/2f && spin < 3f*pi/2f ;
+		boolean flippityFlop = spin > 0f && spin < pi ;
 		
 		for (int i = 0; i < this.pointCloud.regions().size(); i++){
 			int sliceIndex = i;
@@ -120,6 +121,7 @@ public class Renderer {
     		m.makeOrtho(orthoOrigX - orthoWidth, orthoOrigX + orthoWidth, orthoOrigY - orthoHeight,orthoOrigY + orthoHeight, -6f, 6f);
     		
     		Volume v = cr.volume;
+    		Volume vpc = this.pointCloud.volume;
     		float baseScale = 1.0f / this.viewer.getRadius();
     		
     		float pointRadius = this.calculatePointRadiusInPixelsForRegionIndex(sliceIndex) * baseScale * v.wd;
@@ -130,8 +132,12 @@ public class Renderer {
 	    	m.rotate(this.viewer.getySpin(), 1f, 0f, 0f);
 	    	m.rotate(this.viewer.getxSpin(), 0f, 1f, 0f);
 	    	m.scale(baseScale, baseScale, baseScale);
+	    	
 	    	m.translate(v.x, v.y, v.z);
-	    	m.scale(v.wd, v.ht, v.dp);
+	    	m.scale(v.wd,v.ht,v.dp);
+	    	
+//	    	m.translate(vpc.x, vpc.y, vpc.z);
+//	    	m.scale(vpc.wd, vpc.ht, vpc.dp);
 	    	
 	    	//--pass that matrix to the shader
 	    	gl.glUniformMatrix4fv(this.uniformMvpHandle, 1, false, m.getMatrix(), 0);
@@ -163,6 +169,7 @@ public class Renderer {
 		CloudRegion cr = this.pointCloud.regions().get(i);
 		float pointWidth = (float)this.width* this.orthoWidth / (float)cr.ptWidth(); 
 		float pointHeight = (float)this.height* this.orthoHeight / (float)cr.ptHeight();
-		return pointWidth < pointHeight ? pointWidth : pointHeight;
+		float sz =  pointWidth < pointHeight ? pointWidth : pointHeight;
+		return sz * 3f;
 	}
 }

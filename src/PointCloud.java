@@ -45,7 +45,6 @@ public class PointCloud {
 	public PointCloud(String pathName) {
 		this.fileName = pathName;
 		this.regions = new ArrayList<CloudRegion>();
-		
 	}
 	
 
@@ -53,13 +52,12 @@ public class PointCloud {
 		try{
 			
 			this.fits = new Fits(this.fileName);
-			Volume v = this.volume;
-			if (regions.size() > 0) {
-				v = new Volume(boxOrigX, boxOrigY, boxOrigZ + 2f * regions.size(), boxWidth, boxHeight, boxDepth);
-			}
-			
+			Volume v = new Volume(0.7f, 0f, 0f, 0.3f, 1f, 1f);
 			CloudRegion cr = new CloudRegion(fits, v, proportionOfPerfect);
+			this.addRegion(cr);
 			
+			v = new Volume(0f, 0f, 0f, 0.7f, 1f, 1f);
+			cr = new CloudRegion(fits, v, proportionOfPerfect);
 			this.addRegion(cr);
 		} catch (FitsException e) {
 			e.printStackTrace();

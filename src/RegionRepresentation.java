@@ -72,8 +72,8 @@ public class RegionRepresentation {
 			float[] storage = new float[sourceMaxDepth];
 			if (hdu.getData().reset()) {
 				ArrayDataInput adi = fits.getStream();
-				int planesToSkip = 0;
-				adi.skipBytes(sourceMaxDepth * sourceMaxHeight * (stride - 1) * 4);
+				int planesToSkip = sourceStartX;
+				adi.skipBytes(sourceMaxDepth * sourceMaxHeight * planesToSkip * 4);
 
 				for (int x = 0; x < maxWidth; x ++) {
 					for (int y = 0; y < maxHeight; y ++) {
