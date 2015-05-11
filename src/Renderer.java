@@ -55,6 +55,7 @@ public class Renderer {
 	//--MODEL STUFF
 	private WorldViewer viewer;
 	private PointCloud pointCloud;
+	public boolean isTrippy;
 
 
 	public Renderer(PointCloud pointCloud, WorldViewer viewer, GL3 gl){
@@ -90,10 +91,10 @@ public class Renderer {
 		this.uniformPointAreaHandle = gl.glGetUniformLocation(this.shaderProgram, "pointArea");
 		this.uniformColorHandle = gl.glGetUniformLocation(this.shaderProgram, "pointColor");
 		
-    	gl.glEnable(GL_BLEND);
-		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-		gl.glBlendEquation(GL_FUNC_ADD);
-		gl.glDisable(GL_CULL_FACE);
+//    	gl.glEnable(GL_BLEND);
+//		gl.glBlendFunc(GL_ONE, GL_ONE);
+////		gl.glBlendEquation(GL_FUNC_ADD);
+//		gl.glDisable(GL_CULL_FACE);
 	}	
 	
 	public void display() {
@@ -106,7 +107,9 @@ public class Renderer {
 		float spin = Math.abs(this.viewer.getxSpin() % (2f * pi));
 //		boolean flippityFlop = spin > pi/2f && spin < 3f*pi/2f ;
 		boolean flippityFlop = spin > 0f && spin < pi ;
-		
+		if (this.isTrippy = true) {
+			flippityFlop = true;
+		}
 		for (int i = 0; i < this.pointCloud.regions().size(); i++){
 			int sliceIndex = i;
 			if (flippityFlop) {
@@ -124,7 +127,7 @@ public class Renderer {
     		Volume vpc = this.pointCloud.volume;
     		float baseScale = 1.0f / this.viewer.getRadius();
     		
-    		float pointRadius = this.calculatePointRadiusInPixelsForRegionIndex(sliceIndex) * baseScale * v.wd;
+    		float pointRadius = this.calculatePointRadiusInPixelsForRegionIndex(sliceIndex) * baseScale;
     		float ptArea = 0.5f * pointRadius * pointRadius * (float)Math.PI;
     		gl.glPointSize(Math.max(pointRadius,1f));
 			gl.glUniform1f(this.uniformPointAreaHandle, ptArea);
@@ -167,9 +170,9 @@ public class Renderer {
 	
 	private float calculatePointRadiusInPixelsForRegionIndex(int i) {
 		CloudRegion cr = this.pointCloud.regions().get(i);
-		float pointWidth = (float)this.width* this.orthoWidth / (float)cr.ptWidth(); 
-		float pointHeight = (float)this.height* this.orthoHeight / (float)cr.ptHeight();
+		float pointWidth = (float)this.width* this.orthoWidth*cr.volume.wd/ (float)cr.ptWidth(); 
+		float pointHeight = (float)this.height* this.orthoHeight*cr.volume.ht / (float)cr.ptHeight();
 		float sz =  pointWidth < pointHeight ? pointWidth : pointHeight;
-		return sz * 3f;
+		return sz;
 	}
 }

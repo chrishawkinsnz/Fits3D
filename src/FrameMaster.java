@@ -92,6 +92,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
         loadExampleButton.addActionListener(e -> this.loadFile("12CO_MEAN.fits"));
         buttonPanel.add(loadExampleButton);
         
+        JButton tripOutButton = new JButton("Trip Out");
+        tripOutButton.addActionListener(e -> this.renderer.isTrippy = !this.renderer.isTrippy);
+        buttonPanel.add(tripOutButton);
+        
         JSlider slider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
         slider.addChangeListener((ChangeEvent ce) -> {
 			float proportion = (float)slider.getValue()/ (float)slider.getMaximum();
@@ -115,6 +119,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         sliderQuality.setSnapToTicks(true);
         
         buttonPanel.add(sliderQuality);
+        
         
         
         return buttonPanel;
