@@ -52,14 +52,17 @@ public class PointCloud {
 		try{
 			
 			this.fits = new Fits(this.fileName);
-			int slices = 10;
-			float sliceWidth = 1f / ((float)slices);
-			for (int i = 0; i <slices; i++) {
-				float slicePos = ((float)i) * sliceWidth;
-				Volume v = new Volume(slicePos, 0f, 0f, sliceWidth, 1f, 1f);
-				CloudRegion cr = new CloudRegion(fits, v, 0.3f);
-				this.addRegion(cr);
-			}
+			Volume v = new Volume(0f, 0f, 0f, 1f, 1f, 1f);
+			CloudRegion cr = new CloudRegion(fits, v, 0.3f);
+			this.addRegion(cr);
+//			int slices = 10;
+//			float sliceWidth = 1f / ((float)slices);
+//			for (int i = 0; i <slices; i++) {
+//				float slicePos = ((float)i) * sliceWidth;
+//				Volume v = new Volume(slicePos, 0f, 0f, sliceWidth, 1f, 1f);
+//				CloudRegion cr = new CloudRegion(fits, v, 0.3f);
+//				this.addRegion(cr);
+//			}
 			
 		} catch (FitsException e) {
 			e.printStackTrace();

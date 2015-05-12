@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.util.Random;
 
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
@@ -23,6 +24,8 @@ public class RegionRepresentation {
 	public FloatBuffer vertexBuffer;
 	public FloatBuffer valueBuffer;
 	
+	private int seed;
+	
 	/**
 	 * 
 	 * @param fileName Filename of the original fits file
@@ -34,7 +37,7 @@ public class RegionRepresentation {
 		if (fidelity >=1.0) {
 			isMaximumFidelity = true;
 		}
-		
+		this.seed = new Random().nextInt();
 		long t0 = System.currentTimeMillis();
 		try{
 			ImageHDU hdu = (ImageHDU) fits.getHDU(0);
@@ -109,6 +112,7 @@ public class RegionRepresentation {
 	}
 	
 	private void loadNormalizedBuffer() {
+			Random r = new Random(this.seed);
 			long t0 = System.currentTimeMillis();
 			float[] vertexData = new float[this.numPtsX * this.numPtsY * this.numPtsZ * 3];
 			float[] valueData = new float[this.numPtsX * this.numPtsY * this.numPtsZ];
@@ -130,10 +134,11 @@ public class RegionRepresentation {
 						
 						float value = data[(int)(xProportion * this.numPtsX)][(int)(yProportion * this.numPtsY)][(int)(zProportion * this.numPtsZ)];
 						if (!Float.isNaN(value) && value > 0.0f) {
-							
-							vertexData[pts * 3 + 0] = x;
-							vertexData[pts * 3 + 1] = y;
-							vertexData[pts * 3 + 2] = z;
+							float fudge = r.nextFloat();
+							fudge = fudge - 0.5f;
+							vertexData[pts * 3 + 0] = x + fudge * xStride;
+							vertexData[pts * 3 + 1] = y + fudge * yStride;;
+							vertexData[pts * 3 + 2] = z + fudge * zStride;;
 						
 							valueData[pts] = value;
 							pts++;

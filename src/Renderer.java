@@ -107,7 +107,7 @@ public class Renderer {
 		float spin = Math.abs(this.viewer.getxSpin() % (2f * pi));
 //		boolean flippityFlop = spin > pi/2f && spin < 3f*pi/2f ;
 		boolean flippityFlop = spin > 0f && spin < pi ;
-		if (this.isTrippy = true) {
+		if (this.isTrippy == true) {
 			flippityFlop = true;
 		}
 		for (int i = 0; i < this.pointCloud.regions().size(); i++){
@@ -116,7 +116,7 @@ public class Renderer {
 				sliceIndex = this.pointCloud.regions().size() - 1 - i;
 			}
 			CloudRegion cr = this.pointCloud.regions().get(sliceIndex);
-			Color col = CloudRegion.cols [i % CloudRegion.cols.length]; 
+			Color col = CloudRegion.cols [1 % CloudRegion.cols.length]; 
 			gl.glUniform4f(this.uniformColorHandle, col.getRed()/255, col.getGreen()/255, col.getBlue()/255, col.getAlpha()/255);
 	    	Matrix4 m = new Matrix4();
 	    	
@@ -139,8 +139,8 @@ public class Renderer {
 	    	m.translate(v.x, v.y, v.z);
 	    	m.scale(v.wd,v.ht,v.dp);
 	    	
-//	    	m.translate(vpc.x, vpc.y, vpc.z);
-//	    	m.scale(vpc.wd, vpc.ht, vpc.dp);
+	    	m.translate(vpc.x, vpc.y, vpc.z);
+	    	m.scale(vpc.wd, vpc.ht, vpc.dp);
 	    	
 	    	//--pass that matrix to the shader
 	    	gl.glUniformMatrix4fv(this.uniformMvpHandle, 1, false, m.getMatrix(), 0);
@@ -170,9 +170,10 @@ public class Renderer {
 	
 	private float calculatePointRadiusInPixelsForRegionIndex(int i) {
 		CloudRegion cr = this.pointCloud.regions().get(i);
-		float pointWidth = (float)this.width* this.orthoWidth*cr.volume.wd/ (float)cr.ptWidth(); 
+//		float pointWidth = (float)this.width* this.orthoWidth*cr.volume.wd/ (float)cr.ptWidth(); 
 		float pointHeight = (float)this.height* this.orthoHeight*cr.volume.ht / (float)cr.ptHeight();
-		float sz =  pointWidth < pointHeight ? pointWidth : pointHeight;
+//		float sz =  pointWidth < pointHeight ? pointWidth : pointHeight;
+		float sz =  pointHeight;
 		return sz;
 	}
 }
