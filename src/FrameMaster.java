@@ -85,7 +85,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     
     private JPanel buttonBar(){
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setBackground(Color.orange);
+        buttonPanel.setBackground(Color.blue);
         buttonPanel.setMinimumSize(new Dimension(0, 128));
         
         JButton loadExampleButton = new JButton("Load Example");       

@@ -1,6 +1,10 @@
 import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+
+import org.apache.commons.math3.util.Pair;
 
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
@@ -21,9 +25,10 @@ public class RegionRepresentation {
 	public boolean isMaximumFidelity;
 	public float fidelity;
 	
-	public FloatBuffer vertexBuffer;
-	public FloatBuffer valueBuffer;
+//	public FloatBuffer vertexBuffer;
+//	public FloatBuffer valueBuffer;
 	
+	private List<VertexBufferSlice>slices;
 	private int seed;
 	
 	/**
@@ -106,58 +111,66 @@ public class RegionRepresentation {
 		}
 		long t1 = System.currentTimeMillis();
 		System.out.println("took "+(t1-t0) + " ms to read in data");
-		
-		
-		loadNormalizedBuffer();
 	}
 	
-	private void loadNormalizedBuffer() {
-			Random r = new Random(this.seed);
-			long t0 = System.currentTimeMillis();
-			float[] vertexData = new float[this.numPtsX * this.numPtsY * this.numPtsZ * 3];
-			float[] valueData = new float[this.numPtsX * this.numPtsY * this.numPtsZ];
-			
-			float xStride = 1.0f/(float)this.numPtsX;
-			float yStride = 1.0f/(float)this.numPtsY;
-			float zStride = 1.0f/(float)this.numPtsZ;
-			
-			int pts = 0;
-			for (float zProportion = 0.0f; zProportion < 1.0f; zProportion += zStride) {
-				float z =  zProportion;
+	
+	private VertexBufferSlice vertexAndValueBufferForSlice(float zProportion) {
+		Random r = new Random(this.seed);
+		long t0 = System.currentTimeMillis();
+		float[] vertexData = new float[this.numPtsX * this.numPtsY * 3 * 1];
+		float[] valueData = new float[this.numPtsX * this.numPtsY * 1 * 1];
+		
+		float xStride = 1.0f/(float)this.numPtsX;
+		float yStride = 1.0f/(float)this.numPtsY;
+		float zStride = 1.0f/(float)this.numPtsZ;
+		
+		int pts = 0;
+		float z =  zProportion;
+		
+		for (float y = 0.0f; y < 1.0f; y += yStride) {
+			for (float x = 0.0f; x < 1.0f; x += xStride) {
+				float value = data[(int)(x * this.numPtsX)][(int)(y * this.numPtsY)][(int)(z * this.numPtsZ)];
+				if (!Float.isNaN(value) && value > 0.0f) {
+					float fudge = r.nextFloat();
+					fudge = fudge - 0.5f;
+					vertexData[pts * 3 + 0] = x + fudge * xStride;
+					vertexData[pts * 3 + 1] = y + fudge * yStride;;
+					vertexData[pts * 3 + 2] = z + fudge * zStride;;
 				
-				for (float yProportion = 0.0f; yProportion < 1.0f; yProportion += yStride) {
-					float y =  yProportion;
-					
-					for (float xProportion = 0.0f; xProportion < 1.0f; xProportion += xStride) {
-						
-						float x = xProportion;
-						
-						float value = data[(int)(xProportion * this.numPtsX)][(int)(yProportion * this.numPtsY)][(int)(zProportion * this.numPtsZ)];
-						if (!Float.isNaN(value) && value > 0.0f) {
-							float fudge = r.nextFloat();
-							fudge = fudge - 0.5f;
-							vertexData[pts * 3 + 0] = x + fudge * xStride;
-							vertexData[pts * 3 + 1] = y + fudge * yStride;;
-							vertexData[pts * 3 + 2] = z + fudge * zStride;;
-						
-							valueData[pts] = value;
-							pts++;
-						}
-					}	
+					valueData[pts] = value;
+					pts++;
 				}
-			}
-
-			System.out.println("Number of Points: "+pts);
-			this.validPts = pts;
-			this.vertexBuffer = FloatBuffer.allocate(pts * 3);
-			this.vertexBuffer.put(vertexData, 0, pts * 3);
-			this.vertexBuffer.flip();
-			
-			this.valueBuffer = FloatBuffer.allocate(pts);
-			this.valueBuffer.put(valueData, 0, pts);
-			this.valueBuffer.flip();
-			long t1 = System.currentTimeMillis();
-			System.out.println("took "+(t1-t0) + " ms to load into buffers");
+			}	
+		}
+		
+		System.out.println("Number of Points: "+pts);
+		FloatBuffer vertexBuffer = FloatBuffer.allocate(pts * 3);
+		vertexBuffer.put(vertexData, 0, pts * 3);
+		vertexBuffer.flip();
+		
+		FloatBuffer valueBuffer = FloatBuffer.allocate(pts);
+		valueBuffer.put(valueData, 0, pts);
+		valueBuffer.flip();
+		long t1 = System.currentTimeMillis();
+		System.out.println("took "+(t1-t0) + " ms to load into buffers");
+		
+		VertexBufferSlice vbs = new VertexBufferSlice();
+		vbs.vertexBuffer = vertexBuffer;
+		vbs.valueBuffer = valueBuffer;
+		vbs.numberOfPts = pts;
+		vbs.depthValue = zProportion;
+		return vbs;
 	}
 	
+	public List<VertexBufferSlice>getSlices() {
+		if (this.slices == null) {
+			this.slices = new ArrayList<VertexBufferSlice>();
+			float zStride = 1.0f/(float)this.numPtsZ;
+			for (float z = 0.0f; z < 1.0f; z += zStride) {
+				VertexBufferSlice vbs = vertexAndValueBufferForSlice(z);
+				this.slices.add(vbs);
+			}
+		}
+		return this.slices;
+	}
 }

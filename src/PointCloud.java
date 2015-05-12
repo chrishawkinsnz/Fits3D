@@ -37,9 +37,7 @@ public class PointCloud {
 	
 	final Volume volume = new Volume(boxOrigX, boxOrigY, boxOrigZ, boxWidth, boxHeight, boxDepth);
 	
-	private List<CloudRegion>regions;
-	
-	private ImageHDU hdu;
+	List<CloudRegion>regions;
  
 	
 	public PointCloud(String pathName) {
@@ -69,7 +67,7 @@ public class PointCloud {
 		}
 	}
 	
-	public List<CloudRegion> regions() {
+	public List<CloudRegion> getRegions() {
 		return regions;
 	}
 	
@@ -80,7 +78,7 @@ public class PointCloud {
 				return a.depth < b.depth ? -1 : 1;
 			}
 		}
-		Collections.sort(this.regions(), new RegionOrderer());
+		Collections.sort(this.getRegions(), new RegionOrderer());
 	}
 
 }

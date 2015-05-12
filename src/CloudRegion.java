@@ -1,5 +1,6 @@
 import java.awt.Color;
 import java.nio.FloatBuffer;
+import java.util.List;
 
 import nom.tam.fits.Fits;
 
@@ -31,14 +32,11 @@ public class CloudRegion {
 		this.bestRepresentation = initialRepresentation;
 		this.currentRepresentation = initialRepresentation;
 	}
-	
-	public FloatBuffer vertexBuffer() {
-		return this.currentRepresentation.vertexBuffer;
+
+	public List<VertexBufferSlice>getSlices() {
+		return this.currentRepresentation.getSlices();
 	}
 	
-	public FloatBuffer valueBuffer() {
-		return this.currentRepresentation.valueBuffer;
-	}
 	
 	public int numberOfPoints() {
 		return this.currentRepresentation.validPts;
