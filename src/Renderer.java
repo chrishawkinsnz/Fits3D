@@ -97,8 +97,9 @@ public class Renderer {
 		this.uniformColorHandle = gl.glGetUniformLocation(this.shaderProgram, "pointColor");
 		
     	gl.glEnable(GL_BLEND);
-		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);
-//		gl.glBlendEquation(GL_FUNC_ADD);
+    	
+		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		gl.glBlendEquation(GL_FUNC_ADD);
 		gl.glDisable(GL_CULL_FACE);
 	}	
 	
