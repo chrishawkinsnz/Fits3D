@@ -7,6 +7,7 @@ import static com.jogamp.opengl.GL.GL_TRIANGLES;
 
 import java.awt.Color;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -60,35 +61,35 @@ public class Renderer {
 
 
 	public Renderer(PointCloud pointCloud, WorldViewer viewer, GL3 gl){
-//		int nRegions = pointCloud.getRegions().size();
 		this.pointCloud = pointCloud;
 		this.gl = gl;
 		this.viewer = viewer;
 		
-		int nSlices = this.pointCloud.regions.get(0).getSlices().size();
+		int nSlices = 0;
+		for (CloudRegion cr : this.pointCloud.getRegions())
+			nSlices += cr.getSlices().size();
+		
 		this.vertexBufferHandles = new int[nSlices];
 		this.valueBufferHandles = new int[nSlices];
+		int index = 0;
+		int[] ptr = new int[2];
 		
-		int[] ptr = new int[2 * pointCloud.getRegions().size()];
-		
-		for (int i = 0; i < nSlices; i++) {
-		 	gl.glGenBuffers(2, ptr, 0);
-		 	
-//	    	this.vertexBufferHandle = ptr[0];
-		 	this.vertexBufferHandles[i] = ptr[0];
-//	    	CloudRegion region = this.pointCloud.getRegions().get(0);
-		 	VertexBufferSlice vbs = this.pointCloud.getRegions().get(0).getSlices().get(i);
-		 	vbs.index = i;
-	    	FloatBuffer vertBuffer = vbs.vertexBuffer;
-	    	System.out.println(vertBuffer);
-	    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBufferHandles[i]);
-	    	gl.glBufferData(GL_ARRAY_BUFFER, vertBuffer.capacity() * 4, vertBuffer, GL_STATIC_DRAW);
-	    	gl.glBufferData(GL_ARRAY_BUFFER, vertBuffer.capacity() * 4, vertBuffer, GL_STATIC_DRAW);
-			
-	    	FloatBuffer valueBuffer = vbs.valueBuffer;
-	    	this.valueBufferHandles[i] = ptr[1];
-	    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.valueBufferHandles[i]);
-	    	gl.glBufferData(GL_ARRAY_BUFFER, valueBuffer.capacity() * 4, valueBuffer, GL_STATIC_DRAW);
+		for (CloudRegion cr : this.pointCloud.getRegions()) {
+			for (VertexBufferSlice vbs : cr.getSlices()) {
+			 	gl.glGenBuffers(2, ptr, 0);
+			 	this.vertexBufferHandles[index] = ptr[0];
+			 	vbs.index = index;
+			 	
+		    	FloatBuffer vertBuffer = vbs.vertexBuffer;
+		    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBufferHandles[index]);
+		    	gl.glBufferData(GL_ARRAY_BUFFER, vertBuffer.capacity() * 4, vertBuffer, GL_STATIC_DRAW);
+				
+		    	FloatBuffer valueBuffer = vbs.valueBuffer;
+		    	this.valueBufferHandles[index] = ptr[1];
+		    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.valueBufferHandles[index]);
+		    	gl.glBufferData(GL_ARRAY_BUFFER, valueBuffer.capacity() * 4, valueBuffer, GL_STATIC_DRAW);
+		    	index++;
+			}
 		}
 		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "src/shaders/shader2.vert", "src/shaders/shader2.frag");
     	this.uniformMvpHandle = gl.glGetUniformLocation(this.shaderProgram, "mvp");
@@ -117,58 +118,84 @@ public class Renderer {
 		if (this.isTrippy == true) {
 			flippityFlop = true;
 		}
-		List<VertexBufferSlice>slices = this.pointCloud.getRegions().get(0).getSlices();
-		CloudRegion cr = this.pointCloud.getRegions().get(0);
-		for (int i = 0; i < slices.size(); i++){
-			int sliceIndex = i;
-			if (flippityFlop) {
-				sliceIndex = slices.size() - 1 - i;
+		
+		List<VertexBufferSlice> allSlicesLikeEver = new ArrayList<VertexBufferSlice>();
+		for (CloudRegion cr: this.pointCloud.getRegions()) {
+			if (this.pointCloud.getRegions().indexOf(cr) == 1) {
+				continue;
 			}
-//			CloudRegion cr = this.pointCloud.regions().get(sliceIndex);
-			VertexBufferSlice slice = slices.get(sliceIndex);
-//			Color col = CloudRegion.cols [1 % CloudRegion.cols.length];
-			Color col = new Color(1.0f, 0.0f, 0f, 0.1f);
-			if (i > slices.size()/2) {
-				col = new Color(0.0f, 1.0f, 0f, 0.1f);
+			for (VertexBufferSlice slice: cr.getSlices()) {
+				slice.scratchDepth = cr.volume.z + cr.volume.dp * slice.depthValue;
+				slice.region = cr;
+			}
+			allSlicesLikeEver.addAll(cr.getSlices());
+		}
+		
+//		class RegionOrderer implements Comparator<VertexBufferSlice> {
+//			public int compare(VertexBufferSlice a, VertexBufferSlice b) {
+//				return a.scratchDepth < b.scratchDepth ? -1 : 1;
+//			}
+//		}
+//		Collections.sort(allSlicesLikeEver, new RegionOrderer());
+		
+		for (CloudRegion cr: this.pointCloud.getRegions()) {
+			List<VertexBufferSlice>slices = this.pointCloud.getRegions().get(0).getSlices();
+			Color col = CloudRegion.cols [this.pointCloud.regions.indexOf(cr)];
+			
+			for (int i = 0; i < allSlicesLikeEver.size(); i++){
 				
-			}
-			gl.glUniform4f(this.uniformColorHandle, col.getRed(), col.getGreen(), col.getBlue(), col.getAlpha());
-	    	Matrix4 m = new Matrix4();
-	    	
-
-    		m.makeOrtho(orthoOrigX - orthoWidth, orthoOrigX + orthoWidth, orthoOrigY - orthoHeight,orthoOrigY + orthoHeight, -6f, 6f);
-    		
-    		Volume v = cr.volume;
-    		Volume vpc = this.pointCloud.volume;
-    		float baseScale = 1.0f / this.viewer.getRadius();
-    		
-    		float pointRadius = this.calculatePointRadiusInPixelsForRegionIndex(0) * baseScale;
-    		float ptArea = 0.5f * pointRadius * pointRadius * (float)Math.PI;
-    		gl.glPointSize(Math.max(pointRadius,1f));
-			gl.glUniform1f(this.uniformPointAreaHandle, ptArea);
-
-	    	m.rotate(this.viewer.getySpin(), 1f, 0f, 0f);
-	    	m.rotate(this.viewer.getxSpin(), 0f, 1f, 0f);
-	    	m.scale(baseScale, baseScale, baseScale);
-	    	
-	    	m.translate(v.x, v.y, v.z + slice.depthValue);
-	    	m.scale(v.wd,v.ht,v.dp);
-	    	
-	    	m.translate(vpc.x, vpc.y, vpc.z);
-	    	m.scale(vpc.wd, vpc.ht, vpc.dp);
-	    	
-	    	//--pass that matrix to the shader
-	    	gl.glUniformMatrix4fv(this.uniformMvpHandle, 1, false, m.getMatrix(), 0);
+				//-if Z is now pointing out of the screen take slices from the back of the list forward
+				int sliceIndex = i;
+				if (flippityFlop) {
+					sliceIndex = allSlicesLikeEver.size() - 1 - i;
+				}
+				
+//				Color col = Color.orange;
+//				VertexBufferSlice slice = allSlicesLikeEver.get(sliceIndex);
+//				CloudRegion cr = slice.region;
+				
+				VertexBufferSlice slice = slices.get(sliceIndex);
+				
+				System.out.println(cr.volume);
+				
+				gl.glUniform4f(this.uniformColorHandle, col.getRed(), col.getGreen(), col.getBlue(), col.getAlpha());
+		    	Matrix4 m = new Matrix4();
+		    	
 	
-	    	gl.glEnableVertexAttribArray(0);
-	    	gl.glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandles[slice.index]);
-	    	gl.glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-	    	
-	    	gl.glEnableVertexAttribArray(1);
-	    	gl.glBindBuffer(GL_ARRAY_BUFFER, valueBufferHandles[slice.index]);
-	    	gl.glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
-	    	
-	    	gl.glDrawArrays(GL_POINTS, 0, slice.numberOfPts);
+	    		m.makeOrtho(orthoOrigX - orthoWidth, orthoOrigX + orthoWidth, orthoOrigY - orthoHeight,orthoOrigY + orthoHeight, -6f, 6f);
+	    		
+	    		Volume v = cr.volume;
+	    		Volume vpc = this.pointCloud.volume;
+	    		float baseScale = 1.0f / this.viewer.getRadius();
+	    		
+	    		float pointRadius = this.calculatePointRadiusInPixelsForRegionIndex(0) * baseScale;
+	    		float ptArea = 0.5f * pointRadius * pointRadius * (float)Math.PI;
+	    		gl.glPointSize(Math.max(pointRadius,1f));
+				gl.glUniform1f(this.uniformPointAreaHandle, ptArea);
+	
+		    	m.rotate(this.viewer.getySpin(), 1f, 0f, 0f);
+		    	m.rotate(this.viewer.getxSpin(), 0f, 1f, 0f);
+		    	m.scale(baseScale, baseScale, baseScale);
+		    	
+		    	m.translate(v.x, v.y, v.z + slice.depthValue);
+		    	m.scale(v.wd,v.ht,v.dp);
+		    	
+		    	m.translate(vpc.x, vpc.y, vpc.z);
+		    	m.scale(vpc.wd, vpc.ht, vpc.dp);
+		    	
+		    	//--pass that matrix to the shader
+		    	gl.glUniformMatrix4fv(this.uniformMvpHandle, 1, false, m.getMatrix(), 0);
+		
+		    	gl.glEnableVertexAttribArray(0);
+		    	gl.glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandles[slice.index]);
+		    	gl.glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+		    	
+		    	gl.glEnableVertexAttribArray(1);
+		    	gl.glBindBuffer(GL_ARRAY_BUFFER, valueBufferHandles[slice.index]);
+		    	gl.glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
+		    	
+		    	gl.glDrawArrays(GL_POINTS, 0, slice.numberOfPts);
+			}
 		}
     	gl.glEnableVertexAttribArray(0);
     	gl.glDisableVertexAttribArray(1);

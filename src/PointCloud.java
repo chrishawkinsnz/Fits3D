@@ -53,6 +53,11 @@ public class PointCloud {
 			Volume v = new Volume(0f, 0f, 0f, 1f, 1f, 1f);
 			CloudRegion cr = new CloudRegion(fits, v, 0.3f);
 			this.addRegion(cr);
+			
+			v = new Volume(0f, 0f, 0.5f, 1f, 1f, 1f);
+			cr = new CloudRegion(fits, v, 0.3f);
+			this.addRegion(cr);
+			
 //			int slices = 10;
 //			float sliceWidth = 1f / ((float)slices);
 //			for (int i = 0; i <slices; i++) {
