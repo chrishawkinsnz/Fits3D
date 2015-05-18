@@ -209,11 +209,10 @@ public class Renderer {
 	
 	private float calculatePointRadiusInPixelsForRegionIndex(int i) {
 		CloudRegion cr = this.pointCloud.getRegions().get(i);
-//		float pointWidth = (float)this.width* this.orthoWidth*cr.volume.wd/ (float)cr.ptWidth(); 
+		float pointWidth = (float)this.width* this.orthoWidth*cr.volume.wd/ (float)cr.ptWidth(); 
 		float pointHeight = (float)this.height* this.orthoHeight*cr.volume.ht / (float)cr.ptHeight();
-//		float sz =  pointWidth < pointHeight ? pointWidth : pointHeight;
-		float sz =  pointHeight;
-//		return sz;
-		return 5f;
+		float sz =  pointWidth < pointHeight ? pointWidth : pointHeight;
+//		float sz =  pointHeight;
+		return sz;
 	}
 }

@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Random;
 
 public class PointCloud {
+	private static int clouds = 0;
 	public final static boolean shouldFudge = false;
 	
 	public final String fileName;
@@ -35,7 +36,7 @@ public class PointCloud {
 	
 	
 	
-	final Volume volume = new Volume(boxOrigX, boxOrigY, boxOrigZ, boxWidth, boxHeight, boxDepth);
+	final Volume volume;
 	
 	List<CloudRegion>regions;
  
@@ -43,6 +44,13 @@ public class PointCloud {
 	public PointCloud(String pathName) {
 		this.fileName = pathName;
 		this.regions = new ArrayList<CloudRegion>();
+		if (clouds > 0) {
+			this.volume = new Volume(boxOrigX, boxOrigY, boxOrigZ, boxWidth, boxHeight, boxDepth);
+		}
+		else {
+			this.volume = new Volume(boxOrigX+0.5f, boxOrigY, boxOrigZ, boxWidth, boxHeight, boxDepth);
+		}
+		clouds++;
 	}
 	
 
@@ -54,9 +62,9 @@ public class PointCloud {
 			CloudRegion cr = new CloudRegion(fits, v, 0.3f);
 			this.addRegion(cr);
 			
-			v = new Volume(0f, 0f, 0.5f, 1f, 1f, 1f);
-			cr = new CloudRegion(fits, v, 0.3f);
-			this.addRegion(cr);
+//			v = new Volume(0f, 0f, 0.5f, 1f, 1f, 1f);
+//			cr = new CloudRegion(fits, v, 0.3f);
+//			this.addRegion(cr);
 			
 //			int slices = 10;
 //			float sliceWidth = 1f / ((float)slices);
@@ -74,6 +82,14 @@ public class PointCloud {
 	
 	public List<CloudRegion> getRegions() {
 		return regions;
+	}
+	
+	public List<VertexBufferSlice>getSlices() {
+		List<VertexBufferSlice>slices = new ArrayList<VertexBufferSlice>();
+		for (CloudRegion region:this.regions) {
+			slices.addAll(region.getSlices());
+		}
+		return slices;
 	}
 	
 	public void addRegion (CloudRegion cr) {

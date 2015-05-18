@@ -47,10 +47,12 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-public class FrameMaster extends JFrame implements GLEventListener, ListSelectionListener {
+public class FrameMaster extends JFrame implements GLEventListener {
     private static final long serialVersionUID = 1L;
     private FPSAnimator animator;
 	private List<PointCloud> pointClouds = new ArrayList<PointCloud>();
+	private PointCloud currentPointCloud;
+
 	private Renderer renderer;
 	private WorldViewer viewer;
 	private GL3 gl;
@@ -118,7 +120,17 @@ public class FrameMaster extends JFrame implements GLEventListener, ListSelectio
         list = new JList<PointCloud>(listModel);
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.setSelectedIndex(0);
-        list.addListSelectionListener(this);
+        list.addListSelectionListener(new ListSelectionListener() {
+
+			@Override
+			public void valueChanged(ListSelectionEvent e) {
+				PointCloud selectedPointCloud = list.getSelectedValue();
+				if (selectedPointCloud != null && e.getValueIsAdjusting() == false) {
+					FrameMaster.this.currentPointCloud = selectedPointCloud;
+					System.out.println(selectedPointCloud);
+				}
+			}
+		});
         list.setVisibleRowCount(5);
         
         list.setMinimumSize(new Dimension(200, 600));
@@ -242,6 +254,8 @@ public class FrameMaster extends JFrame implements GLEventListener, ListSelectio
             int height) {
     	this.drawableHeight = height;
     	this.drawableWidth = width;
+		System.out.println("reshape:"+this.drawableWidth+"x"+this.drawableHeight);
+
     	if (renderer!= null) {
     		renderer.informOfResolution(width, height);
     	}
@@ -251,11 +265,6 @@ public class FrameMaster extends JFrame implements GLEventListener, ListSelectio
 		// TODO Auto-generated method stub
 	}
 
-	@Override
-	public void valueChanged(ListSelectionEvent e) {
-		System.out.println(e.getSource());
-		// TODO Auto-generated method stub
-		
-	}
+
 	
 }
