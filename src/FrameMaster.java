@@ -1,6 +1,8 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.awt.LayoutManager;
 import java.io.File;
 
 import com.jogamp.opengl.DebugGL3;
@@ -14,6 +16,10 @@ import com.jogamp.opengl.util.FPSAnimator;
 
 
 
+
+
+
+import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -50,11 +56,12 @@ public class FrameMaster extends JFrame implements GLEventListener {
         GLCapabilities capabilities = new GLCapabilities(profile);
 
         this.setName("Very Good Honours Project");
-        this.setMinimumSize(new Dimension(700, 800));
+        this.setSize(new Dimension(700, 800));
+        this.setMinimumSize(new Dimension(300,400));
     	this.setLocationRelativeTo(null);
     	this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     	this.setVisible(true);
-    	this.setResizable(false);
+    	this.setResizable(true);
     	this.setLayout(new BorderLayout());
 
         GLCanvas canvas = new GLCanvas(capabilities);
@@ -81,7 +88,33 @@ public class FrameMaster extends JFrame implements GLEventListener {
         canvas.addMouseMotionListener(this.mouseController);
         canvas.addMouseListener(this.mouseController);
         canvas.addMouseWheelListener(this.mouseController);
+        
+        makeFileFrame();
+    
+        
 	}
+    
+    private void makeFileFrame() {
+    	JFrame fileFrame = new JFrame("Files");
+        
+        //--add file view
+        JPanel filePanel = new JPanel(new GridLayout(10, 1));
+        
+        int rows = 10;
+        
+        filePanel.setBackground(Color.PINK);
+        filePanel.setMinimumSize(new Dimension(200,600));
+        filePanel.setLayout(new GridLayout(rows, 1));
+        
+        JButton loadButton = new JButton("Add Cube");
+        loadButton.addActionListener(e -> System.out.println("what"));
+        filePanel.add(loadButton, rows -1, 0);
+        fileFrame.add(filePanel);
+        
+        fileFrame.pack();
+        fileFrame.setMinimumSize(filePanel.getMinimumSize());
+        fileFrame.setVisible(true);	
+    }
     
     private JPanel buttonBar(){
         JPanel buttonPanel = new JPanel();
