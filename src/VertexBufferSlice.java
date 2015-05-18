@@ -9,4 +9,5 @@ public class VertexBufferSlice {
 	public int index;
 	public int numberOfPts;
 	public CloudRegion region;
+	public PointCloud cloud;
 }

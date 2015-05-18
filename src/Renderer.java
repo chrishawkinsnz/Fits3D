@@ -57,39 +57,41 @@ public class Renderer {
 	
 	//--MODEL STUFF
 	private WorldViewer viewer;
-	private PointCloud pointCloud;
+	private List<PointCloud> pointClouds;
 	public boolean isTrippy;
 
 
-	public Renderer(PointCloud pointCloud, WorldViewer viewer, GL3 gl){
-		this.pointCloud = pointCloud;
+	public Renderer(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl){
+		this.pointClouds = pointClouds;
 		this.gl = gl;
 		this.viewer = viewer;
 		
 		int nSlices = 0;
-		for (CloudRegion cr : this.pointCloud.getRegions())
-			nSlices += cr.getSlices().size();
+		for (PointCloud cloud : this.pointClouds)
+			for (CloudRegion cr : cloud.getRegions())
+				nSlices += cr.getSlices().size();
 		
 		this.vertexBufferHandles = new int[nSlices];
 		this.valueBufferHandles = new int[nSlices];
 		int index = 0;
 		int[] ptr = new int[2];
-		
-		for (CloudRegion cr : this.pointCloud.getRegions()) {
-			for (VertexBufferSlice vbs : cr.getSlices()) {
-			 	gl.glGenBuffers(2, ptr, 0);
-			 	this.vertexBufferHandles[index] = ptr[0];
-			 	vbs.index = index;
-			 	
-		    	FloatBuffer vertBuffer = vbs.vertexBuffer;
-		    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBufferHandles[index]);
-		    	gl.glBufferData(GL_ARRAY_BUFFER, vertBuffer.capacity() * 4, vertBuffer, GL_STATIC_DRAW);
-				
-		    	FloatBuffer valueBuffer = vbs.valueBuffer;
-		    	this.valueBufferHandles[index] = ptr[1];
-		    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.valueBufferHandles[index]);
-		    	gl.glBufferData(GL_ARRAY_BUFFER, valueBuffer.capacity() * 4, valueBuffer, GL_STATIC_DRAW);
-		    	index++;
+		for (PointCloud cloud : this.pointClouds){
+			for (CloudRegion cr : cloud.getRegions()) {
+				for (VertexBufferSlice vbs : cr.getSlices()) {
+				 	gl.glGenBuffers(2, ptr, 0);
+				 	this.vertexBufferHandles[index] = ptr[0];
+				 	vbs.index = index;
+				 	
+			    	FloatBuffer vertBuffer = vbs.vertexBuffer;
+			    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBufferHandles[index]);
+			    	gl.glBufferData(GL_ARRAY_BUFFER, vertBuffer.capacity() * 4, vertBuffer, GL_STATIC_DRAW);
+					
+			    	FloatBuffer valueBuffer = vbs.valueBuffer;
+			    	this.valueBufferHandles[index] = ptr[1];
+			    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.valueBufferHandles[index]);
+			    	gl.glBufferData(GL_ARRAY_BUFFER, valueBuffer.capacity() * 4, valueBuffer, GL_STATIC_DRAW);
+			    	index++;
+				}
 			}
 		}
 		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "src/shaders/shader2.vert", "src/shaders/shader2.frag");
@@ -121,13 +123,15 @@ public class Renderer {
 		}
 
 		List<VertexBufferSlice> allSlicesLikeEver = new ArrayList<VertexBufferSlice>();
-		for (CloudRegion cr: this.pointCloud.getRegions()) {
-			for (VertexBufferSlice slice: cr.getSlices()) {
-				slice.scratchDepth = cr.volume.z + cr.volume.dp * slice.depthValue;
-				slice.region = cr;
+		for (PointCloud cloud : this.pointClouds){
+			for (CloudRegion cr: cloud.getRegions()) {
+				for (VertexBufferSlice slice: cr.getSlices()) {
+					slice.scratchDepth = cr.volume.z + cr.volume.dp * slice.depthValue;
+					slice.region = cr;
+					slice.cloud = cloud;
+				}
+				allSlicesLikeEver.addAll(cr.getSlices());
 			}
-			allSlicesLikeEver.addAll(cr.getSlices());
-
 		}
 
 		
@@ -153,6 +157,7 @@ public class Renderer {
 			}
 			
 			VertexBufferSlice slice = allSlicesLikeEver.get(sliceIndex);
+			PointCloud cloud = slice.cloud;
 			CloudRegion cr = slice.region;
 			
 			gl.glUniform4f(this.uniformColorHandle, col.getRed(), col.getGreen(), col.getBlue(), col.getAlpha());
@@ -162,10 +167,10 @@ public class Renderer {
     		m.makeOrtho(orthoOrigX - orthoWidth, orthoOrigX + orthoWidth, orthoOrigY - orthoHeight,orthoOrigY + orthoHeight, -6f, 6f);
     		
     		Volume v = cr.volume;
-    		Volume vpc = this.pointCloud.volume;
+    		Volume vpc = cloud.volume;
     		float baseScale = 1.0f / this.viewer.getRadius();
     		
-    		float pointRadius = this.calculatePointRadiusInPixelsForRegionIndex(0) * baseScale;
+    		float pointRadius = this.calculatePointRadiusInPixelsForSlice(slice) * baseScale;
     		float ptArea = 0.5f * pointRadius * pointRadius * (float)Math.PI;
     		gl.glPointSize(Math.max(pointRadius,1f));
 			gl.glUniform1f(this.uniformPointAreaHandle, ptArea);
@@ -207,12 +212,11 @@ public class Renderer {
 	}
 
 	
-	private float calculatePointRadiusInPixelsForRegionIndex(int i) {
-		CloudRegion cr = this.pointCloud.getRegions().get(i);
+	private float calculatePointRadiusInPixelsForSlice(VertexBufferSlice slice) {
+		CloudRegion cr = slice.region;
 		float pointWidth = (float)this.width* this.orthoWidth*cr.volume.wd/ (float)cr.ptWidth(); 
 		float pointHeight = (float)this.height* this.orthoHeight*cr.volume.ht / (float)cr.ptHeight();
 		float sz =  pointWidth < pointHeight ? pointWidth : pointHeight;
-//		float sz =  pointHeight;
 		return sz;
 	}
 }

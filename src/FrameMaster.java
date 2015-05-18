@@ -239,7 +239,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     @Override
     public void display(GLAutoDrawable drawable) {    	
     	if (this.rendererNeedsNewPointCloud) {
-    		this.renderer = new Renderer(this.pointClouds.get(0), this.viewer, this.gl);
+    		this.renderer = new Renderer(this.pointClouds, this.viewer, this.gl);
     		this.renderer.informOfResolution(this.drawableWidth, this.drawableHeight);
     		this.rendererNeedsNewPointCloud = false;
     	}
