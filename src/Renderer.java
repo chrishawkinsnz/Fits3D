@@ -119,7 +119,6 @@ public class Renderer {
 		if (this.isTrippy == true) {
 			flippityFlop = true;
 		}
-		System.out.println("num slices ever:" + this.pointCloud.getRegions().size());
 
 		List<VertexBufferSlice> allSlicesLikeEver = new ArrayList<VertexBufferSlice>();
 		for (CloudRegion cr: this.pointCloud.getRegions()) {
@@ -138,9 +137,6 @@ public class Renderer {
 			}
 		}
 		Collections.sort(allSlicesLikeEver, new RegionOrderer());
-		for (VertexBufferSlice vbs : allSlicesLikeEver) {
-			System.out.println(vbs.scratchDepth);
-		}
 
 			
 		for (int i = 0; i < allSlicesLikeEver.size(); i++){

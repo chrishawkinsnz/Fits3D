@@ -4,6 +4,8 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.LayoutManager;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.jogamp.opengl.DebugGL3;
 import com.jogamp.opengl.GL3;
@@ -19,24 +21,36 @@ import com.jogamp.opengl.util.FPSAnimator;
 
 
 
+
+
+
+
+
+
+
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
+import javax.swing.ListSelectionModel;
 import javax.swing.event.ChangeEvent;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
-public class FrameMaster extends JFrame implements GLEventListener {
+public class FrameMaster extends JFrame implements GLEventListener, ListSelectionListener {
     private static final long serialVersionUID = 1L;
     private FPSAnimator animator;
-	private PointCloud pointCloud;
+	private List<PointCloud> pointClouds = new ArrayList<PointCloud>();
 	private Renderer renderer;
 	private WorldViewer viewer;
 	private GL3 gl;
@@ -48,6 +62,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	
 	private int drawableWidth = 0;
 	private int drawableHeight = 0;
+	
+	private DefaultListModel<PointCloud> listModel;
+	private JList<PointCloud> list; 
 	
     public FrameMaster() {
     	super("Very Good Honours Project");
@@ -95,20 +112,28 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	}
     
     private void makeFileFrame() {
+    	listModel = new DefaultListModel<PointCloud>();
+    	
+    	
+        list = new JList<PointCloud>(listModel);
+        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        list.setSelectedIndex(0);
+        list.addListSelectionListener(this);
+        list.setVisibleRowCount(5);
+        
+        list.setMinimumSize(new Dimension(200, 600));
+        list.setFixedCellWidth(200);
     	JFrame fileFrame = new JFrame("Files");
         
+    	
         //--add file view
-        JPanel filePanel = new JPanel(new GridLayout(10, 1));
+        JPanel filePanel = new JPanel();
         
-        int rows = 10;
         
-        filePanel.setBackground(Color.PINK);
         filePanel.setMinimumSize(new Dimension(200,600));
-        filePanel.setLayout(new GridLayout(rows, 1));
         
-        JButton loadButton = new JButton("Add Cube");
-        loadButton.addActionListener(e -> System.out.println("what"));
-        filePanel.add(loadButton, rows -1, 0);
+        
+        filePanel.add(list);
         fileFrame.add(filePanel);
         
         fileFrame.pack();
@@ -145,7 +170,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         	}
         	float proportion = (float)sliderQuality.getValue()/ (float)sliderQuality.getMaximum();
         	System.out.println("Proportion:" + proportion);
-        	this.pointCloud.readFitsAtQualityLevel(proportion);
+        	this.pointClouds.get(0).readFitsAtQualityLevel(proportion);
         	this.rendererNeedsNewPointCloud = true;        	
         });
         sliderQuality.setPaintTicks(true);
@@ -170,8 +195,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
     }
     
     private void loadFile(String fileName) {
-    	this.pointCloud = new PointCloud(fileName);
-    	this.pointCloud.readFitsAtQualityLevel(0.1f);
+    	PointCloud pc = new PointCloud(fileName);
+    	this.pointClouds.add(pc);
+    	pc.readFitsAtQualityLevel(0.1f);
+    	this.listModel.addElement(pc);
     	this.rendererNeedsNewPointCloud = true;
     }
     
@@ -200,7 +227,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     @Override
     public void display(GLAutoDrawable drawable) {    	
     	if (this.rendererNeedsNewPointCloud) {
-    		this.renderer = new Renderer(this.pointCloud, this.viewer, this.gl);
+    		this.renderer = new Renderer(this.pointClouds.get(0), this.viewer, this.gl);
     		this.renderer.informOfResolution(this.drawableWidth, this.drawableHeight);
     		this.rendererNeedsNewPointCloud = false;
     	}
@@ -222,6 +249,13 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 	public void play() {
 		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void valueChanged(ListSelectionEvent e) {
+		System.out.println(e.getSource());
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

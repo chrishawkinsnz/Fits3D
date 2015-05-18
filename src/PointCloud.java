@@ -86,4 +86,7 @@ public class PointCloud {
 		Collections.sort(this.getRegions(), new RegionOrderer());
 	}
 
+	public String toString() {
+		return this.fileName;
+	}
 }
