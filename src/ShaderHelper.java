@@ -7,13 +7,14 @@ import java.nio.IntBuffer;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GL3;
 
+import static com.jogamp.opengl.GL3.*;
 
 public class ShaderHelper {
 
     public static int programWithShaders2(GL3 gl, String vertexShaderPath, String fragmentShaderPath){
     	int shaderProgram = gl.glCreateProgram();
-		int vertexShader = gl.glCreateShader(gl.GL_VERTEX_SHADER);
-		int fragmentShader = gl.glCreateShader(gl.GL_FRAGMENT_SHADER);
+		int vertexShader = gl.glCreateShader(GL_VERTEX_SHADER);
+		int fragmentShader = gl.glCreateShader(GL_FRAGMENT_SHADER);
 		
 		//--parse in that fucking shader using string parsing apparently.
 		StringBuilder vertexShaderSource = new StringBuilder();
@@ -32,7 +33,6 @@ public class ShaderHelper {
 			System.exit(1);
 		}
 		
-	
 		//then frag
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(fragmentShaderPath));
@@ -54,9 +54,6 @@ public class ShaderHelper {
 		gl.glCompileShader(fragmentShader);
 		checkLogInfo(gl, fragmentShader, "fragment shader");
 		
-		ByteBuffer bb = ByteBuffer.allocate(1000);
-		
-		
 		gl.glAttachShader(shaderProgram, vertexShader);
 		gl.glAttachShader(shaderProgram, fragmentShader);
 		
@@ -66,16 +63,12 @@ public class ShaderHelper {
 		return shaderProgram;
     }
     
-    private static void quit() {
-		System.exit(1);	
-    }
-    
     private static void checkLogInfo(GL3 gl, int programObject, String shaderName) {
     	int[] compiled = new int[1];
-        gl.glGetShaderiv(programObject, gl.GL_COMPILE_STATUS, compiled,0);
+        gl.glGetShaderiv(programObject, GL_COMPILE_STATUS, compiled,0);
         if(compiled[0]==0){
             int[] logLength = new int[1];
-            gl.glGetShaderiv(programObject, gl.GL_INFO_LOG_LENGTH, logLength, 0);
+            gl.glGetShaderiv(programObject, GL_INFO_LOG_LENGTH, logLength, 0);
 
             byte[] log = new byte[logLength[0]];
             gl.glGetShaderInfoLog(programObject, logLength[0], (int[])null, 0, log, 0);

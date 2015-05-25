@@ -35,22 +35,20 @@ public class PointCloud {
 	private final float boxOrigY = -0.5f * boxHeight;
 	
 	
-	
 	final Volume volume;
+	
+	public final Color color;
 	
 	List<CloudRegion>regions;
  
+	private static final Color[] colors = {Color.GREEN, Color.RED, Color.BLUE, Color.ORANGE, Color.PINK};
 	
 	public PointCloud(String pathName) {
 		this.fileName = pathName;
 		this.regions = new ArrayList<CloudRegion>();
-		if (clouds > 0) {
-			this.volume = new Volume(boxOrigX, boxOrigY, boxOrigZ, boxWidth, boxHeight, boxDepth);
-		}
-		else {
-			this.volume = new Volume(boxOrigX+0.5f, boxOrigY, boxOrigZ, boxWidth, boxHeight, boxDepth);
-		}
-		clouds++;
+		this.volume = new Volume(boxOrigX, boxOrigY, boxOrigZ, boxWidth, boxHeight, boxDepth);
+
+		this.color = colors[clouds++ % colors.length];
 	}
 	
 
@@ -59,21 +57,8 @@ public class PointCloud {
 			
 			this.fits = new Fits(this.fileName);
 			Volume v = new Volume(0f, 0f, 0f, 1f, 1f, 1f);
-			CloudRegion cr = new CloudRegion(fits, v, 0.3f);
+			CloudRegion cr = new CloudRegion(fits, v, 1f);
 			this.addRegion(cr);
-			
-//			v = new Volume(0f, 0f, 0.5f, 1f, 1f, 1f);
-//			cr = new CloudRegion(fits, v, 0.3f);
-//			this.addRegion(cr);
-			
-//			int slices = 10;
-//			float sliceWidth = 1f / ((float)slices);
-//			for (int i = 0; i <slices; i++) {
-//				float slicePos = ((float)i) * sliceWidth;
-//				Volume v = new Volume(slicePos, 0f, 0f, sliceWidth, 1f, 1f);
-//				CloudRegion cr = new CloudRegion(fits, v, 0.3f);
-//				this.addRegion(cr);
-//			}
 			
 		} catch (FitsException e) {
 			e.printStackTrace();

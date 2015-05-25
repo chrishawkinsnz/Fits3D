@@ -12,14 +12,12 @@ public class FileFilterFits extends FileFilter {
 	
 	@Override
 	public boolean accept(File f) {
-//		return true;
-
 		if (f.isDirectory())
 			return true;
 		
 		String extension = getExtension(f);
-		System.out.println(extension);
-		if (extension.equalsIgnoreCase("fits"))
+		
+		if (extension!=null && extension.equalsIgnoreCase("fits"))
 			return true;
 		
 		return false;

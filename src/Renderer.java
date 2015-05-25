@@ -28,10 +28,7 @@ public class Renderer {
 	public final float orthoWidth = 1.0f;
 	public final float orthoOrigX = 0.0f;
 	public final float orthoOrigY = 0.0f;
-	
-	
-	
-	
+
 	//--SETTINGS
 	public boolean isOrthographic = true;
 	public float alphaFudge = 0.02f;
@@ -94,6 +91,7 @@ public class Renderer {
 				}
 			}
 		}
+		
 		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "src/shaders/shader2.vert", "src/shaders/shader2.frag");
     	this.uniformMvpHandle = gl.glGetUniformLocation(this.shaderProgram, "mvp");
 		this.uniformAlphaFudgeHandle = gl.glGetUniformLocation(this.shaderProgram, "alphaFudge");
@@ -102,7 +100,7 @@ public class Renderer {
 		
     	gl.glEnable(GL_BLEND);
     	
-		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		gl.glBlendEquation(GL_FUNC_ADD);
 		gl.glDisable(GL_CULL_FACE);
 	}	
@@ -121,7 +119,7 @@ public class Renderer {
 		if (this.isTrippy == true) {
 			flippityFlop = true;
 		}
-
+		
 		List<VertexBufferSlice> allSlicesLikeEver = new ArrayList<VertexBufferSlice>();
 		for (PointCloud cloud : this.pointClouds){
 			for (CloudRegion cr: cloud.getRegions()) {
@@ -151,23 +149,17 @@ public class Renderer {
 				sliceIndex = allSlicesLikeEver.size() - 1 - i;
 			}
 			
-			Color col = Color.orange;
-			if (i > 100) {
-				col = Color.green;
-			}
 			
 			VertexBufferSlice slice = allSlicesLikeEver.get(sliceIndex);
 			PointCloud cloud = slice.cloud;
 			CloudRegion cr = slice.region;
 			
-			gl.glUniform4f(this.uniformColorHandle, col.getRed(), col.getGreen(), col.getBlue(), col.getAlpha());
+			gl.glUniform4f(this.uniformColorHandle, cloud.color.getRed(), cloud.color.getGreen(), cloud.color.getBlue(), cloud.color.getAlpha());
 	    	Matrix4 m = new Matrix4();
 	    	
 
     		m.makeOrtho(orthoOrigX - orthoWidth, orthoOrigX + orthoWidth, orthoOrigY - orthoHeight,orthoOrigY + orthoHeight, -6f, 6f);
     		
-    		Volume v = cr.volume;
-    		Volume vpc = cloud.volume;
     		float baseScale = 1.0f / this.viewer.getRadius();
     		
     		float pointRadius = this.calculatePointRadiusInPixelsForSlice(slice) * baseScale;
@@ -179,11 +171,11 @@ public class Renderer {
 	    	m.rotate(this.viewer.getxSpin(), 0f, 1f, 0f);
 	    	m.scale(baseScale, baseScale, baseScale);
 	    	
-	    	m.translate(v.x, v.y, v.z + slice.depthValue);
-	    	m.scale(v.wd,v.ht,v.dp);
+	    	m.translate(cr.volume.x, cr.volume.y, cr.volume.z + slice.depthValue);
+	    	m.scale(cr.volume.wd, cr.volume.ht, cr.volume.dp);
 	    	
-	    	m.translate(vpc.x, vpc.y, vpc.z);
-	    	m.scale(vpc.wd, vpc.ht, vpc.dp);
+	    	m.translate(cloud.volume.x, cloud.volume.y, cloud.volume.z);
+	    	m.scale(cloud.volume.wd, cloud.volume.ht, cloud.volume.dp);
 	    	
 	    	//--pass that matrix to the shader
 	    	gl.glUniformMatrix4fv(this.uniformMvpHandle, 1, false, m.getMatrix(), 0);

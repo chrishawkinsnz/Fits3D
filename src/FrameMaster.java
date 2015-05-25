@@ -51,7 +51,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     private static final long serialVersionUID = 1L;
     private FPSAnimator animator;
 	private List<PointCloud> pointClouds = new ArrayList<PointCloud>();
-	private PointCloud currentPointCloud;
+	private List<PointCloud> currentPointClouds  = new ArrayList<PointCloud>();;
 
 	private Renderer renderer;
 	private WorldViewer viewer;
@@ -118,17 +118,20 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	
     	
         list = new JList<PointCloud>(listModel);
-        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         list.setSelectedIndex(0);
         list.addListSelectionListener(new ListSelectionListener() {
 
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
-				PointCloud selectedPointCloud = list.getSelectedValue();
-				if (selectedPointCloud != null && e.getValueIsAdjusting() == false) {
-					FrameMaster.this.currentPointCloud = selectedPointCloud;
-					System.out.println(selectedPointCloud);
+				List<PointCloud> selectedPointClouds = list.getSelectedValuesList();
+				if (selectedPointClouds != null && e.getValueIsAdjusting() == false) {
+					FrameMaster.this.currentPointClouds = selectedPointClouds;
 				}
+				else {
+					FrameMaster.this.currentPointClouds = new ArrayList<PointCloud>();
+				}
+				rendererNeedsNewPointCloud = true;
 			}
 		});
         list.setVisibleRowCount(5);
@@ -239,7 +242,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     @Override
     public void display(GLAutoDrawable drawable) {    	
     	if (this.rendererNeedsNewPointCloud) {
-    		this.renderer = new Renderer(this.pointClouds, this.viewer, this.gl);
+    		this.renderer = new Renderer(this.currentPointClouds, this.viewer, this.gl);
     		this.renderer.informOfResolution(this.drawableWidth, this.drawableHeight);
     		this.rendererNeedsNewPointCloud = false;
     	}
