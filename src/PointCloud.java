@@ -44,10 +44,10 @@ public class PointCloud {
 	//--interactive attributes
 	public Attribute.RangedAttribute intensity;
 	public Attribute.BinaryAttribute isVisible;
-	public Attribute.RangedAttribute quality;
+	public Attribute.SteppedRangeAttribute quality;
 	
 	public Attribute.Name fileName;
- 
+	 
 	private static final Color[] colors = {Color.GREEN, Color.RED, Color.BLUE, Color.ORANGE, Color.PINK};
 	
 	public PointCloud(String pathName) {
@@ -57,10 +57,11 @@ public class PointCloud {
 		fileName = new Attribute.Name("File Name", pathName, false);
 		attributes.add(fileName);
 		
-		intensity = new Attribute.RangedAttribute("Visibility", 0.001f, 0.15f, 0.15f, true);
+		intensity = new Attribute.RangedAttribute("Visibility", 0.001f, 1f, 0.5f, true);
 		attributes.add(intensity);
 		
-		quality = new Attribute.RangedAttribute("Quality", 0.1f, 1.0f, 0.25f, true);
+		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, 0.25f, 10, true);
+		quality.pointCloud = this;
 		attributes.add(quality);
 		
 		isVisible = new Attribute.BinaryAttribute("Visible", true, true);
@@ -81,9 +82,10 @@ public class PointCloud {
 				
 				attributes.add(1,new Attribute.Name("Observer", hdu.getObserver(), false));
 				attributes.add(2,new Attribute.Name("Observed", "" + hdu.getObservationDate(), false));
-				attributes.add(3,new Attribute.Name("X Resolution", "" + hdu.getAxes()[0], false));
-				attributes.add(4,new Attribute.Name("Y Resolution", "" + hdu.getAxes()[1], false));
-				attributes.add(5,new Attribute.Name("Z Resolution", "" + hdu.getAxes()[2], false));
+				String[] axesNames = {"X", "Y", "Z"};
+				for (int i = 0; i < hdu.getAxes().length; i++) {
+					attributes.add(3,new Attribute.Name(axesNames[i] + " Resolution", "" + hdu.getAxes()[i], false));	
+				}
 				attributes.add(6,new Attribute.Name("Instrument", hdu.getInstrument(), false));
 				for (Attribute attr : attributes) {
 					if (attr instanceof Attribute.Name) {
@@ -98,15 +100,32 @@ public class PointCloud {
 			}
 			
 			
-			Volume v = new Volume(0f, 0f, 0f, 1f, 1f, 1f);
-			CloudRegion cr = new CloudRegion(fits, v, 0.4f);
-			this.addRegion(cr);
+//			Volume v = new Volume(0f, 0f, 0f, 1f, 1f, 1f);
+//			CloudRegion cr = new CloudRegion(fits, v, 0.4f);
+//			
+//			//
+//			//
+//			//
+//			//TODO if you want multiple regions see below
+//			//
+//			//
+//			//
+//			
+//			this.regions = new ArrayList<CloudRegion>();
+//			this.addRegion(cr);
+			loadRegionAtFidelity(0.4f);
 			
 		} catch (FitsException e) {
 			e.printStackTrace();
 		}
 	}
 	
+	public void loadRegionAtFidelity(float fidelity) {
+		this.regions = new ArrayList<CloudRegion>();
+		Volume v = new Volume(0f, 0f, 0f, 1f, 1f, 1f);
+		CloudRegion cr = new CloudRegion(fits, v, fidelity);
+		this.addRegion(cr);
+	}
 	public List<CloudRegion> getRegions() {
 		return regions;
 	}

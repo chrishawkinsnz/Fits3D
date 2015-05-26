@@ -77,12 +77,17 @@ public abstract class Tweakable {
 	public static class Slidable extends Tweakable implements ChangeListener, AttributeDisplayer{
 		public JSlider slider;
 		
-		private final int steps = 100;
+		protected int steps;
 		
 		protected float min;
 		protected float max;
 		
+		public Slidable(Attribute attrbute, float min, float max, float initialValue) {
+			this(attrbute, min, max, initialValue, 100);
+		}
+		
 		public Slidable(Attribute attrbute, float min, float max, float initialValue, int steps) {
+			this.steps = steps;
 			this.attributes.add(attrbute);
 			this.min = min;
 			this.max = max;
@@ -128,6 +133,23 @@ public abstract class Tweakable {
 		}
 		
 		
+	}
+	
+	public static class ClickySlider extends Slidable {
+		public ClickySlider(Attribute attrbute, float min, float max, float initialValue, int steps) {
+			super(attrbute, min, max, steps);
+			slider.setPaintTicks(true);
+			slider.setSnapToTicks(true);			
+		}
+		
+		@Override
+		public void stateChanged(ChangeEvent e) {
+			//--don't update till released
+			if (slider.getValueIsAdjusting()) 
+				return;
+			
+			notifyAttributes();
+		}
 	}
 	
 	/**
