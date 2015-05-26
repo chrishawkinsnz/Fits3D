@@ -39,6 +39,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import net.miginfocom.swing.MigLayout;
+
 public class FrameMaster extends JFrame implements GLEventListener {
     private static final long serialVersionUID = 1L;
     private FPSAnimator animator;
@@ -147,28 +149,29 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	count++;
     	this.attrbutesFrame.getContentPane().removeAll();
 
-    	Dimension lilDimension = new Dimension(300, 600);
+    	Dimension lilDimension = new Dimension(300, 700);
     	int maxRows = 16;
-    	JPanel panel = new JPanel(new GridLayout(maxRows, 3));
-    	panel.setBorder(new EmptyBorder(8, 8, 8, 8));
-    	JLabel title = new JLabel("Attributes" + count, SwingConstants.CENTER);
-    	title.setFont(new Font("Dialog", Font.BOLD, 24));
-    	panel.add(title);
+    	MigLayout mlLayout = new MigLayout("wrap 2");
+    	JPanel panel = new JPanel(mlLayout);
+    	panel.setBorder(new EmptyBorder(0, 8, 8, 8));
+    	
+    	
     	
     	for (PointCloud pc: this.currentPointClouds) {
+    		int cloudIndex = this.pointClouds.indexOf(pc);
+    		JLabel title = new JLabel("Coud "+cloudIndex);
+        	title.setFont(new Font("Dialog", Font.BOLD, 24));
+        	panel.add(title, "span 2");	
     		for (Attribute attribute : pc.attributes) {
     			JLabel label = new JLabel(attribute.displayName);
     			label.setFont(new Font("Dialog", Font.BOLD, 12));
     			panel.add(label);
     			
     			AttributeDisplayer tweakable = tweakableForAttribute(attribute);
-    			panel.add(tweakable.getComponent());
+    			panel.add(tweakable.getComponent(), "gapleft 16");
     		}
     	}
-    	
-    	JButton refreshButton = new JButton("Load Example");
-    	refreshButton.addActionListener(e -> this.loadFile("12CO_MEAN.fits"));
-    	panel.add(refreshButton);
+
     	panel.setMinimumSize(lilDimension);
     	attrbutesFrame.add(panel);
     	SwingUtilities.updateComponentTreeUI(attrbutesFrame);

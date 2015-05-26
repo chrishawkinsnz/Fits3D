@@ -4,6 +4,7 @@ import nom.tam.fits.Data;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.ImageHDU;
+import nom.tam.fits.header.IFitsHeader.HDU;
 import nom.tam.util.ArrayDataInput;
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.BufferedDataInputStream;
@@ -40,10 +41,11 @@ public class PointCloud {
 	List<CloudRegion>regions;
 	
 	public List<Attribute>attributes = new ArrayList<Attribute>();
+	//--interactive attributes
 	public Attribute.RangedAttribute intensity;
 	public Attribute.BinaryAttribute isVisible;
-	public Attribute.BinaryAttribute isTrippy;
 	public Attribute.RangedAttribute quality;
+	
 	public Attribute.Name fileName;
  
 	private static final Color[] colors = {Color.GREEN, Color.RED, Color.BLUE, Color.ORANGE, Color.PINK};
@@ -64,9 +66,6 @@ public class PointCloud {
 		isVisible = new Attribute.BinaryAttribute("Visible", true, true);
 		attributes.add(isVisible);
 		
-		isTrippy = new Attribute.BinaryAttribute("Trippy", false, true);
-		attributes.add(isTrippy);
-		
 		this.color = colors[clouds++ % colors.length];
 	}
 	
@@ -75,8 +74,32 @@ public class PointCloud {
 		try{
 			
 			this.fits = new Fits(this.fileName.value);
+			
+			ImageHDU hdu;
+			try {
+				hdu = (ImageHDU)this.fits.getHDU(0);
+				
+				attributes.add(1,new Attribute.Name("Observer", hdu.getObserver(), false));
+				attributes.add(2,new Attribute.Name("Observed", "" + hdu.getObservationDate(), false));
+				attributes.add(3,new Attribute.Name("X Resolution", "" + hdu.getAxes()[0], false));
+				attributes.add(4,new Attribute.Name("Y Resolution", "" + hdu.getAxes()[1], false));
+				attributes.add(5,new Attribute.Name("Z Resolution", "" + hdu.getAxes()[2], false));
+				attributes.add(6,new Attribute.Name("Instrument", hdu.getInstrument(), false));
+				for (Attribute attr : attributes) {
+					if (attr instanceof Attribute.Name) {
+						Attribute.Name namedAttr = (Attribute.Name)attr;
+						if (namedAttr.value == null || namedAttr.value.equals("") || namedAttr.value.equals("null")) 
+							namedAttr.value = "?";
+					}
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
 			Volume v = new Volume(0f, 0f, 0f, 1f, 1f, 1f);
-			CloudRegion cr = new CloudRegion(fits, v, 0.2f);
+			CloudRegion cr = new CloudRegion(fits, v, 0.4f);
 			this.addRegion(cr);
 			
 		} catch (FitsException e) {
