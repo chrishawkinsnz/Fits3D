@@ -2,20 +2,12 @@ import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.layout.Background;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontPosture;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 
@@ -26,7 +18,6 @@ public class App extends Application{
 	@Override
 	public void start(Stage stage) throws Exception {
 		items = FXCollections.observableArrayList(new StupidObject(), new StupidObject(), new StupidObject(), new StupidObject());
-		
 
 		VBox leftBox = new VBox();
 		leftBox.getChildren().add(makeFileList());
@@ -57,7 +48,6 @@ public class App extends Application{
 	
 	public ListView<StupidObject> makeFileList() {
 		ListView<StupidObject>list = new ListView<StupidObject>();
-//		items = FXCollections.observableArrayList("Single", "Double", "Suite", "Family App");
 		
 		list.setItems(items);
 		list.setPrefWidth(200);

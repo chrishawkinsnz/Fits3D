@@ -31,7 +31,6 @@ public class Renderer {
 
 	//--SETTINGS
 	public boolean isOrthographic = true;
-	public float alphaFudge = 0.02f;
 	private int width;
 	private int height;
 	
@@ -109,7 +108,7 @@ public class Renderer {
 		
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl.glUseProgram(this.shaderProgram);
-		gl.glUniform1f(this.uniformAlphaFudgeHandle, this.alphaFudge);
+		
 		
 		//--figure out if looking back to front
 		float pi = (float)Math.PI;
@@ -122,6 +121,8 @@ public class Renderer {
 		
 		List<VertexBufferSlice> allSlicesLikeEver = new ArrayList<VertexBufferSlice>();
 		for (PointCloud cloud : this.pointClouds){
+			if (cloud.isVisible.value == false) 
+				continue;
 			for (CloudRegion cr: cloud.getRegions()) {
 				for (VertexBufferSlice slice: cr.getSlices()) {
 					slice.scratchDepth = cr.volume.z + cr.volume.dp * slice.depthValue;
@@ -153,6 +154,8 @@ public class Renderer {
 			VertexBufferSlice slice = allSlicesLikeEver.get(sliceIndex);
 			PointCloud cloud = slice.cloud;
 			CloudRegion cr = slice.region;
+			
+			gl.glUniform1f(this.uniformAlphaFudgeHandle, cloud.intensity.value);
 			
 			gl.glUniform4f(this.uniformColorHandle, cloud.color.getRed(), cloud.color.getGreen(), cloud.color.getBlue(), cloud.color.getAlpha());
 	    	Matrix4 m = new Matrix4();

@@ -21,10 +21,8 @@ public class PointCloud {
 	private static int clouds = 0;
 	public final static boolean shouldFudge = false;
 	
-	public final String fileName;
 	
 	private Fits fits;
-	
 	
 	private final float boxWidth = 2.0f;
 	private final float boxHeight = boxWidth;
@@ -40,14 +38,35 @@ public class PointCloud {
 	public final Color color;
 	
 	List<CloudRegion>regions;
+	
+	public List<Attribute>attributes = new ArrayList<Attribute>();
+	public Attribute.RangedAttribute intensity;
+	public Attribute.BinaryAttribute isVisible;
+	public Attribute.BinaryAttribute isTrippy;
+	public Attribute.RangedAttribute quality;
+	public Attribute.Name fileName;
  
 	private static final Color[] colors = {Color.GREEN, Color.RED, Color.BLUE, Color.ORANGE, Color.PINK};
 	
 	public PointCloud(String pathName) {
-		this.fileName = pathName;
 		this.regions = new ArrayList<CloudRegion>();
 		this.volume = new Volume(boxOrigX, boxOrigY, boxOrigZ, boxWidth, boxHeight, boxDepth);
 
+		fileName = new Attribute.Name("File Name", pathName, false);
+		attributes.add(fileName);
+		
+		intensity = new Attribute.RangedAttribute("Visibility", 0.001f, 0.15f, 0.15f, true);
+		attributes.add(intensity);
+		
+		quality = new Attribute.RangedAttribute("Quality", 0.1f, 1.0f, 0.25f, true);
+		attributes.add(quality);
+		
+		isVisible = new Attribute.BinaryAttribute("Visible", true, true);
+		attributes.add(isVisible);
+		
+		isTrippy = new Attribute.BinaryAttribute("Trippy", false, true);
+		attributes.add(isTrippy);
+		
 		this.color = colors[clouds++ % colors.length];
 	}
 	
@@ -55,9 +74,9 @@ public class PointCloud {
 	public void readFitsAtQualityLevel(float proportionOfPerfect) {
 		try{
 			
-			this.fits = new Fits(this.fileName);
+			this.fits = new Fits(this.fileName.value);
 			Volume v = new Volume(0f, 0f, 0f, 1f, 1f, 1f);
-			CloudRegion cr = new CloudRegion(fits, v, 1f);
+			CloudRegion cr = new CloudRegion(fits, v, 0.2f);
 			this.addRegion(cr);
 			
 		} catch (FitsException e) {
@@ -88,6 +107,6 @@ public class PointCloud {
 	}
 
 	public String toString() {
-		return this.fileName;
+		return this.fileName.value;
 	}
 }

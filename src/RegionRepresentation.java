@@ -133,9 +133,9 @@ public class RegionRepresentation {
 				if (!Float.isNaN(value) && value > 0.0f) {
 					float fudge = r.nextFloat();
 					fudge = fudge - 0.5f;
-					vertexData[pts * 3 + 0] = x;// + fudge * xStride;
-					vertexData[pts * 3 + 1] = y;// + fudge * yStride;;
-					vertexData[pts * 3 + 2] = z;// + fudge * zStride;;
+					vertexData[pts * 3 + 0] = x + fudge * xStride;
+					vertexData[pts * 3 + 1] = y + fudge * yStride;;
+					vertexData[pts * 3 + 2] = z + fudge * zStride;;
 				
 					valueData[pts] = value;
 					pts++;
