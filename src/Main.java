@@ -23,8 +23,6 @@ public class Main {
 	             System.out.println("UnsupportedLookAndFeelException: " + e.getMessage());
 	     }
 	 
-
 		FrameMaster game = new FrameMaster();
-		game.play();
 	}
 }

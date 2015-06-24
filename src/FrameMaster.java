@@ -71,9 +71,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
         GLCanvas canvas = new GLCanvas(capabilities);
         canvas.addGLEventListener(this);
         this.getContentPane().add(canvas);
-
-//        JPanel buttonBar = buttonBar();
-//        this.add(buttonBar, BorderLayout.SOUTH);
         
         JMenuBar menuBar = menuBar();
         this.setJMenuBar(menuBar);
@@ -92,9 +89,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         canvas.addMouseMotionListener(this.mouseController);
         canvas.addMouseListener(this.mouseController);
         canvas.addMouseWheelListener(this.mouseController);
-        
-        
-        
+
         makeFileFrame();
         
         System.out.println("loading example");
@@ -153,8 +148,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	JPanel panel = new JPanel(mlLayout);
     	panel.setBorder(new EmptyBorder(0, 8, 8, 8));
     	
-    	
-    	
     	for (PointCloud pc: this.currentPointClouds) {
     		int cloudIndex = this.pointClouds.indexOf(pc);
     		JLabel title = new JLabel("Coud "+cloudIndex);
@@ -175,8 +168,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	SwingUtilities.updateComponentTreeUI(attrbutesFrame);
     	attrbutesFrame.getContentPane().repaint();
     }
-    
-    
     
     private void makeFileFrame() {
     	listModel = new DefaultListModel<PointCloud>();
@@ -211,7 +202,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
         
         filePanel.setMinimumSize(new Dimension(200,600));
         
-        
         filePanel.add(list);
         fileFrame.add(filePanel);
         
@@ -219,40 +209,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
         fileFrame.setMinimumSize(filePanel.getMinimumSize());
         fileFrame.setVisible(true);	
     }
-    
-//    private JPanel buttonBar(){
-//        JPanel buttonPanel = new JPanel();
-//        buttonPanel.setBackground(Color.blue);
-//        buttonPanel.setMinimumSize(new Dimension(0, 128));
-//        
-//        JButton loadExampleButton = new JButton("Load Example");       
-//        loadExampleButton.addActionListener(e -> this.loadFile("12CO_MEAN.fits"));
-//        buttonPanel.add(loadExampleButton);
-//        
-//        JButton tripOutButton = new JButton("Trip Out");
-//        tripOutButton.addActionListener(e -> this.renderer.isTrippy = !this.renderer.isTrippy);
-//        buttonPanel.add(tripOutButton);
-//
-////        JSlider sliderQuality = new JSlider(JSlider.HORIZONTAL,0,10,1);
-////        sliderQuality.addChangeListener((ChangeEvent ce) -> {
-////        	boolean isSliding = sliderQuality.getValueIsAdjusting();
-////        	if (isSliding) {
-////        		return;
-////        	}
-////        	float proportion = (float)sliderQuality.getValue()/ (float)sliderQuality.getMaximum();
-////        	System.out.println("Proportion:" + proportion);
-////        	this.pointClouds.get(0).readFitsAtQualityLevel(proportion);
-////        	this.rendererNeedsNewPointCloud = true;        	
-////        });
-//        sliderQuality.setPaintTicks(true);
-//        sliderQuality.setSnapToTicks(true);
-//        
-//        buttonPanel.add(sliderQuality);
-//        
-//        
-//        
-//        return buttonPanel;
-//    }
     
     private void openDialog() {
     	JFileChooser jfc = new JFileChooser();
@@ -331,10 +287,4 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	}
     }
 
-	public void play() {
-		// TODO Auto-generated method stub
-	}
-
-
-	
 }
