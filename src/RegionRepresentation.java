@@ -136,7 +136,7 @@ public class RegionRepresentation {
 
 			System.out.println("fits file loaded " + maxWidth + " x " + maxHeight + " x " + maxDepth);
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null, e.getMessage(), "Error!", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, e.getClass().getName()+": " + e.getMessage(), "Error!", JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();
 		}
 		long t1 = System.currentTimeMillis();

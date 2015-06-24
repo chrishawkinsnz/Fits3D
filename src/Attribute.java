@@ -1,10 +1,26 @@
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public abstract class Attribute {
 	public String displayName;
 	public boolean isAggregatable;
 	
-	public abstract void notifyWithValue(Object obj);
+	public Consumer<Object>callback = (obj)->{};
+	
+	private Attribute(String displayName, boolean isAggregatable) {
+		this.displayName = displayName;
+		this.isAggregatable = isAggregatable;
+	}
+	
+	public void notifyWithValue(Object obj) {
+		try {
+			callback.accept(obj);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	
 	public static class RangedAttribute extends Attribute {
 		public float value;
@@ -12,15 +28,15 @@ public abstract class Attribute {
 		public float max;
 		
 		public RangedAttribute(String displayName, float min, float max, float initialValue, boolean shouldAggregate) {
-			this.displayName = displayName;
+			super(displayName, shouldAggregate);
 			this.min = min;
 			this.max = max;
 			this.value = initialValue;
-			this.isAggregatable = shouldAggregate;
 		}
 		
 		@Override
 		public void notifyWithValue(Object obj) {
+			super.notifyWithValue(obj);
 			Float float1 = (Float)obj;
 			this.value = float1.floatValue();
 		}
@@ -35,23 +51,23 @@ public abstract class Attribute {
 		public PointCloud pointCloud;
 		
 		public SteppedRangeAttribute(String displayName, float min, float max, float initialValue, int steps, boolean shouldAggregate) {
-			this.displayName = displayName;
+			super(displayName, shouldAggregate);
 			this.min = min;
 			this.max = max;
 			this.value = initialValue;
-			this.isAggregatable = shouldAggregate;
 			this.steps = steps;
 		}
 		
 		@Override
 		public void notifyWithValue(Object obj) {
+			super.notifyWithValue(obj);
 			Float float1 = (Float)obj;
 			this.value = float1.floatValue();
-			if (this.pointCloud != null) {
-				FrameMaster.desiredPointCloudFidelity = value;
-				FrameMaster.pointCloudToUpdate = this.pointCloud;
-				FrameMaster.pointCloudNeedsUpdatedPointCloud = true;
-			}
+//			if (this.pointCloud != null) {
+//				FrameMaster.desiredPointCloudFidelity = value;
+//				FrameMaster.pointCloudToUpdate = this.pointCloud;
+//				FrameMaster.pointCloudNeedsUpdatedPointCloud = true;
+//			}
 		}
 	}
 	
@@ -59,13 +75,13 @@ public abstract class Attribute {
 		public boolean value; 
 		
 		public BinaryAttribute(String displayName, boolean initialValue, boolean shouldAggregate) {
-			this.displayName = displayName;
+			super(displayName, shouldAggregate);
 			this.value = initialValue;
-			this.isAggregatable = shouldAggregate;
 		}
 		
 		@Override
 		public void notifyWithValue(Object obj) {
+			super.notifyWithValue(obj);
 			Boolean boolean1 = (Boolean)obj;
 			this.value = boolean1.booleanValue();
 		}
@@ -74,13 +90,9 @@ public abstract class Attribute {
 	public static class Name extends Attribute {
 		public String value;
 		public Name(String displayName, String value, boolean shouldAggregate) {
-			this.displayName = displayName;
+			super(displayName, shouldAggregate);
 			this.value = value;
-			this.isAggregatable = shouldAggregate;
 		}
-		
-		@Override
-		public void notifyWithValue(Object obj) {}
 	}
 	
 	public static class PathName extends Name {

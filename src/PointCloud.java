@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Callable;
 
 public class PointCloud {
 	private static int clouds = 0;
@@ -62,7 +63,11 @@ public class PointCloud {
 		
 		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, 0.25f, 10, true);
 		quality.pointCloud = this;
+		quality.callback = (obj) -> {
+			System.out.println("quality is now :" +((Float)obj).floatValue());
+		};
 		attributes.add(quality);
+		
 		
 		isVisible = new Attribute.BinaryAttribute("Visible", true, true);
 		attributes.add(isVisible);
