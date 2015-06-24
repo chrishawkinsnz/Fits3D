@@ -23,7 +23,6 @@ public abstract class Attribute {
 		public void notifyWithValue(Object obj) {
 			Float float1 = (Float)obj;
 			this.value = float1.floatValue();
-			System.out.println("This here " + displayName + " attribute just updated with the value " + obj.toString());
 		}
 	}
 	
@@ -53,7 +52,6 @@ public abstract class Attribute {
 				FrameMaster.pointCloudToUpdate = this.pointCloud;
 				FrameMaster.pointCloudNeedsUpdatedPointCloud = true;
 			}
-			System.out.println("This here " + displayName + " attribute just updated with the value " + obj.toString());
 		}
 	}
 	
@@ -70,7 +68,6 @@ public abstract class Attribute {
 		public void notifyWithValue(Object obj) {
 			Boolean boolean1 = (Boolean)obj;
 			this.value = boolean1.booleanValue();
-			System.out.println("This here " + displayName + " attribute just updated with the value " + obj.toString());
 		}
 	}
 	
@@ -83,8 +80,12 @@ public abstract class Attribute {
 		}
 		
 		@Override
-		public void notifyWithValue(Object obj) {
-			System.out.println("This here " + displayName + " attribute just updated with the value " + obj.toString());
+		public void notifyWithValue(Object obj) {}
+	}
+	
+	public static class PathName extends Name {
+		public PathName(String displayName, String value, boolean shouldAggregate) {
+			super(displayName, value, shouldAggregate);
 		}
 	}
 }

@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import javax.swing.JOptionPane;
+
 import org.apache.commons.math3.util.Pair;
+import org.omg.CORBA.PUBLIC_MEMBER;
 
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
@@ -24,10 +27,7 @@ public class RegionRepresentation {
 	public int validPts;
 	public boolean isMaximumFidelity;
 	public float fidelity;
-	
-//	public FloatBuffer vertexBuffer;
-//	public FloatBuffer valueBuffer;
-	
+
 	private List<VertexBufferSlice>slices;
 	private int seed;
 	
@@ -37,6 +37,10 @@ public class RegionRepresentation {
 	 * @param fidelity Fidelity of the represenation (1 being perfect, 0 being emtpy)
 	 * @param volume a volume cube indicating the area of the data to sample (full sample is == new volume(0,0,0,1,1,1));
 	 */
+	public enum DataType {
+		FLOAT, DOUBLE, SHORT, INT, LONG,
+	}
+	
 	public RegionRepresentation(Fits fits, float fidelity, Volume volume) {
 		this.fidelity = fidelity;
 		if (fidelity >=1.0) {
@@ -77,36 +81,62 @@ public class RegionRepresentation {
 
 			this.data = new float[maxWidth][maxHeight][maxDepth];
 			
-			float[] storage = new float[sourceMaxDepth];
+			
+			DataType dataType;
+			int bitPix = hdu.getBitPix();
+			int typeSize = Math.abs(bitPix)/8;
+			float[] storagef = null;
+			double[] storaged = null;
+			switch (bitPix) {
+			case -64:
+				dataType = DataType.DOUBLE;
+				storaged = new double[sourceMaxDepth];
+				break;
+			case -32:
+				dataType = DataType.FLOAT;
+				storagef = new float[sourceMaxDepth];
+				break;
+			default:
+				throw new IOException("Whoops, no support forthat file format (BitPix = "+bitPix+") at the moment.  Floats and Doubles only sorry.");
+			}
+			
+			
 			if (hdu.getData().reset()) {
 				ArrayDataInput adi = fits.getStream();
 				int planesToSkip = sourceStartX;
-				adi.skipBytes(sourceMaxDepth * sourceMaxHeight * planesToSkip * 4);
+				adi.skipBytes(sourceMaxDepth * sourceMaxHeight * planesToSkip * typeSize);
 
 				for (int x = 0; x < maxWidth; x ++) {
 					for (int y = 0; y < maxHeight; y ++) {
-						
-						adi.read(storage, 0, storage.length);
-						for (int z = 0; z < maxDepth; z++) {
-							data[x][y][z] = storage[z * stride];
+						if (dataType == DataType.DOUBLE) {
+							adi.read(storaged, 0, storaged.length);
+							for (int z = 0; z < maxDepth; z++) {
+								data[x][y][z] = (float)storaged[z * stride];
+							}
+						} 
+						else if (dataType == DataType.FLOAT) {
+							adi.read(storagef, 0, storagef.length);
+							for (int z = 0; z < maxDepth; z++) {
+								data[x][y][z] = storagef[z * stride];
+							}
 						}
+
 						if (y == maxHeight-1 && yRemainder!=0) {
 							//is remainder zone
 							int linesToSkip = yRemainder + stride - 1;
-							adi.skipBytes(sourceMaxDepth * linesToSkip * 4 );
+							adi.skipBytes(sourceMaxDepth * linesToSkip * typeSize );
 						} else {
 							int linesToSkip = stride - 1;
-							adi.skipBytes(sourceMaxDepth * linesToSkip * 4);	
+							adi.skipBytes(sourceMaxDepth * linesToSkip * typeSize);	
 						}
 					}
-					adi.skipBytes(sourceMaxDepth * sourceMaxHeight * (stride - 1) * 4);
+					adi.skipBytes(sourceMaxDepth * sourceMaxHeight * (stride - 1) * typeSize);
 				}
 			}
 
 			System.out.println("fits file loaded " + maxWidth + " x " + maxHeight + " x " + maxDepth);
-		} catch (FitsException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, e.getMessage(), "Error!", JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();
 		}
 		long t1 = System.currentTimeMillis();

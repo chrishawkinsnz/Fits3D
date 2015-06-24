@@ -54,7 +54,7 @@ public class PointCloud {
 		this.regions = new ArrayList<CloudRegion>();
 		this.volume = new Volume(boxOrigX, boxOrigY, boxOrigZ, boxWidth, boxHeight, boxDepth);
 
-		fileName = new Attribute.Name("File Name", pathName, false);
+		fileName = new Attribute.PathName("File Name", pathName, false);
 		attributes.add(fileName);
 		
 		intensity = new Attribute.RangedAttribute("Visibility", 0.001f, 1f, 0.5f, true);

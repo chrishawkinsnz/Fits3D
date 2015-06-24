@@ -1,6 +1,8 @@
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.LayoutManager;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +15,9 @@ import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLCanvas;
 import com.jogamp.opengl.util.FPSAnimator;
+import com.sun.java.swing.plaf.motif.MotifBorders.BevelBorder;
 
+import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -51,7 +55,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	
 	private DefaultListModel<PointCloud> listModel;
 	private JList<PointCloud> list;
-	private JFrame attrbutesFrame; 
+	private JPanel attributPanel;
 	
     public FrameMaster() {
     	super("Very Good Honours Project");
@@ -60,8 +64,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
         GLCapabilities capabilities = new GLCapabilities(profile);
 
         this.setName("Very Good Honours Project");
-        this.setSize(new Dimension(700, 800));
-        this.setMinimumSize(new Dimension(500,600));
+        this.setSize(new Dimension(1100, 800));
+        this.setMinimumSize(new Dimension(1600,1000));
     	this.setLocationRelativeTo(null);
     	this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     	this.setVisible(true);
@@ -70,7 +74,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
         GLCanvas canvas = new GLCanvas(capabilities);
         canvas.addGLEventListener(this);
-        this.getContentPane().add(canvas);
+        this.getContentPane().setLayout(new BorderLayout());
+        this.getContentPane().add(canvas,BorderLayout.CENTER);
         
         JMenuBar menuBar = menuBar();
         this.setJMenuBar(menuBar);
@@ -94,18 +99,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
         
         System.out.println("loading example");
         
-        makeAttributesFrame();
-	}
-    
-    private void makeAttributesFrame() {
-    	Dimension lilDimension = new Dimension(300, 600);
-    	this.attrbutesFrame = new JFrame("Attributely Everybody");
-    	reloadAttributePanel();
-    	attrbutesFrame.setMinimumSize(lilDimension);
-    	attrbutesFrame.setSize(lilDimension);
-    	attrbutesFrame.pack();
-    	attrbutesFrame.setVisible(true);
+        reloadAttributePanel();
     }
+
     
     private AttributeDisplayer tweakableForAttribute(Attribute attribute) {
     	//--listen okay we are just going to assume it is foo for the moment
@@ -117,6 +113,13 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	else if (attribute instanceof Attribute.BinaryAttribute) {
     		Attribute.BinaryAttribute bAttribute = (Attribute.BinaryAttribute)attribute;
     		tweakable = new Tweakable.Toggleable(bAttribute, bAttribute.value);
+    	}
+    	else if (attribute instanceof Attribute.PathName) {
+    		Attribute.PathName pnAttribute = (Attribute.PathName)attribute;
+    		//--split up url 
+    		String[] urlComponentsStrings = pnAttribute.value.split("/");
+    		String name = urlComponentsStrings[urlComponentsStrings.length - 1];
+    		tweakable = new Tweakable.ChrisLabel(name);
     	}
     	else if (attribute instanceof Attribute.Name) {
     		Attribute.Name nAttribute = (Attribute.Name)attribute;
@@ -132,41 +135,42 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	return tweakable;
     }
 
-    int count;
     
     public static boolean pointCloudNeedsUpdatedPointCloud;
 	public static PointCloud pointCloudToUpdate;
 	public static float desiredPointCloudFidelity;
     
     private void reloadAttributePanel() {
-    	count++;
-    	this.attrbutesFrame.getContentPane().removeAll();
+    	if (this.attributPanel != null) {
+    		this.getContentPane().remove(this.attributPanel);
+    	}
 
     	Dimension lilDimension = new Dimension(300, 700);
-    	int maxRows = 16;
+
     	MigLayout mlLayout = new MigLayout("wrap 2");
-    	JPanel panel = new JPanel(mlLayout);
-    	panel.setBorder(new EmptyBorder(0, 8, 8, 8));
+    	this.attributPanel = new JPanel(mlLayout);
+    	attributPanel.setBorder(new EmptyBorder(0, 8, 8, 8));
     	
     	for (PointCloud pc: this.currentPointClouds) {
     		int cloudIndex = this.pointClouds.indexOf(pc);
     		JLabel title = new JLabel("Coud "+cloudIndex);
         	title.setFont(new Font("Dialog", Font.BOLD, 24));
-        	panel.add(title, "span 2");	
+        	attributPanel.add(title, "span 2");	
     		for (Attribute attribute : pc.attributes) {
     			JLabel label = new JLabel(attribute.displayName);
     			label.setFont(new Font("Dialog", Font.BOLD, 12));
-    			panel.add(label);
+    			attributPanel.add(label);
     			
     			AttributeDisplayer tweakable = tweakableForAttribute(attribute);
-    			panel.add(tweakable.getComponent(), "gapleft 16");
+    			attributPanel.add(tweakable.getComponent(), "gapleft 16");
     		}
     	}
 
-    	panel.setMinimumSize(lilDimension);
-    	attrbutesFrame.add(panel);
-    	SwingUtilities.updateComponentTreeUI(attrbutesFrame);
-    	attrbutesFrame.getContentPane().repaint();
+    	attributPanel.setMinimumSize(lilDimension);
+    	attributPanel.setPreferredSize(lilDimension);
+    	this.getContentPane().add(attributPanel, BorderLayout.EAST);
+    	SwingUtilities.updateComponentTreeUI(this);
+    	this.getContentPane().repaint();
     }
     
     private void makeFileFrame() {
@@ -176,7 +180,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
         list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         list.setSelectedIndex(0);
         list.addListSelectionListener(new ListSelectionListener() {
-
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
 				List<PointCloud> selectedPointClouds = list.getSelectedValuesList();
@@ -188,26 +191,22 @@ public class FrameMaster extends JFrame implements GLEventListener {
 					FrameMaster.this.currentPointClouds = new ArrayList<PointCloud>();
 					FrameMaster.this.reloadAttributePanel();
 				}
-				
 			}
 		});
         list.setVisibleRowCount(5);
         
         list.setMinimumSize(new Dimension(200, 600));
         list.setFixedCellWidth(200);
-    	JFrame fileFrame = new JFrame("Files");
         
         //--add file view
         JPanel filePanel = new JPanel();
         
-        filePanel.setMinimumSize(new Dimension(200,600));
+        Dimension lilDimension = new Dimension(200, 600);
+        filePanel.setMinimumSize(lilDimension);
+        filePanel.setPreferredSize(lilDimension);
         
         filePanel.add(list);
-        fileFrame.add(filePanel);
-        
-        fileFrame.pack();
-        fileFrame.setMinimumSize(filePanel.getMinimumSize());
-        fileFrame.setVisible(true);	
+        this.add(filePanel, BorderLayout.WEST);
     }
     
     private void openDialog() {
@@ -265,9 +264,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
     		this.rendererNeedsNewPointCloud = false;
     	}
     	
-    	if (this.pointCloudNeedsUpdatedPointCloud) {
-    		this.pointCloudToUpdate.readFitsAtQualityLevel(this.desiredPointCloudFidelity);
-    		this.pointCloudNeedsUpdatedPointCloud = false;
+    	if (pointCloudNeedsUpdatedPointCloud) {
+    		pointCloudToUpdate.readFitsAtQualityLevel(desiredPointCloudFidelity);
+    		pointCloudNeedsUpdatedPointCloud = false;
     	}
     	
     	if (this.renderer != null) {
@@ -286,5 +285,4 @@ public class FrameMaster extends JFrame implements GLEventListener {
     		renderer.informOfResolution(width, height);
     	}
     }
-
 }
