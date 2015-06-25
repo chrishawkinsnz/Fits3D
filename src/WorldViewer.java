@@ -17,6 +17,7 @@ public class WorldViewer {
 			return;
 		
 		this.ySpin += addition;
+		FrameMaster.setNeedsDisplay();
 	}
 	
 	
@@ -47,5 +48,6 @@ public class WorldViewer {
 			return;
 		
 		this.radius += dist;
+		FrameMaster.setNeedsDisplay();
 	}
 }

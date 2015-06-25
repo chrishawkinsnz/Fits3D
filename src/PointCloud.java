@@ -64,7 +64,9 @@ public class PointCloud {
 		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, 0.25f, 10, true);
 		quality.pointCloud = this;
 		quality.callback = (obj) -> {
-			System.out.println("quality is now :" +((Float)obj).floatValue());
+			float newQuality = ((Float)obj).floatValue();
+			System.out.println("quality is now :" + newQuality);
+			readFitsAtQualityLevel(newQuality);
 		};
 		attributes.add(quality);
 		
@@ -84,7 +86,7 @@ public class PointCloud {
 			ImageHDU hdu;
 			try {
 				hdu = (ImageHDU)this.fits.getHDU(0);
-				
+				attributes.add(0,new Attribute.Name("Data Type", BitPix.dataTypeForBitPix(hdu.getBitPix()).name(), false));
 				attributes.add(1,new Attribute.Name("Observer", hdu.getObserver(), false));
 				attributes.add(2,new Attribute.Name("Observed", "" + hdu.getObservationDate(), false));
 				String[] axesNames = {"X", "Y", "Z"};

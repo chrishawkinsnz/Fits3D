@@ -14,12 +14,8 @@ public abstract class Attribute {
 	}
 	
 	public void notifyWithValue(Object obj) {
-		try {
-			callback.accept(obj);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		callback.accept(obj);
+		FrameMaster.setNeedsDisplay();
 	}
 	
 	public static class RangedAttribute extends Attribute {

@@ -1,4 +1,5 @@
 import java.awt.BorderLayout;
+import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -37,7 +38,9 @@ import net.miginfocom.swing.MigLayout;
 
 public class FrameMaster extends JFrame implements GLEventListener {
     private static final long serialVersionUID = 1L;
-    private FPSAnimator animator;
+    
+    private static FrameMaster singleFrameMaster;
+    
 	private List<PointCloud> pointClouds = new ArrayList<PointCloud>();
 	private List<PointCloud> currentPointClouds  = new ArrayList<PointCloud>();;
 
@@ -56,23 +59,25 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	private DefaultListModel<PointCloud> listModel;
 	private JList<PointCloud> list;
 	private JPanel attributPanel;
+	private GLCanvas canvas;
 	
     public FrameMaster() {
     	super("Very Good Honours Project");
-    	    	
+    	    	singleFrameMaster = this;
         GLProfile profile = GLProfile.get(GLProfile.GL3);
         GLCapabilities capabilities = new GLCapabilities(profile);
 
         this.setName("Very Good Honours Project");
         this.setSize(new Dimension(1100, 800));
-        this.setMinimumSize(new Dimension(1600,1000));
+        this.setMinimumSize(new Dimension(800,600));
+        this.setPreferredSize(new Dimension(1600,1000));
     	this.setLocationRelativeTo(null);
     	this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     	this.setVisible(true);
     	this.setResizable(true);
     	this.setLayout(new BorderLayout());
 
-        GLCanvas canvas = new GLCanvas(capabilities);
+        this.canvas = new GLCanvas(capabilities);
         canvas.addGLEventListener(this);
         this.getContentPane().setLayout(new BorderLayout());
         this.getContentPane().add(canvas,BorderLayout.CENTER);
@@ -83,12 +88,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         this.pack();
 
         canvas.requestFocusInWindow();
-
-        this.animator = new FPSAnimator(canvas, 120);
-        this.animator.setUpdateFPSFrames(100, null);
         
-        this.animator.start();
-
         this.viewer = new WorldViewer();
         this.mouseController = new MouseController(this.viewer);
         canvas.addMouseMotionListener(this.mouseController);
@@ -162,11 +162,12 @@ public class FrameMaster extends JFrame implements GLEventListener {
     			attributPanel.add(label);
     			
     			AttributeDisplayer tweakable = tweakableForAttribute(attribute);
-    			attributPanel.add(tweakable.getComponent(), "gapleft 16");
+    			attributPanel.add(tweakable.getComponent(), "gapleft 16, width ::150");
     		}
     	}
 
     	attributPanel.setMinimumSize(lilDimension);
+    	attributPanel.setMaximumSize(lilDimension);
     	attributPanel.setPreferredSize(lilDimension);
     	this.getContentPane().add(attributPanel, BorderLayout.EAST);
     	SwingUtilities.updateComponentTreeUI(this);
@@ -199,13 +200,18 @@ public class FrameMaster extends JFrame implements GLEventListener {
         list.setFixedCellWidth(200);
         
         //--add file view
-        JPanel filePanel = new JPanel();
+        JPanel filePanel = new JPanel(new MigLayout("flowy"));
         
+        
+        
+        
+//        filePanel
         Dimension lilDimension = new Dimension(200, 600);
         filePanel.setMinimumSize(lilDimension);
         filePanel.setPreferredSize(lilDimension);
         
         filePanel.add(list);
+        
         this.add(filePanel, BorderLayout.WEST);
     }
     
@@ -226,6 +232,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	pc.readFitsAtQualityLevel(0.1f);
     	this.listModel.addElement(pc);
     	this.rendererNeedsNewPointCloud = true;
+    	setNeedsDisplay();
     }
     
     private JMenuBar menuBar() {
@@ -257,7 +264,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     }
     
     @Override
-    public void display(GLAutoDrawable drawable) {    	
+    public void display(GLAutoDrawable drawable) {    
     	if (this.rendererNeedsNewPointCloud) {
     		this.renderer = new Renderer(this.pointClouds, this.viewer, this.gl);
     		this.renderer.informOfResolution(this.drawableWidth, this.drawableHeight);
@@ -269,8 +276,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
     		pointCloudNeedsUpdatedPointCloud = false;
     	}
     	
+    	
     	if (this.renderer != null) {
-    		this.renderer.display();
+    			this.renderer.display();  
     	}    	
     }
 
@@ -285,4 +293,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
     		renderer.informOfResolution(width, height);
     	}
     }
+    
+    public static void setNeedsDisplay() {
+    	singleFrameMaster.canvas.display();
+    }
+    
 }
