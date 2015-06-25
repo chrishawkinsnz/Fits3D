@@ -110,13 +110,13 @@ public class FrameMaster extends JFrame implements GLEventListener {
     }
     
     private void attachControlsToCanvas(Canvas canvas) {
-        this.canvas = makeCanvas();
         this.viewer = new WorldViewer();
         this.mouseController = new MouseController(this.viewer);
         canvas.addMouseMotionListener(this.mouseController);
         canvas.addMouseListener(this.mouseController);
         canvas.addMouseWheelListener(this.mouseController);
     }
+    
     private AttributeDisplayer tweakableForAttribute(Attribute attribute) {
     	//--listen okay we are just going to assume it is foo for the moment
     	AttributeDisplayer tweakable;
@@ -225,7 +225,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
         filePanel.add(list);
         
-        JButton buttonAddFitsFile = new JButton("Load New Fits File");
+        JButton buttonAddFitsFile = new JButton("Open New Fits File");
+        buttonAddFitsFile.addActionListener(e -> this.showOpenDialog());
         filePanel.add(buttonAddFitsFile, "grow");
         
         list.setBackground(colorBackground);
@@ -234,7 +235,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         return filePanel;        
     }
     
-    private void openDialog() {
+    private void showOpenDialog() {
     	JFileChooser jfc = new JFileChooser();
     	jfc.setAcceptAllFileFilterUsed(false);
     	jfc.setFileFilter(new FileFilterFits());
@@ -262,7 +263,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         
         JMenuItem loadItem = new JMenuItem("Open");
         setKeyboardShortcutTo(KeyEvent.VK_O, loadItem);
-        loadItem.addActionListener(e -> this.openDialog());
+        loadItem.addActionListener(e -> this.showOpenDialog());
         fileMenu.add(loadItem);
         
         menuBar.add(fileMenu);
@@ -302,7 +303,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
     		pointCloudToUpdate.readFitsAtQualityLevel(desiredPointCloudFidelity);
     		pointCloudNeedsUpdatedPointCloud = false;
     	}
-    	
     	
     	if (this.renderer != null) {
     			this.renderer.display();  

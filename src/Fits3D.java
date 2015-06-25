@@ -18,7 +18,6 @@ public class Fits3D {
 	        	System.setProperty("apple.laf.useScreenMenuBar", "true");
 	        	System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Fits3D");	        	
 	        	System.setProperty("com.apple.mrj.application.apple.menu.about.version", "0.1");
-	        	//Application.getApplication().setDockIconBadge("Alpha");
 	        	BufferedImage img = null;
 	        	try {
 	        	    img = ImageIO.read(new File("stupidSpaceIcon.png"));
