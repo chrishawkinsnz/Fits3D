@@ -2,8 +2,10 @@ import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Event;
 import java.awt.Font;
 import java.awt.LayoutManager;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +22,7 @@ import com.sun.java.swing.plaf.motif.MotifBorders.BevelBorder;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -28,6 +31,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JSplitPane;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
@@ -61,48 +66,57 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	private JPanel attributPanel;
 	private GLCanvas canvas;
 	
+	private static Color colorBackground = new Color(238, 238, 238, 255);
     public FrameMaster() {
     	super("Very Good Honours Project");
-    	    	singleFrameMaster = this;
-        GLProfile profile = GLProfile.get(GLProfile.GL3);
-        GLCapabilities capabilities = new GLCapabilities(profile);
+    	singleFrameMaster = this;
+        
 
         this.setName("Very Good Honours Project");
-        this.setSize(new Dimension(1100, 800));
+        
         this.setMinimumSize(new Dimension(800,600));
         this.setPreferredSize(new Dimension(1600,1000));
-    	this.setLocationRelativeTo(null);
     	this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     	this.setVisible(true);
     	this.setResizable(true);
     	this.setLayout(new BorderLayout());
+    	
+            
+       
+        this.setJMenuBar(makeMenuBar());
+                
 
+    
+        canvas = makeCanvas();
+        attachControlsToCanvas(canvas);
+        
+        this.add(canvas,BorderLayout.CENTER);
+        this.add(filePanel(), BorderLayout.WEST);
+        
+        reloadAttributePanel();
+        
+        this.pack();
+    }
+
+    private GLCanvas makeCanvas() {
+    	GLProfile profile = GLProfile.get(GLProfile.GL3);
+        GLCapabilities capabilities = new GLCapabilities(profile);
         this.canvas = new GLCanvas(capabilities);
         canvas.addGLEventListener(this);
-        this.getContentPane().setLayout(new BorderLayout());
-        this.getContentPane().add(canvas,BorderLayout.CENTER);
-        
-        JMenuBar menuBar = menuBar();
-        this.setJMenuBar(menuBar);
-                
-        this.pack();
-
+        canvas.setMinimumSize(new Dimension());
         canvas.requestFocusInWindow();
-        
+
+        return canvas;
+    }
+    
+    private void attachControlsToCanvas(Canvas canvas) {
+        this.canvas = makeCanvas();
         this.viewer = new WorldViewer();
         this.mouseController = new MouseController(this.viewer);
         canvas.addMouseMotionListener(this.mouseController);
         canvas.addMouseListener(this.mouseController);
         canvas.addMouseWheelListener(this.mouseController);
-
-        makeFileFrame();
-        
-        System.out.println("loading example");
-        
-        reloadAttributePanel();
     }
-
-    
     private AttributeDisplayer tweakableForAttribute(Attribute attribute) {
     	//--listen okay we are just going to assume it is foo for the moment
     	AttributeDisplayer tweakable;
@@ -174,7 +188,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	this.getContentPane().repaint();
     }
     
-    private void makeFileFrame() {
+    
+    private JPanel filePanel() {
     	listModel = new DefaultListModel<PointCloud>();
     	
         list = new JList<PointCloud>(listModel);
@@ -194,25 +209,29 @@ public class FrameMaster extends JFrame implements GLEventListener {
 				}
 			}
 		});
-        list.setVisibleRowCount(5);
+        list.setMinimumSize(new Dimension(240, 200));
+        list.setPreferredSize(new Dimension(240, 2000));
+//        list.setFixedCellWidth(240);
         
-        list.setMinimumSize(new Dimension(200, 600));
-        list.setFixedCellWidth(200);
         
-        //--add file view
+        list.setBorder(BorderFactory.createTitledBorder("Fits Files"));
+        
         JPanel filePanel = new JPanel(new MigLayout("flowy"));
         
         
-        
-        
-//        filePanel
-        Dimension lilDimension = new Dimension(200, 600);
-        filePanel.setMinimumSize(lilDimension);
+        Dimension lilDimension = new Dimension(265, 600);
+        filePanel.setMaximumSize(lilDimension);
         filePanel.setPreferredSize(lilDimension);
-        
+
         filePanel.add(list);
         
-        this.add(filePanel, BorderLayout.WEST);
+        JButton buttonAddFitsFile = new JButton("Load New Fits File");
+        filePanel.add(buttonAddFitsFile, "grow");
+        
+        list.setBackground(colorBackground);
+        filePanel.setBackground(colorBackground);
+        
+        return filePanel;        
     }
     
     private void openDialog() {
@@ -235,20 +254,28 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	setNeedsDisplay();
     }
     
-    private JMenuBar menuBar() {
+    private JMenuBar makeMenuBar() {
+
+
         JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu("File");
-        JMenuItem loadItem = new JMenuItem("Load");
+        
+        JMenuItem loadItem = new JMenuItem("Open");
+        setKeyboardShortcutTo(KeyEvent.VK_O, loadItem);
         loadItem.addActionListener(e -> this.openDialog());
-        
-        JMenuItem loadExample = new JMenuItem("Load Example");
-        loadExample.addActionListener(e -> this.loadFile("12CO_MEAN.fits"));
-        
         fileMenu.add(loadItem);
-        fileMenu.add(loadExample);
         
         menuBar.add(fileMenu);
         return menuBar;
+    }
+    
+    private static void setKeyboardShortcutTo(int key, JMenuItem menuItem){
+    	String os = System.getProperty("os.name").toLowerCase();	
+        if (os.indexOf("mac") != -1) {
+        	menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, Event.META_MASK));
+        } else {
+        	menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, Event.CTRL_MASK));
+        }
     }
     
     @Override
