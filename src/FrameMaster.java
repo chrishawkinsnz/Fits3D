@@ -20,6 +20,18 @@ import com.jogamp.opengl.awt.GLCanvas;
 import com.jogamp.opengl.util.FPSAnimator;
 import com.sun.java.swing.plaf.motif.MotifBorders.BevelBorder;
 
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.Plot;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.statistics.HistogramDataset;
+import org.jfree.data.statistics.HistogramType;
+import org.jreliability.function.ReliabilityFunction;
+import org.jreliability.function.common.ExponentialReliabilityFunction;
+import org.jreliability.gui.SamplerHistogramPanel;
+
+import javax.media.jai.Histogram;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -38,6 +50,11 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+
+import org.jreliability.gui.SamplerHistogramPanel;
+import org.jreliability.gui.sampler.AbstractSampler;
+import org.jreliability.gui.sampler.Sampler;
+import org.jreliability.gui.sampler.TTFFrequencyDistributionSampler;
 
 import net.miginfocom.swing.MigLayout;
 
@@ -219,7 +236,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         JPanel filePanel = new JPanel(new MigLayout("flowy"));
         
         
-        Dimension lilDimension = new Dimension(265, 600);
+        Dimension lilDimension = new Dimension(400, 600);
         filePanel.setMaximumSize(lilDimension);
         filePanel.setPreferredSize(lilDimension);
 
@@ -231,9 +248,24 @@ public class FrameMaster extends JFrame implements GLEventListener {
         
         list.setBackground(colorBackground);
         filePanel.setBackground(colorBackground);
+  
         
+        float []dubs = new float[50];
+        for (int i = 0; i < dubs.length ; i++) {
+        	dubs [i] = (float)i * 1.2f;
+        }
+        
+        int bins = 10;
+        Christogram christogram = new Christogram(dubs, 0f,50f * 1.2f, 10);
+        christogram.setTitle("christogram");
+        christogram.setXAxisTitle("Frequency");
+        
+        filePanel.add(christogram);
+        christogram.setPreferredSize(lilDimension);
+        christogram.setMinimumSize(lilDimension);
         return filePanel;        
     }
+    
     
     private void showOpenDialog() {
     	JFileChooser jfc = new JFileChooser();
