@@ -31,8 +31,8 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	private float min = 0.0f;
 	private float max = 0.0f;
 
-	private int leftInset = 20;
-	private int rightInset = 20;
+	private int leftInset = 0;
+	private int rightInset = 0;
 	private int topInset = 20;
 	private int botInset = 70;
 
@@ -66,7 +66,6 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		g.fillRect(chartLeft(), chartTop(), chartWidth(), chartHeight());
 		g.setColor(Color.black);
 		g.drawRect(chartLeft(), chartTop(), chartWidth(), chartHeight());
-		
 		
 		//--draw bars
 		for(int bindex = 0; bindex < nBuckets; bindex++) {
@@ -321,5 +320,14 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 				return null;
 			}
 		}
+	}
+	
+	public static class FilterSelectionData {
+		public float minX;
+		public float maxX;
+		public float minY;
+		public float maxY;
+		public boolean isExponential;
+		
 	}
 }

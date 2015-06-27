@@ -48,6 +48,7 @@ public class PointCloud {
 	public Attribute.SteppedRangeAttribute quality;
 	
 	public Attribute.Name fileName;
+	private Attribute.FilterSelectionAttribute filterSelection;
 	 
 	private static final Color[] colors = {Color.GREEN, Color.RED, Color.BLUE, Color.ORANGE, Color.PINK};
 	
@@ -73,6 +74,15 @@ public class PointCloud {
 		
 		isVisible = new Attribute.BinaryAttribute("Visible", true, true);
 		attributes.add(isVisible);
+		
+		Christogram.FilterSelectionData data = new Christogram.FilterSelectionData();
+		data.minX = 0f;
+		data.maxX = 0f;
+		data.minY = 0f;
+		data.maxY = 0f;
+		data.isExponential = false;
+		filterSelection = new Attribute.FilterSelectionAttribute("Filter", false, data);
+		attributes.add(filterSelection);
 		
 		this.color = colors[clouds++ % colors.length];
 	}

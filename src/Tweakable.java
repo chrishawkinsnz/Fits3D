@@ -1,3 +1,5 @@
+import java.awt.Color;
+import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,6 +69,11 @@ public abstract class Tweakable {
 		public JComponent getComponent() {
 			return this.checkBox;
 		}
+
+		@Override
+		public boolean isDoubleLiner() {
+			return false;
+		}
 	}
 	
 	/**
@@ -132,6 +139,10 @@ public abstract class Tweakable {
 			slider.setValue(steps);
 		}
 		
+		@Override
+		public boolean isDoubleLiner() {
+			return false;
+		}
 		
 	}
 	
@@ -149,6 +160,11 @@ public abstract class Tweakable {
 				return;
 			
 			notifyAttributes();
+		}
+		
+		@Override
+		public boolean isDoubleLiner() {
+			return false;
 		}
 	}
 	
@@ -175,5 +191,47 @@ public abstract class Tweakable {
 			return label;
 		}
 
+		@Override
+		public boolean isDoubleLiner() {
+			return false;
+		}
+		
+	}
+	
+	public static class ChristogramTweakable implements AttributeDisplayer {
+		private Christogram christogram;
+		
+		public ChristogramTweakable(){
+			float []dubs = new float[50];
+	        for (int i = 0; i < dubs.length ; i++) {
+	        	dubs [i] = (float)i * 1.2f;
+	        }
+	        
+	        int bins = 20;
+	        christogram = new Christogram(dubs, 0f,50f * 1.2f, bins);
+	        christogram.setXAxisTitle("Frequency");
+	        christogram.setLeftInset(0);
+	        christogram.setRightInset(0);
+	        christogram.setTopInset(0);
+	        christogram.setMinimumSize(new Dimension(800,200));
+	        christogram.setPreferredSize(new Dimension(800,200));
+	        christogram.setBackground(Color.pink);
+		}
+		
+		@Override
+		public void setValue(Object value) {
+			
+			
+		}
+		
+		@Override
+		public JComponent getComponent() {
+			return christogram;
+		}
+
+		@Override
+		public boolean isDoubleLiner() {
+			return true;
+		}
 	}
 }

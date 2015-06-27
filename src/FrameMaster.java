@@ -160,6 +160,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
     		Attribute.SteppedRangeAttribute srAttribute = (Attribute.SteppedRangeAttribute)attribute;
     		tweakable = new Tweakable.ClickySlider(srAttribute, srAttribute.min, srAttribute.max, srAttribute.value, srAttribute.steps);
     	}
+    	else if (attribute instanceof Attribute.FilterSelectionAttribute) {
+    		Attribute.FilterSelectionAttribute fsAttribute = (Attribute.FilterSelectionAttribute)attribute;
+    		tweakable = new Tweakable.ChristogramTweakable();
+    	}
     	else {
     		tweakable = null;
     	}
@@ -188,12 +192,17 @@ public class FrameMaster extends JFrame implements GLEventListener {
         	title.setFont(new Font("Dialog", Font.BOLD, 24));
         	attributPanel.add(title, "span 2");	
     		for (Attribute attribute : pc.attributes) {
-    			JLabel label = new JLabel(attribute.displayName);
-    			label.setFont(new Font("Dialog", Font.BOLD, 12));
-    			attributPanel.add(label);
     			
     			AttributeDisplayer tweakable = tweakableForAttribute(attribute);
-    			attributPanel.add(tweakable.getComponent(), "gapleft 16, width ::150");
+    			String formatString = tweakable.isDoubleLiner() ? "span 2" : "";
+    			
+    			JLabel label = new JLabel(attribute.displayName);
+    			label.setFont(new Font("Dialog", Font.BOLD, 12));
+    			attributPanel.add(label, formatString);
+    			
+    			
+    			formatString = tweakable.isDoubleLiner() ? "width ::250, span 2" : "gapleft 16, width ::150";
+    			attributPanel.add(tweakable.getComponent(), formatString);
     		}
     	}
 
