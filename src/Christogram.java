@@ -19,7 +19,7 @@ import org.omg.CORBA.PRIVATE_MEMBER;
 
 public class Christogram extends JComponent implements MouseMotionListener, MouseListener{
 	private static final int ticks = 5;
-	private float[] values;
+//	private float[] values;
 	
 	private float[] buckets;
 	private float maxBucket;
@@ -33,7 +33,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 
 	private int leftInset = 0;
 	private int rightInset = 0;
-	private int topInset = 20;
+	private int topInset = 0;
 	private int botInset = 70;
 
 	private float selectionBegin = 0f;
@@ -43,13 +43,24 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	public Christogram(float[] values, float min, float max, int buckets) {
 		this.min = min;
 		this.max = max;
-		this.values = values;
 		this.nBuckets = buckets;
-		this.bucketise();
+		this.bucketise(values);
 		this.addMouseMotionListener(this);
 		this.addMouseListener(this);
 		
 		this.currentDistribution = SelectionDistribution.nextDefault();
+	}
+	
+	public Christogram(int[]counts, float min, float max) {
+		this.min = min;
+		this.max = max;
+		this.nBuckets = counts.length;
+		this.turnCountsIntoRelFreqsLol(counts);
+
+		this.addMouseMotionListener(this);
+		this.addMouseListener(this);
+		this.currentDistribution = SelectionDistribution.nextDefault();
+
 	}
 	
 	
@@ -104,7 +115,6 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		g.setColor(new Color(1.0f, 0.5f, 0.5f, 0.5f));
 		g.fillRect(x1, y1, width, height);
 		
-		
 		//--draw distribution line within selection
 		g.setColor(new Color(1.0f, 0f, 0f, 1f));
 		if (this.currentDistribution.isExponential) {
@@ -142,7 +152,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 			g2d.drawLine(chartLeft() + (int)(stepSize * tick), chartBot(), chartLeft() + (int)(stepSize * tick), chartBot() + 4);
 			g2d.rotate(Math.PI/2);
 			
-			float value = tick * stepSize;
+			float value = tick * (max - min) + min;
 			String valueString = "" + value;
 			
 			//--cut the string down if necessarry (making sure not to leave a '.' on the end
@@ -162,7 +172,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		}
 	}
 	
-	private void bucketise() {
+	private void bucketise(float[]values) {
 		int []counts = new int[nBuckets];
 		float stepSize = (max - min) / (float)nBuckets; 
 		for (float val : values) {
@@ -173,10 +183,19 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 				counts[bucketIndex]++;
 		}
 		
+		turnCountsIntoRelFreqsLol(counts);
+	}
+	
+	private void turnCountsIntoRelFreqsLol(int[]counts) {
+		
+		int totValues = 0;
+		for (int i : counts) {totValues+=i;}
+		
 		maxBucket = -999f;
 		buckets = new float[nBuckets];
+		 
 		for(int bindex = 0; bindex < nBuckets; bindex++) {
-			float relFreq = (float)counts[bindex]/(float)values.length;
+			float relFreq = (float)counts[bindex]/(float)totValues;
 			buckets[bindex] = relFreq;
 			if (relFreq > maxBucket) 
 				maxBucket = relFreq;			
@@ -328,6 +347,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		public float minY;
 		public float maxY;
 		public boolean isExponential;
+		public int[] buckets;
 		
 	}
 }

@@ -116,20 +116,7 @@ public class PointCloud {
 				e.printStackTrace();
 			}
 			
-			
-//			Volume v = new Volume(0f, 0f, 0f, 1f, 1f, 1f);
-//			CloudRegion cr = new CloudRegion(fits, v, 0.4f);
-//			
-//			//
-//			//
-//			//
-//			//TODO if you want multiple regions see below
-//			//
-//			//
-//			//
-//			
-//			this.regions = new ArrayList<CloudRegion>();
-//			this.addRegion(cr);
+		
 			loadRegionAtFidelity(0.4f);
 			
 		} catch (FitsException e) {
@@ -142,6 +129,9 @@ public class PointCloud {
 		Volume v = new Volume(0f, 0f, 0f, 1f, 1f, 1f);
 		CloudRegion cr = new CloudRegion(fits, v, fidelity);
 		this.addRegion(cr);
+		this.filterSelection.buckets = cr.currentRepresentation.buckets;
+		this.filterSelection.estMin = cr.currentRepresentation.estMin;
+		this.filterSelection.estMax = cr.currentRepresentation.estMax;
 	}
 	public List<CloudRegion> getRegions() {
 		return regions;

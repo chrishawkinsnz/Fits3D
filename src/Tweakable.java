@@ -201,26 +201,16 @@ public abstract class Tweakable {
 	public static class ChristogramTweakable implements AttributeDisplayer {
 		private Christogram christogram;
 		
-		public ChristogramTweakable(){
-			float []dubs = new float[50];
-	        for (int i = 0; i < dubs.length ; i++) {
-	        	dubs [i] = (float)i * 1.2f;
-	        }
-	        
-	        int bins = 20;
-	        christogram = new Christogram(dubs, 0f,50f * 1.2f, bins);
-	        christogram.setXAxisTitle("Frequency");
-	        christogram.setLeftInset(0);
-	        christogram.setRightInset(0);
-	        christogram.setTopInset(0);
+		public ChristogramTweakable(int[]buckets, float min, float max){
+	        christogram = new Christogram(buckets, min, max);
+	        christogram.setXAxisTitle("Intensity");
 	        christogram.setMinimumSize(new Dimension(800,200));
 	        christogram.setPreferredSize(new Dimension(800,200));
-	        christogram.setBackground(Color.pink);
 		}
 		
 		@Override
 		public void setValue(Object value) {
-			
+			System.err.println("not yet implemented setValue");
 			
 		}
 		

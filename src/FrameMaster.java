@@ -162,7 +162,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	}
     	else if (attribute instanceof Attribute.FilterSelectionAttribute) {
     		Attribute.FilterSelectionAttribute fsAttribute = (Attribute.FilterSelectionAttribute)attribute;
-    		tweakable = new Tweakable.ChristogramTweakable();
+    		tweakable = new Tweakable.ChristogramTweakable(fsAttribute.buckets,fsAttribute.estMin, fsAttribute.estMax);
     	}
     	else {
     		tweakable = null;
@@ -262,21 +262,21 @@ public class FrameMaster extends JFrame implements GLEventListener {
         
         //--Graff
         
-        float []dubs = new float[50];
-        for (int i = 0; i < dubs.length ; i++) {
-        	dubs [i] = (float)i * 1.2f;
-        }
-        
-        int bins = 20;
-        Christogram christogram = new Christogram(dubs, 0f,50f * 1.2f, bins);
-        christogram.setXAxisTitle("Frequency");
-        christogram.setLeftInset(0);
-        christogram.setRightInset(0);
-        
-        filePanel.add(christogram);
-        christogram.setPreferredSize(new Dimension(200, 150));
-        christogram.setMinimumSize(new Dimension(200, 150));
-        christogram.setBackground(Color.pink);
+//        float []dubs = new float[50];
+//        for (int i = 0; i < dubs.length ; i++) {
+//        	dubs [i] = (float)i * 1.2f;
+//        }
+//        
+//        int bins = 20;
+//        Christogram christogram = new Christogram(dubs, 0f,50f * 1.2f, bins);
+//        christogram.setXAxisTitle("Frequency");
+//        christogram.setLeftInset(0);
+//        christogram.setRightInset(0);
+//        
+//        filePanel.add(christogram);
+//        christogram.setPreferredSize(new Dimension(200, 150));
+//        christogram.setMinimumSize(new Dimension(200, 150));
+//        christogram.setBackground(Color.pink);
         return filePanel;        
     }
     
