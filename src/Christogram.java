@@ -152,7 +152,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 			g2d.drawLine(chartLeft() + (int)(stepSize * tick), chartBot(), chartLeft() + (int)(stepSize * tick), chartBot() + 4);
 			g2d.rotate(Math.PI/2);
 			
-			float value = tick * (max - min) + min;
+			float value = tick * (max - min)/((float)(ticks-1)) + min;
 			String valueString = "" + value;
 			
 			//--cut the string down if necessarry (making sure not to leave a '.' on the end

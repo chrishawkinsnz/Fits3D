@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
@@ -185,6 +186,8 @@ public class RegionRepresentation {
 		long t0 = System.currentTimeMillis();
 		float minn = 999f;
 		float maxx = -999f;
+		
+		List<Float>allOfThemFloats =new ArrayList<Float>();
 		try{
 			float shittyFidelity = 0.1f;
 
@@ -235,21 +238,6 @@ public class RegionRepresentation {
 			
 
 			if (hdu.getData().reset()) {
-				System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");
-				System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");
-				System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");
-				System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");
-				System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");
-				System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");
-				System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");
-				System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");
-				System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");
-				System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");
-				System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");
-				System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");
-				System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");
-				System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");
-				System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");System.out.println("in here!!!");
 				
 				ArrayDataInput adi = fits.getStream();
 				int planesToSkip = sourceStartX;
@@ -262,7 +250,9 @@ public class RegionRepresentation {
 							for (int z = 0; z < maxDepth; z++) {
 								float val = (float)storaged[z * stride];
 								if (val < minn) minn = val;
-								if (val > maxx) maxx = val; 
+								if (val > maxx) maxx = val;
+								if (!Float.isNaN(val))
+									allOfThemFloats.add(val);
 							}
 						} 
 						else if (dataType == DataType.FLOAT) {
@@ -270,7 +260,9 @@ public class RegionRepresentation {
 							for (int z = 0; z < maxDepth; z++) {
 								float val = (float)storagef[z * stride];
 								if (val < minn) minn = val;
-								if (val > maxx) maxx = val; 
+								if (val > maxx) maxx = val;
+								if (!Float.isNaN(val))
+									allOfThemFloats.add(val);
 							}
 						}
 
@@ -290,8 +282,21 @@ public class RegionRepresentation {
 			System.out.println("fits file loaded " + maxWidth + " x " + maxHeight + " x " + maxDepth);
 			System.out.println("min" + minn);
 			System.out.println("max" + maxx);
-			this.estMin = minn;
-			this.estMax = maxx;
+			allOfThemFloats.sort(new Comparator<Float>() {
+				@Override
+				public int compare(Float o1, Float o2) {
+					return Float.compare(o1.floatValue(), o2.floatValue());
+				}
+			});
+			int highIndex = (int)(0.99 *(float) allOfThemFloats.size());
+			int lowIndex = (int)(0.01 * allOfThemFloats.size());
+			this.estMax = allOfThemFloats.get(highIndex);
+			this.estMin = allOfThemFloats.get(lowIndex);
+			minn = this.estMin;
+			maxx = this.estMax;
+//			this.estMin = minn;
+//			this.estMax = maxx;
+			
 			
 	}catch(Exception e){
 		e.printStackTrace();
