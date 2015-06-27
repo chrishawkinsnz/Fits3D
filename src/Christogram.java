@@ -1,5 +1,3 @@
-
-
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -19,58 +17,15 @@ import javax.swing.JPanel;
 
 import org.omg.CORBA.PRIVATE_MEMBER;
 
-
-
 public class Christogram extends JComponent implements MouseMotionListener, MouseListener{
 	private static final int ticks = 5;
-
-	public static class SelectionDistribution{
-		public float start;
-		public float end;
-		public final boolean isExponential;
-		
-		private SelectionDistribution(float start, float end, boolean isExponential) {
-			this.start = start;
-			this.end = end;
-			this.isExponential = isExponential;
-		}
-		
-		public static SelectionDistribution distributionWithLinearIncrease(float startValue, float endValue) {
-			return new SelectionDistribution(startValue, endValue, false);
-		}
-		
-		public static SelectionDistribution distributionWithStaticValue(float value) {
-			return new SelectionDistribution(value, value, false);
-		}
-		
-		public static SelectionDistribution distributionWithExponentialIncrease(float startValue, float endValue) {
-			return new SelectionDistribution(startValue, endValue, true);
-		}
-		
-		private static int currentDefault = -1;
-		public static SelectionDistribution nextDefault() {
-			currentDefault = ++currentDefault % 3;
-			switch (currentDefault) {
-			case 0:
-				return SelectionDistribution.distributionWithLinearIncrease(0f, 1f);
-			case 1:
-				return SelectionDistribution.distributionWithStaticValue(1f);
-			case 2:
-				return SelectionDistribution.distributionWithExponentialIncrease(0f, 1f);
-			default:
-				return null;
-			}
-		}
-	}
-		
-	
 	private float[] values;
 	
 	private float[] buckets;
 	private float maxBucket;
 	
 	private int nBuckets;
-	private String title;
+
 	private String xAxisTitle;
 	
 	private float min = 0.0f;
@@ -80,17 +35,9 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	private int rightInset = 20;
 	private int topInset = 20;
 	private int botInset = 70;
-	
-	private int x = 20;
-	private int y = 20;
-	private int wd = 50;
-	private int ht = 10;
 
 	private float selectionBegin = 0f;
-
 	private float selectionCurrent = 0f;
-	
-	
 	private SelectionDistribution currentDistribution;
 	
 	public Christogram(float[] values, float min, float max, int buckets) {
@@ -106,51 +53,48 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	}
 	
 	
-	public void setTitle(String title){
-		this.title = title;
-	}
-	
 	public void setXAxisTitle(String title){
 		this.xAxisTitle = title;
 	}
 	
-	
-	
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
-
-		g.drawLine(x, y, x + wd, y + ht);
 		
 		//--draw box
 		g.setColor(Color.lightGray);
 		g.fillRect(chartLeft(), chartTop(), chartWidth(), chartHeight());
+		g.setColor(Color.black);
+		g.drawRect(chartLeft(), chartTop(), chartWidth(), chartHeight());
 		
 		
 		//--draw bars
 		for(int bindex = 0; bindex < nBuckets; bindex++) {
 			float relFreq = buckets[bindex];
 			float relRelFreq = (relFreq - 0f)/ maxBucket;
-			
-			float xProportion = (float)bindex / (float)nBuckets;
-			
-			
+
 			int width = chartWidth() / nBuckets;
-			int height = (int) (relRelFreq * (float)chartHeight());
+			int height = (int) (relRelFreq * chartHeight());
 			
-			int x1 = chartLeft() + (int)(xProportion * chartWidth());
+			int x1 = chartLeft() + (int)(chartWidth() * bindex / nBuckets);
 			int y1 = chartBot() - height;
 			
+			//--draw background of bar
 			g.setColor(Color.gray);
 			g.fillRect(x1, y1, width, height);
+			
+			//--draw outline of bar
 			g.setColor(Color.black);
 			g.drawRect(x1, y1, width, height);
 		}
 	
 		//--draw selection
-		float minSelection = selectionBegin < selectionCurrent ? selectionBegin : selectionCurrent;
-		float maxSelection = selectionBegin < selectionCurrent ?  selectionCurrent : selectionBegin;
 		
+		//--figure out which one is on the left and which is on the right
+		float minSelection = selectionBegin < selectionCurrent ? selectionBegin : selectionCurrent;
+		float maxSelection = selectionBegin < selectionCurrent ? selectionCurrent : selectionBegin;
+		
+		//--find the proportion along the chart each is
 		float startProportion = (minSelection - min)/(max - min);
 		float endProportion = (maxSelection - min)/(max - min);
 		
@@ -158,8 +102,6 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		int y1 = chartTop();
 		int width = (int)(chartWidth() * (endProportion - startProportion));
 		int height = chartHeight();
-		int y2;
-		int x2;
 		g.setColor(new Color(1.0f, 0.5f, 0.5f, 0.5f));
 		g.fillRect(x1, y1, width, height);
 		
@@ -167,99 +109,79 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		//--draw distribution line within selection
 		g.setColor(new Color(1.0f, 0f, 0f, 1f));
 		if (this.currentDistribution.isExponential) {
-			x1 = x1 - width;
-			x2 = x1 + width;
 			height = (int) (this.currentDistribution.end * chartHeight()) - (int)(this.currentDistribution.start * chartHeight());
+			x1 = x1 - width;
 			y1 = (int) (chartBot() - this.currentDistribution.start * chartHeight()) - height * 2;
 			g.drawArc(x1, y1, width * 2, height * 2, 270, 90);
 		}
 		else {
-			x1 = x1;
-			x2 = x1 + width;
+			int x2 = x1 + width;
 			y1 = (int) (chartBot() - this.currentDistribution.start * chartHeight());
-			y2 = (int) (chartBot() - this.currentDistribution.end * chartHeight());
-			System.out.println("y1:"+y1+" y2:"+y2);
+			int y2 = (int) (chartBot() - this.currentDistribution.end * chartHeight());
 			g.drawLine(x1, y1, x2, y2);	
 		}
-		
-		
 		
 		//--draw the ticks
 		Graphics2D g2d = (Graphics2D)g;
 		g2d.setColor(Color.black);
 		float stepSize = (float)chartWidth() / (float)(ticks - 1);
 		for (int tick = 0; tick < ticks; tick++) {
-
-			FontMetrics fm   = g.getFontMetrics(g2d.getFont());
-			java.awt.geom.Rectangle2D rect = fm.getStringBounds(xAxisTitle, g2d);
-
-			int textHeight = (int)(rect.getHeight()); 
-			int textWidth  = (int)(rect.getWidth());
-			
 			int tickX = chartLeft() - (int)(stepSize * tick);
 
+			//--fudge the tick position so the start and end labels aren't offscreen
 			if (tick > 0 && tick < (ticks - 1)) {
-				tickX += textHeight/2;
+				tickX += 10/2;
 			}
 			else if (tick == (ticks - 1)) {
-				tickX += textHeight;
+				tickX += 10;
 			}
 			
-			int tickY = chartTop() + chartHeight() + 5;//chartBot();
+			int tickY = chartTop() + chartHeight() + 5;
+			
+			//-rotate the view so our text is written sideways
 			AffineTransform orig = g2d.getTransform();
 			g2d.drawLine(chartLeft() + (int)(stepSize * tick), chartBot(), chartLeft() + (int)(stepSize * tick), chartBot() + 4);
 			g2d.rotate(Math.PI/2);
 			
 			float value = tick * stepSize;
 			String valueString = "" + value;
+			
+			//--cut the string down if necessarry (making sure not to leave a '.' on the end
 			if (valueString.length() > 4) 
 				valueString = valueString.substring(0, 4);
 			if (valueString.charAt(valueString.length() - 1) == '.') {
 				valueString = valueString.substring(0, valueString.length() - 1);
 			}
-
 			g2d.drawString(valueString, tickY, tickX);
-			
 			g2d.setTransform(orig);
 			
-			g2d.drawString(xAxisTitle, chartLeft() + chartWidth()/2 - textWidth/2, chartBot() + 50);
-
-			System.out.println("text width" + textWidth);
-			
-			
+			//--use the size of the font to figure out where to center the xAxis
+			FontMetrics fm   = g.getFontMetrics(g2d.getFont());
+			java.awt.geom.Rectangle2D rect = fm.getStringBounds(xAxisTitle, g2d);
+			int textWidth  = (int)(rect.getWidth());
+			g2d.drawString(xAxisTitle, chartLeft() + chartWidth()/2 - textWidth/2, chartBot() + 50);			
 		}
 	}
-	
-	
-	
-	
 	
 	private void bucketise() {
 		int []counts = new int[nBuckets];
 		float stepSize = (max - min) / (float)nBuckets; 
 		for (float val : values) {
-			int bucketIndex = (int)(val/stepSize);
-			
+			int bucketIndex = (int)(val/stepSize);	
 			if (bucketIndex > counts.length) 
 				counts[counts.length]++;
 			else
 				counts[bucketIndex]++;
 		}
 		
-		//--draw
 		maxBucket = -999f;
-		
 		buckets = new float[nBuckets];
 		for(int bindex = 0; bindex < nBuckets; bindex++) {
 			float relFreq = (float)counts[bindex]/(float)values.length;
 			buckets[bindex] = relFreq;
 			if (relFreq > maxBucket) 
-				maxBucket = relFreq;
-			
-			System.out.println("bucket"+bindex + ": "+relFreq);
+				maxBucket = relFreq;			
 		}
-		
-		
 	}
 	
 	private int chartTop() {
@@ -361,4 +283,43 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		return value;
 	}
 
+	
+	public static class SelectionDistribution{
+		public float start;
+		public float end;
+		public final boolean isExponential;
+		
+		private SelectionDistribution(float start, float end, boolean isExponential) {
+			this.start = start;
+			this.end = end;
+			this.isExponential = isExponential;
+		}
+		
+		public static SelectionDistribution distributionWithLinearIncrease(float startValue, float endValue) {
+			return new SelectionDistribution(startValue, endValue, false);
+		}
+		
+		public static SelectionDistribution distributionWithStaticValue(float value) {
+			return new SelectionDistribution(value, value, false);
+		}
+		
+		public static SelectionDistribution distributionWithExponentialIncrease(float startValue, float endValue) {
+			return new SelectionDistribution(startValue, endValue, true);
+		}
+		
+		private static int currentDefault = -1;
+		public static SelectionDistribution nextDefault() {
+			currentDefault = ++currentDefault % 3;
+			switch (currentDefault) {
+			case 0:
+				return SelectionDistribution.distributionWithLinearIncrease(0f, 1f);
+			case 1:
+				return SelectionDistribution.distributionWithStaticValue(1f);
+			case 2:
+				return SelectionDistribution.distributionWithExponentialIncrease(0f, 1f);
+			default:
+				return null;
+			}
+		}
+	}
 }

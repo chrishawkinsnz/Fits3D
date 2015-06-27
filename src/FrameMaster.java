@@ -260,7 +260,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
         
         int bins = 20;
         Christogram christogram = new Christogram(dubs, 0f,50f * 1.2f, bins);
-        christogram.setTitle("christogram");
         christogram.setXAxisTitle("Frequency");
         christogram.setLeftInset(0);
         christogram.setRightInset(0);
