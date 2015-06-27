@@ -236,7 +236,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         JPanel filePanel = new JPanel(new MigLayout("flowy"));
         
         
-        Dimension lilDimension = new Dimension(400, 600);
+        Dimension lilDimension = new Dimension(240, 600);
         filePanel.setMaximumSize(lilDimension);
         filePanel.setPreferredSize(lilDimension);
 
@@ -248,21 +248,27 @@ public class FrameMaster extends JFrame implements GLEventListener {
         
         list.setBackground(colorBackground);
         filePanel.setBackground(colorBackground);
-  
+        filePanel.setPreferredSize(new Dimension(260, 500));
+
+        
+        //--Graff
         
         float []dubs = new float[50];
         for (int i = 0; i < dubs.length ; i++) {
         	dubs [i] = (float)i * 1.2f;
         }
         
-        int bins = 10;
-        Christogram christogram = new Christogram(dubs, 0f,50f * 1.2f, 10);
+        int bins = 20;
+        Christogram christogram = new Christogram(dubs, 0f,50f * 1.2f, bins);
         christogram.setTitle("christogram");
         christogram.setXAxisTitle("Frequency");
+        christogram.setLeftInset(0);
+        christogram.setRightInset(0);
         
         filePanel.add(christogram);
-        christogram.setPreferredSize(lilDimension);
-        christogram.setMinimumSize(lilDimension);
+        christogram.setPreferredSize(new Dimension(200, 150));
+        christogram.setMinimumSize(new Dimension(200, 150));
+        christogram.setBackground(Color.pink);
         return filePanel;        
     }
     
