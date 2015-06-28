@@ -198,7 +198,7 @@ public abstract class Tweakable {
 		
 	}
 	
-	public static class ChristogramTweakable implements AttributeDisplayer {
+	public static class ChristogramTweakable extends Tweakable implements AttributeDisplayer {
 		private Christogram christogram;
 		
 		public ChristogramTweakable(int[]buckets, float min, float max){
@@ -222,6 +222,16 @@ public abstract class Tweakable {
 		@Override
 		public boolean isDoubleLiner() {
 			return true;
+		}
+		
+		public void stateChanged(ChangeEvent e) {
+			notifyAttributes();
+		}
+
+		@Override
+		protected Object getValue() {
+//			Christogram.FilterSelectionData data = christogram
+			return null;
 		}
 	}
 }

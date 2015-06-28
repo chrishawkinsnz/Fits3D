@@ -52,6 +52,9 @@ public class PointCloud {
 	 
 	private static final Color[] colors = {Color.GREEN, Color.RED, Color.BLUE, Color.ORANGE, Color.PINK};
 	
+	//--histogram estimation data
+	
+	
 	public PointCloud(String pathName) {
 		this.regions = new ArrayList<CloudRegion>();
 		this.volume = new Volume(boxOrigX, boxOrigY, boxOrigZ, boxWidth, boxHeight, boxDepth);
@@ -75,12 +78,7 @@ public class PointCloud {
 		isVisible = new Attribute.BinaryAttribute("Visible", true, true);
 		attributes.add(isVisible);
 		
-		Christogram.FilterSelectionData data = new Christogram.FilterSelectionData();
-		data.minX = 0f;
-		data.maxX = 0f;
-		data.minY = 0f;
-		data.maxY = 0f;
-		data.isExponential = false;
+		Christogram.Filter data = new Christogram.Filter(0f,0f,0f,1f,false);
 		filterSelection = new Attribute.FilterSelectionAttribute("Filter", false, data);
 		attributes.add(filterSelection);
 		
@@ -129,9 +127,6 @@ public class PointCloud {
 		Volume v = new Volume(0f, 0f, 0f, 1f, 1f, 1f);
 		CloudRegion cr = new CloudRegion(fits, v, fidelity);
 		this.addRegion(cr);
-		this.filterSelection.buckets = cr.currentRepresentation.buckets;
-		this.filterSelection.estMin = cr.currentRepresentation.estMin;
-		this.filterSelection.estMax = cr.currentRepresentation.estMax;
 	}
 	public List<CloudRegion> getRegions() {
 		return regions;
@@ -158,4 +153,18 @@ public class PointCloud {
 	public String toString() {
 		return this.fileName.value;
 	}
+	
+	public int[] getHistBuckets() {
+		return this.regions.get(0).currentRepresentation.buckets;
+	}
+
+
+	public float getHistMin() {
+		return this.regions.get(0).currentRepresentation.estMin;
+	}
+
+	public float getHistMax() {
+		return this.regions.get(0).currentRepresentation.estMax;
+	}
+
 }

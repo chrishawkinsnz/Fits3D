@@ -104,11 +104,8 @@ public abstract class Attribute {
 		public float minY;
 		public float maxY;
 		public boolean isExponential;
-		public int[] buckets;
-		public float estMin;
-		public float estMax;
 		
-		public FilterSelectionAttribute(String displayName, boolean shouldAggregate, Christogram.FilterSelectionData data) {
+		public FilterSelectionAttribute(String displayName, boolean shouldAggregate, Christogram.Filter data) {
 			super(displayName, shouldAggregate);
 			this.minX = data.minX;
 			this.maxX = data.maxX;
@@ -120,7 +117,7 @@ public abstract class Attribute {
 		@Override
 		public void notifyWithValue(Object obj) {
 			super.notifyWithValue(obj);
-			Christogram.FilterSelectionData data = (Christogram.FilterSelectionData)obj;
+			Christogram.Filter data = (Christogram.Filter)obj;
 			this.minX = data.minX;
 			this.maxX = data.maxX;
 			this.minY = data.minY;

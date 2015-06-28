@@ -134,7 +134,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         canvas.addMouseWheelListener(this.mouseController);
     }
     
-    private AttributeDisplayer tweakableForAttribute(Attribute attribute) {
+    private AttributeDisplayer tweakableForAttribute(Attribute attribute, PointCloud pc) {
     	//--listen okay we are just going to assume it is foo for the moment
     	AttributeDisplayer tweakable;
     	if (attribute instanceof Attribute.RangedAttribute) {
@@ -162,7 +162,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	}
     	else if (attribute instanceof Attribute.FilterSelectionAttribute) {
     		Attribute.FilterSelectionAttribute fsAttribute = (Attribute.FilterSelectionAttribute)attribute;
-    		tweakable = new Tweakable.ChristogramTweakable(fsAttribute.buckets,fsAttribute.estMin, fsAttribute.estMax);
+    		tweakable = new Tweakable.ChristogramTweakable(pc.getHistBuckets(), pc.getHistMin(), pc.getHistMax());
     	}
     	else {
     		tweakable = null;
@@ -193,7 +193,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         	attributPanel.add(title, "span 2");	
     		for (Attribute attribute : pc.attributes) {
     			
-    			AttributeDisplayer tweakable = tweakableForAttribute(attribute);
+    			AttributeDisplayer tweakable = tweakableForAttribute(attribute, pc);
     			String formatString = tweakable.isDoubleLiner() ? "span 2" : "";
     			
     			JLabel label = new JLabel(attribute.displayName);

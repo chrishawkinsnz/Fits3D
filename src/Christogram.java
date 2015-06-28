@@ -38,7 +38,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 
 	private float selectionBegin = 0f;
 	private float selectionCurrent = 0f;
-	private SelectionDistribution currentDistribution;
+	private Filter currentDistribution;
 	
 	public Christogram(float[] values, float min, float max, int buckets) {
 		this.min = min;
@@ -48,7 +48,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		this.addMouseMotionListener(this);
 		this.addMouseListener(this);
 		
-		this.currentDistribution = SelectionDistribution.nextDefault();
+		this.currentDistribution = Filter.nextDefault();
 	}
 	
 	public Christogram(int[]counts, float min, float max) {
@@ -59,7 +59,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 
 		this.addMouseMotionListener(this);
 		this.addMouseListener(this);
-		this.currentDistribution = SelectionDistribution.nextDefault();
+		this.currentDistribution = Filter.nextDefault();
 
 	}
 	
@@ -118,15 +118,15 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		//--draw distribution line within selection
 		g.setColor(new Color(1.0f, 0f, 0f, 1f));
 		if (this.currentDistribution.isExponential) {
-			height = (int) (this.currentDistribution.end * chartHeight()) - (int)(this.currentDistribution.start * chartHeight());
+			height = (int) (this.currentDistribution.maxX * chartHeight()) - (int)(this.currentDistribution.minX * chartHeight());
 			x1 = x1 - width;
-			y1 = (int) (chartBot() - this.currentDistribution.start * chartHeight()) - height * 2;
+			y1 = (int) (chartBot() - this.currentDistribution.minX * chartHeight()) - height * 2;
 			g.drawArc(x1, y1, width * 2, height * 2, 270, 90);
 		}
 		else {
 			int x2 = x1 + width;
-			y1 = (int) (chartBot() - this.currentDistribution.start * chartHeight());
-			int y2 = (int) (chartBot() - this.currentDistribution.end * chartHeight());
+			y1 = (int) (chartBot() - this.currentDistribution.minX * chartHeight());
+			int y2 = (int) (chartBot() - this.currentDistribution.maxX * chartHeight());
 			g.drawLine(x1, y1, x2, y2);	
 		}
 		
@@ -281,7 +281,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	public void mouseReleased(MouseEvent e) {
 		float tentativeSelectionEnd = proportionAtPixelX(e.getX());
 		if (tentativeSelectionEnd == tentativeSelectionBegin) {
-			this.currentDistribution = SelectionDistribution.nextDefault();
+			this.currentDistribution = Filter.nextDefault();
 			this.repaint();
 		}
 	}
@@ -302,52 +302,54 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	}
 
 	
-	public static class SelectionDistribution{
-		public float start;
-		public float end;
+	public static class Filter{
+		public float minX;
+		public float maxX;
+		public float minY = 0f;
+		public float maxY = 1f;
 		public final boolean isExponential;
 		
-		private SelectionDistribution(float start, float end, boolean isExponential) {
-			this.start = start;
-			this.end = end;
+		public Filter(float minX, float maxX, float minY, float maxY, boolean isExponential) {
+			this.minX = minX;
+			this.maxX = maxX;
+			this.minY = minY;
+			this.maxY = maxY;
 			this.isExponential = isExponential;
 		}
 		
-		public static SelectionDistribution distributionWithLinearIncrease(float startValue, float endValue) {
-			return new SelectionDistribution(startValue, endValue, false);
+		private Filter(float start, float end, boolean isExponential) {
+			this.minX = start;
+			this.maxX = end;
+			this.isExponential = isExponential;
 		}
 		
-		public static SelectionDistribution distributionWithStaticValue(float value) {
-			return new SelectionDistribution(value, value, false);
+		public static Filter distributionWithLinearIncrease(float startValue, float endValue) {
+			return new Filter(startValue, endValue, false);
 		}
 		
-		public static SelectionDistribution distributionWithExponentialIncrease(float startValue, float endValue) {
-			return new SelectionDistribution(startValue, endValue, true);
+		public static Filter distributionWithStaticValue(float value) {
+			return new Filter(value, value, false);
+		}
+		
+		public static Filter distributionWithExponentialIncrease(float startValue, float endValue) {
+			return new Filter(startValue, endValue, true);
 		}
 		
 		private static int currentDefault = -1;
-		public static SelectionDistribution nextDefault() {
+		public static Filter nextDefault() {
 			currentDefault = ++currentDefault % 3;
 			switch (currentDefault) {
 			case 0:
-				return SelectionDistribution.distributionWithLinearIncrease(0f, 1f);
+				return Filter.distributionWithLinearIncrease(0f, 1f);
 			case 1:
-				return SelectionDistribution.distributionWithStaticValue(1f);
+				return Filter.distributionWithStaticValue(1f);
 			case 2:
-				return SelectionDistribution.distributionWithExponentialIncrease(0f, 1f);
+				return Filter.distributionWithExponentialIncrease(0f, 1f);
 			default:
 				return null;
 			}
 		}
 	}
 	
-	public static class FilterSelectionData {
-		public float minX;
-		public float maxX;
-		public float minY;
-		public float maxY;
-		public boolean isExponential;
-		public int[] buckets;
-		
-	}
+
 }

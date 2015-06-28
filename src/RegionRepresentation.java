@@ -294,8 +294,6 @@ public class RegionRepresentation {
 			this.estMin = allOfThemFloats.get(lowIndex);
 			minn = this.estMin;
 			maxx = this.estMax;
-//			this.estMin = minn;
-//			this.estMax = maxx;
 			
 			
 	}catch(Exception e){
