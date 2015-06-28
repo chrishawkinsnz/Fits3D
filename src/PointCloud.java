@@ -115,7 +115,7 @@ public class PointCloud {
 			}
 			
 		
-			loadRegionAtFidelity(0.4f);
+			loadRegionAtFidelity(1f);
 			
 		} catch (FitsException e) {
 			e.printStackTrace();
