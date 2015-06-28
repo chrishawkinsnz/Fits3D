@@ -26,6 +26,7 @@ public abstract class Tweakable {
 	
 	
 	
+	
 	public void notifyAttributes() { 
 		for (Attribute attribute : attributes) {
 			attribute.notifyWithValue(this.getValue());
@@ -198,14 +199,17 @@ public abstract class Tweakable {
 		
 	}
 	
-	public static class ChristogramTweakable extends Tweakable implements AttributeDisplayer {
+	public static class ChristogramTweakable extends Tweakable implements AttributeDisplayer, ChangeListener {
 		private Christogram christogram;
 		
-		public ChristogramTweakable(int[]buckets, float min, float max){
+		public ChristogramTweakable(int[]buckets, Attribute attribute, float min, float max){
+			super();
 	        christogram = new Christogram(buckets, min, max);
 	        christogram.setXAxisTitle("Intensity");
 	        christogram.setMinimumSize(new Dimension(800,200));
 	        christogram.setPreferredSize(new Dimension(800,200));
+	        christogram.addChangeListener(this);
+	        this.attributes.add(attribute);
 		}
 		
 		@Override
@@ -230,8 +234,10 @@ public abstract class Tweakable {
 
 		@Override
 		protected Object getValue() {
-//			Christogram.FilterSelectionData data = christogram
-			return null;
+			return christogram.getCurrentFilter();
 		}
 	}
+	
 }
+
+

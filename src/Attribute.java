@@ -2,7 +2,6 @@ import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-
 public abstract class Attribute {
 	public String displayName;
 	public boolean isAggregatable;
@@ -99,30 +98,18 @@ public abstract class Attribute {
 	}
 	
 	public static class FilterSelectionAttribute extends Attribute {
-		public float minX;
-		public float maxX;
-		public float minY;
-		public float maxY;
-		public boolean isExponential;
+		public Christogram.Filter filter;
 		
-		public FilterSelectionAttribute(String displayName, boolean shouldAggregate, Christogram.Filter data) {
+		public FilterSelectionAttribute(String displayName, boolean shouldAggregate, Christogram.Filter filter) {
 			super(displayName, shouldAggregate);
-			this.minX = data.minX;
-			this.maxX = data.maxX;
-			this.minY = data.minY;
-			this.maxY = data.maxY;
-			this.isExponential = data.isExponential;
+			this.filter = filter;
 		}
 
 		@Override
 		public void notifyWithValue(Object obj) {
 			super.notifyWithValue(obj);
-			Christogram.Filter data = (Christogram.Filter)obj;
-			this.minX = data.minX;
-			this.maxX = data.maxX;
-			this.minY = data.minY;
-			this.maxY = data.maxY;
-			this.isExponential = data.isExponential;
+			Christogram.Filter filter = (Christogram.Filter)obj;
+			this.filter = filter;
 		}
 	}
 }

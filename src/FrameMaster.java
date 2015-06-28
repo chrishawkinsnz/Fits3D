@@ -162,7 +162,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	}
     	else if (attribute instanceof Attribute.FilterSelectionAttribute) {
     		Attribute.FilterSelectionAttribute fsAttribute = (Attribute.FilterSelectionAttribute)attribute;
-    		tweakable = new Tweakable.ChristogramTweakable(pc.getHistBuckets(), pc.getHistMin(), pc.getHistMax());
+    		tweakable = new Tweakable.ChristogramTweakable(pc.getHistBuckets(), fsAttribute, pc.getHistMin(), pc.getHistMax());
     	}
     	else {
     		tweakable = null;

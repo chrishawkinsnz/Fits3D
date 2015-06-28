@@ -167,4 +167,7 @@ public class PointCloud {
 		return this.regions.get(0).currentRepresentation.estMax;
 	}
 
+	public Christogram.Filter getFilter() {
+		return this.filterSelection.filter;
+	}
 }

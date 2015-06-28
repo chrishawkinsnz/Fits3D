@@ -55,6 +55,10 @@ public class Renderer {
 	private WorldViewer viewer;
 	private List<PointCloud> pointClouds;
 	public boolean isTrippy;
+	private int uniformFilterMinX;
+	private int uniformFilterMaxX;
+	private int uniformFilterGradient;
+	private int uniformFilterConstant;
 
 
 	public Renderer(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl){
@@ -97,6 +101,10 @@ public class Renderer {
 		this.uniformPointAreaHandle = gl.glGetUniformLocation(this.shaderProgram, "pointArea");
 		this.uniformColorHandle = gl.glGetUniformLocation(this.shaderProgram, "pointColor");
 		
+		this.uniformFilterMinX = gl.glGetUniformLocation(this.shaderProgram, "filterMinX");
+		this.uniformFilterMaxX = gl.glGetUniformLocation(this.shaderProgram, "filterMaxX");
+		this.uniformFilterGradient = gl.glGetUniformLocation(this.shaderProgram, "filterGradient");
+		this.uniformFilterConstant = gl.glGetUniformLocation(this.shaderProgram, "filterConstant");
     	gl.glEnable(GL_BLEND);
     	
 		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -156,6 +164,20 @@ public class Renderer {
 			CloudRegion cr = slice.region;
 			
 			gl.glUniform1f(this.uniformAlphaFudgeHandle, cloud.intensity.value);
+			//--filtery doodle TODO probably move this out one level of the loop
+			
+			Christogram.Filter filter = cloud.getFilter();
+			gl.glUniform1f(this.uniformFilterMinX, filter.minX);
+			gl.glUniform1f(this.uniformFilterMaxX, filter.maxX);
+			
+			float gradient = (filter.maxY - filter.minY) / (filter.maxX - filter.minX);
+			float constant = filter.minY - gradient * filter.minX;
+			
+			gl.glUniform1f(this.uniformFilterGradient, gradient);
+			gl.glUniform1f(this.uniformFilterConstant, constant);
+
+			System.out.println("minX:" + filter.minX);
+			System.out.println("maxX:" + filter.maxX);
 			
 			gl.glUniform4f(this.uniformColorHandle, cloud.color.getRed(), cloud.color.getGreen(), cloud.color.getBlue(), cloud.color.getAlpha());
 	    	Matrix4 m = new Matrix4();

@@ -14,6 +14,8 @@ import java.util.List;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import org.omg.CORBA.PRIVATE_MEMBER;
 
@@ -38,7 +40,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 
 	private float selectionBegin = 0f;
 	private float selectionCurrent = 0f;
-	private Filter currentDistribution;
+	private Filter currentFilter;
 	
 	public Christogram(float[] values, float min, float max, int buckets) {
 		this.min = min;
@@ -48,7 +50,9 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		this.addMouseMotionListener(this);
 		this.addMouseListener(this);
 		
-		this.currentDistribution = Filter.nextDefault();
+		this.currentFilter = Filter.distributionWithLinearIncrease(0f, 1f);
+		this.currentFilter.minX = this.min;
+		this.currentFilter.maxX = this.max;
 	}
 	
 	public Christogram(int[]counts, float min, float max) {
@@ -59,7 +63,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 
 		this.addMouseMotionListener(this);
 		this.addMouseListener(this);
-		this.currentDistribution = Filter.nextDefault();
+		this.currentFilter = Filter.distributionWithLinearIncrease(0f, 1f);
 
 	}
 	
@@ -101,8 +105,8 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		//--draw selection
 		
 		//--figure out which one is on the left and which is on the right
-		float minSelection = selectionBegin < selectionCurrent ? selectionBegin : selectionCurrent;
-		float maxSelection = selectionBegin < selectionCurrent ? selectionCurrent : selectionBegin;
+		float minSelection = this.currentFilter.minX;//selectionBegin < selectionCurrent ? selectionBegin : selectionCurrent;
+		float maxSelection = this.currentFilter.maxX;//selectionBegin < selectionCurrent ? selectionCurrent : selectionBegin;
 		
 		//--find the proportion along the chart each is
 		float startProportion = (minSelection - min)/(max - min);
@@ -117,16 +121,16 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		
 		//--draw distribution line within selection
 		g.setColor(new Color(1.0f, 0f, 0f, 1f));
-		if (this.currentDistribution.isExponential) {
-			height = (int) (this.currentDistribution.maxX * chartHeight()) - (int)(this.currentDistribution.minX * chartHeight());
+		if (this.currentFilter.isExponential) {
+			height = (int) (this.currentFilter.maxY * chartHeight()) - (int)(this.currentFilter.minY * chartHeight());
 			x1 = x1 - width;
-			y1 = (int) (chartBot() - this.currentDistribution.minX * chartHeight()) - height * 2;
+			y1 = (int) (chartBot() - this.currentFilter.minY * chartHeight()) - height * 2;
 			g.drawArc(x1, y1, width * 2, height * 2, 270, 90);
 		}
 		else {
 			int x2 = x1 + width;
-			y1 = (int) (chartBot() - this.currentDistribution.minX * chartHeight());
-			int y2 = (int) (chartBot() - this.currentDistribution.maxX * chartHeight());
+			y1 = (int) (chartBot() - this.currentFilter.minY * chartHeight());
+			int y2 = (int) (chartBot() - this.currentFilter.maxY * chartHeight());
 			g.drawLine(x1, y1, x2, y2);	
 		}
 		
@@ -264,6 +268,8 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		if (this.tentativeSelectionBegin!=Float.MIN_VALUE) 
 			this.selectionBegin = tentativeSelectionBegin;
 		this.selectionCurrent =  proportionAtPixelX(e.getX());
+		this.currentFilter.updateWithXBounds(this.selectionBegin, this.selectionCurrent);
+		this.changeListener.stateChanged(new ChangeEvent(this));
 		this.repaint();
 	}
 
@@ -272,6 +278,8 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	public void mouseClicked(MouseEvent e) {}
 
 	private float tentativeSelectionBegin = Float.MIN_VALUE;
+
+	private ChangeListener changeListener;
 	@Override
 	public void mousePressed(MouseEvent e) {
 		this.tentativeSelectionBegin = proportionAtPixelX(e.getX());
@@ -281,7 +289,8 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	public void mouseReleased(MouseEvent e) {
 		float tentativeSelectionEnd = proportionAtPixelX(e.getX());
 		if (tentativeSelectionEnd == tentativeSelectionBegin) {
-			this.currentDistribution = Filter.nextDefault();
+			this.currentFilter.nextDefaultDistribution();
+			this.changeListener.stateChanged(new ChangeEvent(this));
 			this.repaint();
 		}
 	}
@@ -307,7 +316,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		public float maxX;
 		public float minY = 0f;
 		public float maxY = 1f;
-		public final boolean isExponential;
+		public boolean isExponential;
 		
 		public Filter(float minX, float maxX, float minY, float maxY, boolean isExponential) {
 			this.minX = minX;
@@ -317,6 +326,33 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 			this.isExponential = isExponential;
 		}
 		
+		public void updateWithXBounds(float selectionBegin,
+				float selectionCurrent) {
+			this.minX = selectionBegin < selectionCurrent ? selectionBegin : selectionCurrent;
+			this.maxX = selectionBegin > selectionCurrent ? selectionBegin : selectionCurrent;
+		}
+
+		public void nextDefaultDistribution() {
+			currentDefault = ++currentDefault % 3;
+			switch (currentDefault) {
+			case 0:
+				this.isExponential = false;
+				this.minY = 0f;
+				this.maxY = 1f;
+				break;
+			case 1:
+				this.isExponential = false;
+				this.minY = 0.8f;
+				this.maxY = 0.8f;
+				break;
+			case 2:
+				this.isExponential = true;
+				this.minY = 0f;
+				this.maxY = 1f;
+				break;
+			}
+		}
+
 		private Filter(float start, float end, boolean isExponential) {
 			this.minX = start;
 			this.maxX = end;
@@ -335,21 +371,28 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 			return new Filter(startValue, endValue, true);
 		}
 		
-		private static int currentDefault = -1;
-		public static Filter nextDefault() {
-			currentDefault = ++currentDefault % 3;
-			switch (currentDefault) {
-			case 0:
-				return Filter.distributionWithLinearIncrease(0f, 1f);
-			case 1:
-				return Filter.distributionWithStaticValue(1f);
-			case 2:
-				return Filter.distributionWithExponentialIncrease(0f, 1f);
-			default:
-				return null;
-			}
-		}
+		private static int currentDefault = 0;
+//		public static Filter nextDefault() {
+//			currentDefault = ++currentDefault % 3;
+//			switch (currentDefault) {
+//			case 0:
+//				return Filter.distributionWithLinearIncrease(0f, 1f);
+//			case 1:
+//				return Filter.distributionWithStaticValue(1f);
+//			case 2:
+//				return Filter.distributionWithExponentialIncrease(0f, 1f);
+//			default:
+//				return null;
+//			}
+//		}
+		
 	}
 	
-
+	public Filter getCurrentFilter() {
+		return this.currentFilter;
+	}
+	
+	public void addChangeListener(ChangeListener changeListener) {
+		this.changeListener = changeListener;
+	}
 }
