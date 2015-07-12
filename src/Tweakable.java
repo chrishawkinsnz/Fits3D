@@ -150,9 +150,10 @@ public abstract class Tweakable {
 	
 	public static class ClickySlider extends Slidable {
 		public ClickySlider(Attribute attrbute, float min, float max, float initialValue, int steps) {
-			super(attrbute, min, max, steps);
+			super(attrbute, min, max, initialValue);
 			slider.setPaintTicks(true);
-			slider.setSnapToTicks(true);			
+			slider.setSnapToTicks(true);
+
 		}
 		
 		@Override

@@ -1,6 +1,4 @@
-import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public abstract class Attribute {
 	public String displayName;
@@ -83,15 +81,15 @@ public abstract class Attribute {
 		}
 	}
 	
-	public static class Name extends Attribute {
+	public static class TextAttribute extends Attribute {
 		public String value;
-		public Name(String displayName, String value, boolean shouldAggregate) {
+		public TextAttribute(String displayName, String value, boolean shouldAggregate) {
 			super(displayName, shouldAggregate);
 			this.value = value;
 		}
 	}
 	
-	public static class PathName extends Name {
+	public static class PathName extends TextAttribute {
 		public PathName(String displayName, String value, boolean shouldAggregate) {
 			super(displayName, value, shouldAggregate);
 		}

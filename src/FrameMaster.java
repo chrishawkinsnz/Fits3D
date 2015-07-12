@@ -39,6 +39,7 @@ import javax.swing.event.ListSelectionListener;
 import net.miginfocom.swing.MigLayout;
 
 public class FrameMaster extends JFrame implements GLEventListener {
+
     private static final long serialVersionUID = 1L;
     
     private static FrameMaster singleFrameMaster;
@@ -52,7 +53,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	
 	private boolean debug = false;
 	
-	private boolean rendererNeedsNewPointCloud = false;
 	private MouseController mouseController;
 	
 	private int drawableWidth = 0;
@@ -115,12 +115,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         canvas.addMouseWheelListener(this.mouseController);
     }
     
-
-    
-    public static boolean pointCloudNeedsUpdatedPointCloud;
-	public static PointCloud pointCloudToUpdate;
-	public static float desiredPointCloudFidelity;
-    public AttributeDisplayManager  attributeDisplayManager = new AttributeDisplayManager();
+	public AttributeDisplayManager  attributeDisplayManager = new AttributeDisplayManager();
     private void reloadAttributePanel() {
     	if (this.attributPanel != null) {
     		this.getContentPane().remove(this.attributPanel);
@@ -206,24 +201,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
         filePanel.setBackground(colorBackground);
         filePanel.setPreferredSize(new Dimension(260, 500));
 
-        
-        //--Graff
-        
-//        float []dubs = new float[50];
-//        for (int i = 0; i < dubs.length ; i++) {
-//        	dubs [i] = (float)i * 1.2f;
-//        }
-//        
-//        int bins = 20;
-//        Christogram christogram = new Christogram(dubs, 0f,50f * 1.2f, bins);
-//        christogram.setXAxisTitle("Frequency");
-//        christogram.setLeftInset(0);
-//        christogram.setRightInset(0);
-//        
-//        filePanel.add(christogram);
-//        christogram.setPreferredSize(new Dimension(200, 150));
-//        christogram.setMinimumSize(new Dimension(200, 150));
-//        christogram.setBackground(Color.pink);
         return filePanel;        
     }
     
@@ -242,10 +219,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
     private void loadFile(String fileName) {
     	PointCloud pc = new PointCloud(fileName);
     	this.pointClouds.add(pc);
-    	pc.readFitsAtQualityLevel(0.1f);
+    	pc.readFits();
     	this.listModel.addElement(pc);
-    	this.rendererNeedsNewPointCloud = true;
-    	setNeedsDisplay();
+		setNeedsDisplay();
     }
     
     private JMenuBar makeMenuBar() {
@@ -285,18 +261,22 @@ public class FrameMaster extends JFrame implements GLEventListener {
     }
     
     @Override
-    public void display(GLAutoDrawable drawable) {    
-    	if (this.rendererNeedsNewPointCloud) {
+    public void display(GLAutoDrawable drawable) {
+		boolean needsFreshRenderer = false;
+		//--check all the point clouds and if they have a pending region create a new renderer.
+		for (PointCloud pc : this.pointClouds) {
+			if (pc.pendingRegion != null) {
+				pc.regions.clear();
+				pc.addRegion(pc.pendingRegion, pc.regions);
+				pc.pendingRegion = null;
+				needsFreshRenderer = true;
+			}
+		}
+    	if (needsFreshRenderer){
     		this.renderer = new Renderer(this.pointClouds, this.viewer, this.gl);
     		this.renderer.informOfResolution(this.drawableWidth, this.drawableHeight);
-    		this.rendererNeedsNewPointCloud = false;
     	}
-    	
-    	if (pointCloudNeedsUpdatedPointCloud) {
-    		pointCloudToUpdate.readFitsAtQualityLevel(desiredPointCloudFidelity);
-    		pointCloudNeedsUpdatedPointCloud = false;
-    	}
-    	
+
     	if (this.renderer != null) {
     			this.renderer.display();  
     	}    	
@@ -307,7 +287,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
             int height) {
     	this.drawableHeight = height;
     	this.drawableWidth = width;
-		System.out.println("reshape:"+this.drawableWidth+"x"+this.drawableHeight);
 
     	if (renderer!= null) {
     		renderer.informOfResolution(width, height);
@@ -317,5 +296,4 @@ public class FrameMaster extends JFrame implements GLEventListener {
     public static void setNeedsDisplay() {
     	singleFrameMaster.canvas.display();
     }
-    
 }

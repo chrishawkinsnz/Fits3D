@@ -178,9 +178,6 @@ public class Renderer {
 			
 			gl.glUniform1f(this.uniformFilterGradient, gradient);
 			gl.glUniform1f(this.uniformFilterConstant, constant);
-
-			System.out.println("minX:" + filter.minX);
-			System.out.println("maxX:" + filter.maxX);
 			
 			gl.glUniform4f(this.uniformColorHandle, cloud.color.getRed(), cloud.color.getGreen(), cloud.color.getBlue(), cloud.color.getAlpha());
 	    	Matrix4 m = new Matrix4();

@@ -164,11 +164,7 @@ public class RegionRepresentation {
 			}
 
 			System.out.println("fits file loaded " + maxWidth + " x " + maxHeight + " x " + maxDepth);
-			System.out.println("min" + minn);
-			System.out.println("max" + maxx);
-			for (int bindex = 0; bindex < nBuckets; bindex++) {
-				System.out.println("bucket"+bindex+": "+ buckets[bindex]);	
-			}
+
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, e.getClass().getName()+": " + e.getMessage(), "Error!", JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();

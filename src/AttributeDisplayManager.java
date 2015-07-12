@@ -18,8 +18,8 @@ public class AttributeDisplayManager {
     		String name = urlComponentsStrings[urlComponentsStrings.length - 1];
     		tweakable = new Tweakable.ChrisLabel(name);
     	}
-    	else if (attribute instanceof Attribute.Name) {
-    		Attribute.Name nAttribute = (Attribute.Name)attribute;
+    	else if (attribute instanceof Attribute.TextAttribute) {
+    		Attribute.TextAttribute nAttribute = (Attribute.TextAttribute)attribute;
     		tweakable = new Tweakable.ChrisLabel(nAttribute.value);
     	}
     	else if (attribute instanceof Attribute.SteppedRangeAttribute) {
