@@ -1,17 +1,16 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
-import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GL3;
 
 import static com.jogamp.opengl.GL3.*;
 
 public class ShaderHelper {
 
-    public static int programWithShaders2(GL3 gl, String vertexShaderPath, String fragmentShaderPath){
+    public static int programWithShaders2(GL3 gl, String vertexShaderFileName, String fragmentShaderFileName){
     	int shaderProgram = gl.glCreateProgram();
 		int vertexShader = gl.glCreateShader(GL_VERTEX_SHADER);
 		int fragmentShader = gl.glCreateShader(GL_FRAGMENT_SHADER);
@@ -19,10 +18,12 @@ public class ShaderHelper {
 		//--parse in that fucking shader using string parsing apparently.
 		StringBuilder vertexShaderSource = new StringBuilder();
 		StringBuilder fragmentShaderSource = new StringBuilder();
-		
+
 		//--vert first
 		try {
-			BufferedReader reader = new BufferedReader(new FileReader(vertexShaderPath));
+			InputStream is = ShaderHelper.class.getClass().getResourceAsStream("/shaders/" + vertexShaderFileName);
+			InputStreamReader isr = new InputStreamReader(is);
+			BufferedReader reader = new BufferedReader(isr);
 
 			String line;
 			while((line = reader.readLine()) != null) {
@@ -37,7 +38,11 @@ public class ShaderHelper {
 		
 		//then frag
 		try {
-			BufferedReader reader = new BufferedReader(new FileReader(fragmentShaderPath));
+			InputStream is = ShaderHelper.class.getClass().getResourceAsStream("/shaders/" + fragmentShaderFileName);
+			InputStreamReader isr = new InputStreamReader(is);
+			BufferedReader reader = new BufferedReader(isr);
+
+
 			String line;
 			while((line = reader.readLine()) != null) {
 				fragmentShaderSource.append(line).append("\n");

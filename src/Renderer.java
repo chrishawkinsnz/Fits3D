@@ -95,7 +95,10 @@ public class Renderer {
 			}
 		}
 		
-		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "/Users/chrishawkins/shaders/shader2.vert", "/Users/chrishawkins/shaders/shader2.frag");
+//		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "/Users/chrishawkins/shaders/shader2.vert", "/Users/chrishawkins/shaders/shader2.frag");
+		//this.shaderProgram = ShaderHelper.programWithShaders2(gl, "bin/shaders/shader2.vert", "bin/shaders/shader2.frag");
+		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "shader2.vert", "shader2.frag");
+
     	this.uniformMvpHandle = gl.glGetUniformLocation(this.shaderProgram, "mvp");
 		this.uniformAlphaFudgeHandle = gl.glGetUniformLocation(this.shaderProgram, "alphaFudge");
 		this.uniformPointAreaHandle = gl.glGetUniformLocation(this.shaderProgram, "pointArea");
