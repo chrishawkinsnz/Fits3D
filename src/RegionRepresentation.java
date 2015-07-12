@@ -6,10 +6,7 @@ import java.util.List;
 import java.util.Random;
 
 import javax.swing.JOptionPane;
-import javax.vecmath.Tuple2f;
 
-import org.apache.commons.math3.util.Pair;
-import org.omg.CORBA.PUBLIC_MEMBER;
 
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
@@ -58,12 +55,13 @@ public class RegionRepresentation {
 		try{
 			ImageHDU hdu = (ImageHDU) fits.getHDU(0);
 			MinAndMax minAndMax = minAndMaxBasedOnRoughOnePercentRushThrough(hdu, volume, fits);
-
+			this.estMax = minAndMax.max;
+			this.estMin = minAndMax.min;
 
 			int sourceMaxWidth = hdu.getAxes()[0];
 			int sourceMaxHeight = hdu.getAxes()[1];
-			int sourceMaxDepth = hdu.getAxes()[2];
-			
+			int sourceMaxDepth = hdu.getAxes().length > 2? hdu.getAxes()[2] : 0;
+
 			//stirde of 1 = full fidelity , stride of 2 = half fidelity
 			int stride = (int)(1.0f/fidelity);
 			System.out.println("stride:"+stride);
@@ -107,7 +105,10 @@ public class RegionRepresentation {
 			default:
 				throw new IOException("Whoops, no support forthat file format (BitPix = "+bitPix+") at the moment.  Floats and Doubles only sorry.");
 			}
-			
+
+
+			int numNeg = 0;
+			int numTot = 0;
 			int nBuckets = 100;
 			buckets = new int[nBuckets];
 			float min = minAndMax.min;
@@ -128,8 +129,8 @@ public class RegionRepresentation {
 							for (int z = 0; z < maxDepth; z++) {
 								float val = (float)storaged[z * stride];
 								System.out.println(val);
-								int bucketIndex = (int)(val/stepSize);
-								if (bucketIndex >= 0 && bucketIndex < nBuckets){
+								int bucketIndex = (int)(val - estMin/stepSize);
+								if (bucketIndex >= 0 && bucketIndex < nBuckets && !Double.isNaN(val)){
 									buckets[bucketIndex]++;	
 								}
 								
@@ -139,9 +140,10 @@ public class RegionRepresentation {
 						else if (dataType == DataType.FLOAT) {
 							adi.read(storagef, 0, storagef.length);
 							for (int z = 0; z < maxDepth; z++) {
-								float val = (float)storagef[z * stride];	
-								int bucketIndex = (int)(val/stepSize);
-								if (bucketIndex >= 0 && bucketIndex < nBuckets){
+								float val = (float)storagef[z * stride];
+
+								int bucketIndex = (int)((val - estMin)/stepSize);
+								if (bucketIndex >= 0 && bucketIndex < nBuckets && !Float.isNaN(val)){
 									buckets[bucketIndex]++;	
 								} 
 								data[x][y][z] = val;
@@ -180,6 +182,14 @@ public class RegionRepresentation {
 		float min,max;
 	}
 	
+	private MinAndMax minAndMaxBasedOnHeader(ImageHDU hdu) {
+		double max = hdu.getMaximumValue();
+		double min = hdu.getMinimumValue();
+		MinAndMax mam = new MinAndMax();
+		mam.min = (float)min;
+		mam.max = (float)max;
+		return mam;
+	}
 	private MinAndMax minAndMaxBasedOnRoughOnePercentRushThrough(ImageHDU hdu, Volume volume, Fits fits) {
 		MinAndMax mam = new MinAndMax();
 		
@@ -193,7 +203,7 @@ public class RegionRepresentation {
 
 			int sourceMaxWidth = hdu.getAxes()[0];
 			int sourceMaxHeight = hdu.getAxes()[1];
-			int sourceMaxDepth = hdu.getAxes()[2];
+			int sourceMaxDepth = hdu.getAxes().length > 2? hdu.getAxes()[2] : 0;
 			
 			//stirde of 1 = full fidelity , stride of 2 = half fidelity
 			int stride = (int)(1.0f/shittyFidelity);
@@ -249,20 +259,23 @@ public class RegionRepresentation {
 							adi.read(storaged, 0, storaged.length);
 							for (int z = 0; z < maxDepth; z++) {
 								float val = (float)storaged[z * stride];
+								if (Double.isNaN(val))
+									continue;
 								if (val < minn) minn = val;
 								if (val > maxx) maxx = val;
-								if (!Float.isNaN(val))
-									allOfThemFloats.add(val);
+
+								allOfThemFloats.add(val);
 							}
 						} 
 						else if (dataType == DataType.FLOAT) {
 							adi.read(storagef, 0, storagef.length);
 							for (int z = 0; z < maxDepth; z++) {
 								float val = (float)storagef[z * stride];
+								if (Float.isNaN(val))
+									continue;
 								if (val < minn) minn = val;
 								if (val > maxx) maxx = val;
-								if (!Float.isNaN(val))
-									allOfThemFloats.add(val);
+								allOfThemFloats.add(val);
 							}
 						}
 
@@ -288,13 +301,13 @@ public class RegionRepresentation {
 					return Float.compare(o1.floatValue(), o2.floatValue());
 				}
 			});
-			int highIndex = (int)(0.99 *(float) allOfThemFloats.size());
-			int lowIndex = (int)(0.01 * allOfThemFloats.size());
-			this.estMax = allOfThemFloats.get(highIndex);
-			this.estMin = allOfThemFloats.get(lowIndex);
-			minn = this.estMin;
-			maxx = this.estMax;
-			
+//			int highIndex = (int)(0.99 *(float) allOfThemFloats.size());
+//			int lowIndex = (int)(0.01 * allOfThemFloats.size());
+//			maxx = allOfThemFloats.get(highIndex);
+//			this.estMin = allOfThemFloats.get(lowIndex);
+//			minn = this.estMin;
+//			maxx = this.estMax;
+
 			
 	}catch(Exception e){
 		e.printStackTrace();
@@ -321,9 +334,10 @@ public class RegionRepresentation {
 		for (float y = 0.0f; y < 1.0f; y += yStride) {
 			for (float x = 0.0f; x < 1.0f; x += xStride) {
 				float value = data[(int)(x * this.numPtsX)][(int)(y * this.numPtsY)][(int)(z * this.numPtsZ)];
-				if (!Float.isNaN(value) && value > 0.0f) {
+				if (!Float.isNaN(value) ) {
 					float fudge = r.nextFloat();
 					fudge = fudge - 0.5f;
+
 					vertexData[pts * 3 + 0] = x + fudge * xStride;
 					vertexData[pts * 3 + 1] = y + fudge * yStride;;
 					vertexData[pts * 3 + 2] = z + fudge * zStride;;

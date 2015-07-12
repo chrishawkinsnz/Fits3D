@@ -1,6 +1,8 @@
 import java.awt.image.BufferedImage;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 
 import javax.imageio.ImageIO;
 import javax.swing.UIManager;
@@ -44,5 +46,15 @@ public class Fits3D {
 	     }
 	 
 		 new FrameMaster();
+	}
+	static class IdealBlockSize {
+	    // You could alternatively use BufferedInputStream and System.in .
+	    private static class MyBufferedOS extends BufferedOutputStream {
+	        public MyBufferedOS() { super(System.out); }
+	        public MyBufferedOS(OutputStream out) { super(out); }
+	        public int bufferSize() { return buf.length; }
+	    }
+
+	    public static int VALUE = new IdealBlockSize.MyBufferedOS().bufferSize();
 	}
 }

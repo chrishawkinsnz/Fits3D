@@ -23,6 +23,7 @@ public class ShaderHelper {
 		//--vert first
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(vertexShaderPath));
+
 			String line;
 			while((line = reader.readLine()) != null) {
 				vertexShaderSource.append(line).append("\n");
@@ -30,6 +31,7 @@ public class ShaderHelper {
 			reader.close();
 		} catch (IOException e) {
 			System.err.println("Somehting went wrton with the vertex shader reading");
+			e.printStackTrace();
 			System.exit(1);
 		}
 		
@@ -43,6 +45,7 @@ public class ShaderHelper {
 			reader.close();
 		} catch (IOException e) {
 			System.err.println("Somehting went wrton with the frag shader reading");
+			e.printStackTrace();
 			System.exit(1);
 		}
 		

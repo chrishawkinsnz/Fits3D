@@ -119,8 +119,14 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		g.setColor(new Color(1.0f, 0.5f, 0.5f, 0.5f));
 		g.fillRect(x1, y1, width, height);
 		
+		g.setColor(new Color(1.0f, 0f, 0f, 1f));
+		
+		g.drawLine(x1, chartBot(), x1, chartTop());
+		g.drawLine(x1 + width, chartBot(), x1 + width, chartTop());
+		
 		//--draw distribution line within selection
 		g.setColor(new Color(1.0f, 0f, 0f, 1f));
+		
 		if (this.currentFilter.isExponential) {
 			height = (int) (this.currentFilter.maxY * chartHeight()) - (int)(this.currentFilter.minY * chartHeight());
 			x1 = x1 - width;

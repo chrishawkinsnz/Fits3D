@@ -49,8 +49,9 @@ public class PointCloud {
 	
 	public Attribute.Name fileName;
 	private Attribute.FilterSelectionAttribute filterSelection;
-	 
+	 private static int time = 0;
 	private static final Color[] colors = {Color.GREEN, Color.RED, Color.BLUE, Color.ORANGE, Color.PINK};
+//	 private static final Color[] colors = {Color.GREEN};
 	
 	//--histogram estimation data
 	
@@ -114,8 +115,22 @@ public class PointCloud {
 				e.printStackTrace();
 			}
 			
-		
-			loadRegionAtFidelity(1f);
+//			switch (time++) {
+//			case 0:
+//				loadRegionAtFidelity(0.05f);
+//				break;
+//			case 1:
+//				loadRegionAtFidelity(0.1f);
+//				break;
+//			case 2:
+				loadRegionAtFidelity(0.4f);
+//				break;
+//			case 3:
+//				loadRegionAtFidelity(1f);
+//				break;
+//			}
+			
+			
 			
 		} catch (FitsException e) {
 			e.printStackTrace();
@@ -128,6 +143,7 @@ public class PointCloud {
 		CloudRegion cr = new CloudRegion(fits, v, fidelity);
 		this.addRegion(cr);
 	}
+	
 	public List<CloudRegion> getRegions() {
 		return regions;
 	}

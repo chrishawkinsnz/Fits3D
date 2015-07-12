@@ -35,6 +35,7 @@ public abstract class Tweakable {
 		
 	protected abstract Object getValue();
 	
+        
 	/**
 	 * A toggleable checkbox for selecting a boolean value
 	 * @author chrishawkins
