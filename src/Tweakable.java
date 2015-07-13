@@ -26,6 +26,7 @@ public abstract class Tweakable {
 	
 	
 	
+	
 	public void notifyAttributes() { 
 		for (Attribute attribute : attributes) {
 			attribute.notifyWithValue(this.getValue());
@@ -34,6 +35,7 @@ public abstract class Tweakable {
 		
 	protected abstract Object getValue();
 	
+        
 	/**
 	 * A toggleable checkbox for selecting a boolean value
 	 * @author chrishawkins
@@ -148,9 +150,10 @@ public abstract class Tweakable {
 	
 	public static class ClickySlider extends Slidable {
 		public ClickySlider(Attribute attrbute, float min, float max, float initialValue, int steps) {
-			super(attrbute, min, max, steps);
+			super(attrbute, min, max, initialValue);
 			slider.setPaintTicks(true);
-			slider.setSnapToTicks(true);			
+			slider.setSnapToTicks(true);
+
 		}
 		
 		@Override
@@ -198,14 +201,17 @@ public abstract class Tweakable {
 		
 	}
 	
-	public static class ChristogramTweakable implements AttributeDisplayer {
+	public static class ChristogramTweakable extends Tweakable implements AttributeDisplayer, ChangeListener {
 		private Christogram christogram;
 		
-		public ChristogramTweakable(int[]buckets, float min, float max){
+		public ChristogramTweakable(int[]buckets, Attribute attribute, float min, float max){
+			super();
 	        christogram = new Christogram(buckets, min, max);
 	        christogram.setXAxisTitle("Intensity");
 	        christogram.setMinimumSize(new Dimension(800,200));
 	        christogram.setPreferredSize(new Dimension(800,200));
+	        christogram.addChangeListener(this);
+	        this.attributes.add(attribute);
 		}
 		
 		@Override
@@ -223,5 +229,17 @@ public abstract class Tweakable {
 		public boolean isDoubleLiner() {
 			return true;
 		}
+		
+		public void stateChanged(ChangeEvent e) {
+			notifyAttributes();
+		}
+
+		@Override
+		protected Object getValue() {
+			return christogram.getCurrentFilter();
+		}
 	}
+	
 }
+
+

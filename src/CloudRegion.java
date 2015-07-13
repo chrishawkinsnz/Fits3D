@@ -37,7 +37,10 @@ public class CloudRegion {
 		return this.currentRepresentation.getSlices();
 	}
 	
-	
+	public void clear() {
+		this.bestRepresentation.clear();
+		this.currentRepresentation.clear();
+	}
 	public int numberOfPoints() {
 		return this.currentRepresentation.validPts;
 	}

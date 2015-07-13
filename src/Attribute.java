@@ -1,7 +1,4 @@
-import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-import java.util.function.Function;
-
 
 public abstract class Attribute {
 	public String displayName;
@@ -84,48 +81,33 @@ public abstract class Attribute {
 		}
 	}
 	
-	public static class Name extends Attribute {
+	public static class TextAttribute extends Attribute {
 		public String value;
-		public Name(String displayName, String value, boolean shouldAggregate) {
+		public TextAttribute(String displayName, String value, boolean shouldAggregate) {
 			super(displayName, shouldAggregate);
 			this.value = value;
 		}
 	}
 	
-	public static class PathName extends Name {
+	public static class PathName extends TextAttribute {
 		public PathName(String displayName, String value, boolean shouldAggregate) {
 			super(displayName, value, shouldAggregate);
 		}
 	}
 	
 	public static class FilterSelectionAttribute extends Attribute {
-		public float minX;
-		public float maxX;
-		public float minY;
-		public float maxY;
-		public boolean isExponential;
-		public int[] buckets;
-		public float estMin;
-		public float estMax;
+		public Christogram.Filter filter;
 		
-		public FilterSelectionAttribute(String displayName, boolean shouldAggregate, Christogram.FilterSelectionData data) {
+		public FilterSelectionAttribute(String displayName, boolean shouldAggregate, Christogram.Filter filter) {
 			super(displayName, shouldAggregate);
-			this.minX = data.minX;
-			this.maxX = data.maxX;
-			this.minY = data.minY;
-			this.maxY = data.maxY;
-			this.isExponential = data.isExponential;
+			this.filter = filter;
 		}
 
 		@Override
 		public void notifyWithValue(Object obj) {
 			super.notifyWithValue(obj);
-			Christogram.FilterSelectionData data = (Christogram.FilterSelectionData)obj;
-			this.minX = data.minX;
-			this.maxX = data.maxX;
-			this.minY = data.minY;
-			this.maxY = data.maxY;
-			this.isExponential = data.isExponential;
+			Christogram.Filter filter = (Christogram.Filter)obj;
+			this.filter = filter;
 		}
 	}
 }
