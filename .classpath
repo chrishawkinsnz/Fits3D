@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry exported="true" kind="lib" path="commons-compress-1.9.jar"/>
+	<classpathentry exported="true" kind="lib" path="commons-math3-3.4.1.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/Jogl/commons-math3-3.4.1-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry exported="true" kind="lib" path="fits.jar"/>
+	<classpathentry exported="true" kind="lib" path="miglayout-4.0-swing.jar"/>
+	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/JOGL"/>
+	<classpathentry exported="true" kind="lib" path="jreliability-1.2.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="jfreechart-1.0.19.jar" sourcepath="/Users/chrishawkins/Downloads/jfreechart-1.0-2.19/source"/>
+	<classpathentry exported="true" kind="lib" path="jcommon-1.0.23.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
