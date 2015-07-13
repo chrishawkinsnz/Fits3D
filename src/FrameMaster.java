@@ -11,7 +11,7 @@ import java.util.List;
 
 import com.jogamp.opengl.GL3;
 import com.jogamp.opengl.DebugGL3;
-import com.jogamp.opengl.GLAutoDrawable;
+import com.jogamp.opengl.GLAutoDrawable;/**/
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLProfile;
@@ -34,7 +34,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-
 
 import net.miginfocom.swing.MigLayout;
 
