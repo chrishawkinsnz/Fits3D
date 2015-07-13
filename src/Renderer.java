@@ -160,8 +160,7 @@ public class Renderer {
 			if (flippityFlop) {
 				sliceIndex = allSlicesLikeEver.size() - 1 - i;
 			}
-			
-			
+
 			VertexBufferSlice slice = allSlicesLikeEver.get(sliceIndex);
 			PointCloud cloud = slice.cloud;
 			CloudRegion cr = slice.region;

@@ -297,12 +297,6 @@ public class RegionRepresentation {
 					return Float.compare(o1.floatValue(), o2.floatValue());
 				}
 			});
-//			int highIndex = (int)(0.99 *(float) allOfThemFloats.size());
-//			int lowIndex = (int)(0.01 * allOfThemFloats.size());
-//			maxx = allOfThemFloats.get(highIndex);
-//			this.estMin = allOfThemFloats.get(lowIndex);
-//			minn = this.estMin;
-//			maxx = this.estMax;
 
 			
 	}catch(Exception e){

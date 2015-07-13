@@ -10,15 +10,13 @@ import java.util.List;
 public class PointCloud {
 
 	private final static Color[] colors = {Color.GREEN, Color.RED, Color.BLUE, Color.ORANGE, Color.PINK};
-	public final static float startingFidelity = 0.1f;
+	public final static float startingFidelity = 0.15f;
 
 	private static int clouds = 0;
 
 	public CloudRegion pendingRegion;
 
 	private Fits fits;
-
-
 
 	private final float boxWidth = 2.0f;
 	private final float boxHeight = boxWidth;
@@ -27,8 +25,7 @@ public class PointCloud {
 	private final float boxOrigZ = -0.5f * boxDepth;
 	private final float boxOrigX = -0.5f * boxWidth;
 	private final float boxOrigY = -0.5f * boxHeight;
-	
-	
+
 	final Volume volume;
 	
 	public final Color color;
@@ -46,8 +43,6 @@ public class PointCloud {
 	//--static attributes
 	public Attribute.TextAttribute fileName;
 
-
-	
 	public PointCloud(String pathName) {
 		this.regions = new ArrayList<CloudRegion>();
 		this.volume = new Volume(boxOrigX, boxOrigY, boxOrigZ, boxWidth, boxHeight, boxDepth);
@@ -66,8 +61,7 @@ public class PointCloud {
 			loadRegionAtFidelity(newQuality);
 		};
 		attributes.add(quality);
-		
-		
+
 		isVisible = new Attribute.BinaryAttribute("Visible", true, true);
 		attributes.add(isVisible);
 		
@@ -90,11 +84,13 @@ public class PointCloud {
 			ImageHDU hdu = (ImageHDU)this.fits.getHDU(0);
 			attributes.add(0,new Attribute.TextAttribute("Data Type", BitPix.dataTypeForBitPix(hdu.getBitPix()).name(), false));
 			attributes.add(1,new Attribute.TextAttribute("Observer", hdu.getObserver(), false));
-			attributes.add(2,new Attribute.TextAttribute("Observed", "" + hdu.getObservationDate(), false));
+			attributes.add(2, new Attribute.TextAttribute("Observed", "" + hdu.getObservationDate(), false));
+
 			String[] axesNames = {"X", "Y", "Z"};
-			for (int i = 0; i < hdu.getAxes().length; i++) {
+			for (int i = hdu.getAxes().length-1; i >= 0 ; i--) {
 				attributes.add(3,new Attribute.TextAttribute(axesNames[i] + " Resolution", "" + hdu.getAxes()[i], false));
 			}
+
 			attributes.add(6,new Attribute.TextAttribute("Instrument", hdu.getInstrument(), false));
 			for (Attribute attr : attributes) {
 				if (attr instanceof Attribute.TextAttribute) {
