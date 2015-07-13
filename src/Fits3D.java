@@ -1,8 +1,5 @@
 import java.awt.image.BufferedImage;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 
 import javax.imageio.ImageIO;
 import javax.swing.UIManager;
@@ -22,7 +19,7 @@ public class Fits3D {
 	        	System.setProperty("com.apple.mrj.application.apple.menu.about.version", "0.1");
 	        	BufferedImage img = null;
 	        	try {
-	        	    img = ImageIO.read(new File("stupidSpaceIcon.png"));
+	        	    img = ImageIO.read(new File("resources/stupidSpaceIcon.png"));
 	        	    
 	        	    Application.getApplication().setDockIconImage(img);
 	        	} catch (IOException e) {
