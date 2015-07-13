@@ -50,7 +50,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	private Renderer renderer;
 	private WorldViewer viewer;
 	private GL3 gl;
-	
+
+	private PointCloud pleaseSelectThisNextChanceYouGet;
 	private boolean debug = false;
 	
 	private MouseController mouseController;
@@ -78,13 +79,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	this.setVisible(true);
     	this.setResizable(true);
     	this.setLayout(new BorderLayout());
-    	
-            
        
         this.setJMenuBar(makeMenuBar());
-                
 
-    
         canvas = makeCanvas();
         attachControlsToCanvas(canvas);
         
@@ -221,6 +218,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	this.pointClouds.add(pc);
     	pc.readFits();
     	this.listModel.addElement(pc);
+		this.pleaseSelectThisNextChanceYouGet = pc;
 		setNeedsDisplay();
     }
     
@@ -276,6 +274,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
     		this.renderer = new Renderer(this.pointClouds, this.viewer, this.gl);
     		this.renderer.informOfResolution(this.drawableWidth, this.drawableHeight);
     	}
+		if (this.pleaseSelectThisNextChanceYouGet != null) {
+			this.list.setSelectedValue(pleaseSelectThisNextChanceYouGet, true);
+			pleaseSelectThisNextChanceYouGet = null;
+		}
 
     	if (this.renderer != null) {
     			this.renderer.display();  
