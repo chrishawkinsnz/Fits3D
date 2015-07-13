@@ -136,6 +136,14 @@ public class PointCloud {
 		Collections.sort(existingRegions, new RegionOrderer());
 	}
 
+	public void clearRegions() {
+		for (CloudRegion region : regions) {
+			region.clear();
+		}
+		regions.clear();
+	}
+
+
 	public String toString() {
 		return this.fileName.value;
 	}

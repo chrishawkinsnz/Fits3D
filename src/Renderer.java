@@ -62,15 +62,19 @@ public class Renderer {
 
 
 	public Renderer(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl){
+		setupWith(pointClouds, viewer, gl);
+	}
+
+	public void setupWith(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl){
 		this.pointClouds = pointClouds;
 		this.gl = gl;
 		this.viewer = viewer;
-		
+
 		int nSlices = 0;
 		for (PointCloud cloud : this.pointClouds)
 			for (CloudRegion cr : cloud.getRegions())
 				nSlices += cr.getSlices().size();
-		
+
 		this.vertexBufferHandles = new int[nSlices];
 		this.valueBufferHandles = new int[nSlices];
 		int index = 0;
@@ -78,42 +82,43 @@ public class Renderer {
 		for (PointCloud cloud : this.pointClouds){
 			for (CloudRegion cr : cloud.getRegions()) {
 				for (VertexBufferSlice vbs : cr.getSlices()) {
-				 	gl.glGenBuffers(2, ptr, 0);
-				 	this.vertexBufferHandles[index] = ptr[0];
-				 	vbs.index = index;
-				 	
-			    	FloatBuffer vertBuffer = vbs.vertexBuffer;
-			    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBufferHandles[index]);
-			    	gl.glBufferData(GL_ARRAY_BUFFER, vertBuffer.capacity() * 4, vertBuffer, GL_STATIC_DRAW);
-					
-			    	FloatBuffer valueBuffer = vbs.valueBuffer;
-			    	this.valueBufferHandles[index] = ptr[1];
-			    	gl.glBindBuffer(GL_ARRAY_BUFFER, this.valueBufferHandles[index]);
-			    	gl.glBufferData(GL_ARRAY_BUFFER, valueBuffer.capacity() * 4, valueBuffer, GL_STATIC_DRAW);
-			    	index++;
+					gl.glGenBuffers(2, ptr, 0);
+					this.vertexBufferHandles[index] = ptr[0];
+					vbs.index = index;
+
+					FloatBuffer vertBuffer = vbs.vertexBuffer;
+					gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBufferHandles[index]);
+					gl.glBufferData(GL_ARRAY_BUFFER, vertBuffer.capacity() * 4, vertBuffer, GL_STATIC_DRAW);
+
+					FloatBuffer valueBuffer = vbs.valueBuffer;
+					this.valueBufferHandles[index] = ptr[1];
+					gl.glBindBuffer(GL_ARRAY_BUFFER, this.valueBufferHandles[index]);
+					gl.glBufferData(GL_ARRAY_BUFFER, valueBuffer.capacity() * 4, valueBuffer, GL_STATIC_DRAW);
+					index++;
 				}
 			}
 		}
-		
+
 //		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "/Users/chrishawkins/shaders/shader2.vert", "/Users/chrishawkins/shaders/shader2.frag");
 		//this.shaderProgram = ShaderHelper.programWithShaders2(gl, "bin/shaders/shader2.vert", "bin/shaders/shader2.frag");
 		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "shader2.vert", "shader2.frag");
 
-    	this.uniformMvpHandle = gl.glGetUniformLocation(this.shaderProgram, "mvp");
+		this.uniformMvpHandle = gl.glGetUniformLocation(this.shaderProgram, "mvp");
 		this.uniformAlphaFudgeHandle = gl.glGetUniformLocation(this.shaderProgram, "alphaFudge");
 		this.uniformPointAreaHandle = gl.glGetUniformLocation(this.shaderProgram, "pointArea");
 		this.uniformColorHandle = gl.glGetUniformLocation(this.shaderProgram, "pointColor");
-		
+
 		this.uniformFilterMinX = gl.glGetUniformLocation(this.shaderProgram, "filterMinX");
 		this.uniformFilterMaxX = gl.glGetUniformLocation(this.shaderProgram, "filterMaxX");
 		this.uniformFilterGradient = gl.glGetUniformLocation(this.shaderProgram, "filterGradient");
 		this.uniformFilterConstant = gl.glGetUniformLocation(this.shaderProgram, "filterConstant");
-    	gl.glEnable(GL_BLEND);
-    	
+		gl.glEnable(GL_BLEND);
+
 		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		gl.glBlendEquation(GL_FUNC_ADD);
 		gl.glDisable(GL_CULL_FACE);
-	}	
+
+	}
 	
 	public void display() {
 		

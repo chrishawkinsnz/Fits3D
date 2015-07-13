@@ -60,7 +60,7 @@ public class RegionRepresentation {
 
 			int sourceMaxWidth = hdu.getAxes()[0];
 			int sourceMaxHeight = hdu.getAxes()[1];
-			int sourceMaxDepth = hdu.getAxes().length > 2? hdu.getAxes()[2] : 0;
+			int sourceMaxDepth = hdu.getAxes().length > 2? hdu.getAxes()[2] : 1;
 
 			//stirde of 1 = full fidelity , stride of 2 = half fidelity
 			int stride = (int)(1.0f/fidelity);
@@ -324,7 +324,8 @@ public class RegionRepresentation {
 		for (float y = 0.0f; y < 1.0f; y += yStride) {
 			for (float x = 0.0f; x < 1.0f; x += xStride) {
 				float value = data[(int)(x * this.numPtsX)][(int)(y * this.numPtsY)][(int)(z * this.numPtsZ)];
-				if (!Float.isNaN(value) ) {
+//				if (!Float.isNaN(value) ) {
+				if (!Float.isNaN(value) && value > 0.0f) {
 					float fudge = r.nextFloat();
 					fudge = fudge - 0.5f;
 
@@ -337,8 +338,7 @@ public class RegionRepresentation {
 				}
 			}	
 		}
-		
-		System.out.println("Number of Points: "+pts);
+
 		FloatBuffer vertexBuffer = FloatBuffer.allocate(pts * 3);
 		vertexBuffer.put(vertexData, 0, pts * 3);
 		vertexBuffer.flip();
@@ -347,7 +347,7 @@ public class RegionRepresentation {
 		valueBuffer.put(valueData, 0, pts);
 		valueBuffer.flip();
 		long t1 = System.currentTimeMillis();
-		System.out.println("took "+(t1-t0) + " ms to load into buffers");
+		System.out.println("took "+(t1-t0) + " ms to load " + pts + "into buffers (" + (int)(zProportion * 100) + "% read)");
 		
 		VertexBufferSlice vbs = new VertexBufferSlice();
 		vbs.vertexBuffer = vertexBuffer;
@@ -365,7 +365,13 @@ public class RegionRepresentation {
 				VertexBufferSlice vbs = vertexAndValueBufferForSlice(z);
 				this.slices.add(vbs);
 			}
+			this.data = null;
 		}
 		return this.slices;
+	}
+
+	public void clear() {
+		data = null;
+		slices = null;
 	}
 }

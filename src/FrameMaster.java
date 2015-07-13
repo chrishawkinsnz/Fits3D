@@ -264,14 +264,20 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		//--check all the point clouds and if they have a pending region create a new renderer.
 		for (PointCloud pc : this.pointClouds) {
 			if (pc.pendingRegion != null) {
-				pc.regions.clear();
+				pc.clearRegions();
 				pc.addRegion(pc.pendingRegion, pc.regions);
 				pc.pendingRegion = null;
 				needsFreshRenderer = true;
 			}
 		}
     	if (needsFreshRenderer){
-    		this.renderer = new Renderer(this.pointClouds, this.viewer, this.gl);
+			if (this.renderer == null) {
+				this.renderer = new Renderer(this.pointClouds, this.viewer, this.gl);
+			}
+			else {
+				this.renderer.setupWith(this.pointClouds, this.viewer, this.gl);
+				System.gc();
+			}
     		this.renderer.informOfResolution(this.drawableWidth, this.drawableHeight);
     	}
 		if (this.pleaseSelectThisNextChanceYouGet != null) {
