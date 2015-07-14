@@ -311,8 +311,9 @@ public class RegionRepresentation {
 	private VertexBufferSlice vertexAndValueBufferForSlice(float zProportion) {
 		Random r = new Random(this.seed);
 		long t0 = System.currentTimeMillis();
-		float[] vertexData = new float[this.numPtsX * this.numPtsY * 3 * 1];
-		float[] valueData = new float[this.numPtsX * this.numPtsY * 1 * 1];
+		int extras = 100;
+		float[] vertexData = new float[this.numPtsX * this.numPtsY * 3 * 1 + extras * 3];
+		float[] valueData = new float[this.numPtsX * this.numPtsY * 1 * 1 + extras * 1];
 		
 		float xStride = 1.0f/(float)this.numPtsX;
 		float yStride = 1.0f/(float)this.numPtsY;
@@ -324,8 +325,8 @@ public class RegionRepresentation {
 		for (float y = 0.0f; y < 1.0f; y += yStride) {
 			for (float x = 0.0f; x < 1.0f; x += xStride) {
 				float value = data[(int)(x * this.numPtsX)][(int)(y * this.numPtsY)][(int)(z * this.numPtsZ)];
-//				if (!Float.isNaN(value) ) {
-				if (!Float.isNaN(value) && value > 0.0f) {
+				if (!Float.isNaN(value) ) {
+//				if (!Float.isNaN(value) && value > 0.0f) {
 					float fudge = r.nextFloat();
 					fudge = fudge - 0.5f;
 
