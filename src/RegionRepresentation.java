@@ -4,10 +4,13 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.*;
+import java.util.concurrent.Future;
 
 import javax.swing.JOptionPane;
 
 
+import com.sun.corba.se.impl.orbutil.closure.*;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.ImageHDU;
@@ -33,6 +36,7 @@ public class RegionRepresentation {
 	public float fidelity;
 
 	private List<VertexBufferSlice>slices;
+	private int totalSlicesToSlice = 999;
 	private int seed;
 	
 	/**
@@ -309,6 +313,8 @@ public class RegionRepresentation {
 	}
 	
 	private VertexBufferSlice vertexAndValueBufferForSlice(float zProportion) {
+
+
 		Random r = new Random(this.seed);
 		long t0 = System.currentTimeMillis();
 		int extras = 100;
@@ -358,21 +364,74 @@ public class RegionRepresentation {
 		return vbs;
 	}
 	
+//	public List<VertexBufferSlice>getSlices() {
+//		if (this.slices == null) {
+//			this.slices = new ArrayList<VertexBufferSlice>();
+//			float zStride = 1.0f/(float)this.numPtsZ;
+//
+//
+//			double t0 = System.currentTimeMillis();
+//			for (float z = 0.0f; z < 1.0f; z += zStride) {
+//				VertexBufferSlice vbs = vertexAndValueBufferForSlice(z);
+//				this.slices.add(vbs);
+//			}
+//			double t1 = System.currentTimeMillis();
+//			double delta = t1 - t0;
+//			System.out.println("time taken : " + delta);
+//			this.data = null;
+//		}
+//		return this.slices;
+//	}
+
 	public List<VertexBufferSlice>getSlices() {
 		if (this.slices == null) {
 			this.slices = new ArrayList<VertexBufferSlice>();
+			double t0 = System.currentTimeMillis();
+			ExecutorService executor = Executors.newFixedThreadPool(16);
 			float zStride = 1.0f/(float)this.numPtsZ;
+
+			//--be a big stupid baby and figure out how many slices there will be for sure.
+			totalSlicesToSlice = 0;
+
+			List<Callable<VertexBufferSlice>>workers = new ArrayList<>();
 			for (float z = 0.0f; z < 1.0f; z += zStride) {
-				VertexBufferSlice vbs = vertexAndValueBufferForSlice(z);
-				this.slices.add(vbs);
+				workers.add(new SlicingWorker(z));
 			}
-			this.data = null;
+			try {
+				List<Future<VertexBufferSlice>> answers = executor.invokeAll(workers);
+				for (Future<VertexBufferSlice>futureSlice : answers) {
+					this.slices.add(futureSlice.get());
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				e.printStackTrace();
+			}
+			double t1 = System.currentTimeMillis();
+			double delta = t1 - t0;
+			System.out.println("time taken : " + delta);
+
 		}
 		return this.slices;
+	}
+
+	public class SlicingWorker implements Callable<VertexBufferSlice> {
+		private float z;
+
+		public SlicingWorker(float z__) {
+			this.z = z__;
+		}
+
+		@Override
+		public VertexBufferSlice call() throws Exception {
+			VertexBufferSlice vbs = vertexAndValueBufferForSlice(z);
+			return vbs;
+		}
 	}
 
 	public void clear() {
 		data = null;
 		slices = null;
 	}
+
 }
