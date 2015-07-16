@@ -7,6 +7,7 @@ import static com.jogamp.opengl.GL.GL_TRIANGLES;
 
 import java.awt.Color;
 import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -87,9 +88,9 @@ public class Renderer {
 					this.vertexBufferHandles[index] = ptr[0];
 					vbs.index = index;
 
-					FloatBuffer vertBuffer = vbs.vertexBuffer;
+					ShortBuffer vertBuffer = vbs.vertexBuffer;
 					gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBufferHandles[index]);
-					gl.glBufferData(GL_ARRAY_BUFFER, vertBuffer.capacity() * 4, vertBuffer, GL_STATIC_DRAW);
+					gl.glBufferData(GL_ARRAY_BUFFER, vertBuffer.capacity() * 2, vertBuffer, GL_STATIC_DRAW);
 
 					FloatBuffer valueBuffer = vbs.valueBuffer;
 					this.valueBufferHandles[index] = ptr[1];
@@ -221,7 +222,7 @@ public class Renderer {
 	
 	    	gl.glEnableVertexAttribArray(0);
 	    	gl.glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandles[slice.index]);
-	    	gl.glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+	    	gl.glVertexAttribPointer(0, 3, GL_SHORT, true, 0, 0);
 	    	
 	    	gl.glEnableVertexAttribArray(1);
 	    	gl.glBindBuffer(GL_ARRAY_BUFFER, valueBufferHandles[slice.index]);

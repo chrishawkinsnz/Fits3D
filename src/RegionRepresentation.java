@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -135,7 +136,8 @@ public class RegionRepresentation {
 					float xProportion = (float)x/(float)repWidth;
 					int pts = 0;
 					int maxPts = repHeight * repDepth;
-					FloatBuffer vertexBuffer = FloatBuffer.allocate(maxPts * 3);
+
+					ShortBuffer vertexBuffer = ShortBuffer.allocate(maxPts * 3);
 					FloatBuffer valueBuffer = FloatBuffer.allocate(maxPts);
 
 					for (int y = 0; y < repHeight; y ++) {
@@ -162,9 +164,9 @@ public class RegionRepresentation {
 								float fudge = r.nextFloat();
 								fudge = fudge - 0.5f;
 
-								vertexBuffer.put(xProportion + fudge * xStride);
-								vertexBuffer.put(yProportion + fudge * yStride);
-								vertexBuffer.put(zProportion + fudge * zStride);
+								vertexBuffer.put((short) ((xProportion + fudge * xStride) * Short.MAX_VALUE));
+								vertexBuffer.put((short) ((yProportion + fudge * yStride) * Short.MAX_VALUE));
+								vertexBuffer.put((short) ((zProportion + fudge * zStride) * Short.MAX_VALUE));
 								valueBuffer.put(val);
 								pts++;
 							}
