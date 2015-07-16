@@ -45,7 +45,7 @@ public class Renderer {
 	
 	//--OPEN GL HANDLES
 	private int shaderProgram;
-	
+
 	private int uniformAlphaFudgeHandle;
 	private int uniformMvpHandle;
 	private int uniformPointAreaHandle;
@@ -125,6 +125,8 @@ public class Renderer {
 		this.uniformFilterGradient = gl.glGetUniformLocation(this.shaderProgram, "filterGradient");
 		this.uniformFilterConstant = gl.glGetUniformLocation(this.shaderProgram, "filterConstant");
 		gl.glEnable(GL_BLEND);
+		gl.glEnable(gl.GL_DEPTH_TEST);
+		gl.glDepthFunc(gl.GL_ALWAYS);
 
 		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		gl.glBlendEquation(GL_FUNC_ADD);
@@ -139,50 +141,79 @@ public class Renderer {
 		lastTime = System.nanoTime();
 	}
 
-	int[] legendVertexHandles = new int[3];
-	int[] legendColorHandles = new int[3];
 
-	private void drawLegend() {
+	boolean first = true;
 
-		float[] origin = {0f, 0f, 0f};
-		if (legendVertexHandles.length == 0) {
+	private int[] legendVertexHandles = new int[3];
+	private int[] legendColorHandles = new int[3];
+	private int legendMvpUniformHandle;
+	private int shaderProgramLegend;
+
+	private void drawLegend(Matrix4 mvp) {
+
+		float length = 10f;
+		float[] origin = {-1f, -1f, -1f};
+		if (first) {
+			//--load the shader files in
+			this.shaderProgramLegend = ShaderHelper.programWithShaders2(gl, "shaderFlat.vert", "shaderFlat.frag");
+			this.legendMvpUniformHandle = gl.glGetUniformLocation(this.shaderProgramLegend, "mvp");
+
 			gl.glGenBuffers(3, legendVertexHandles, 0);
 			gl.glGenBuffers(3, legendColorHandles, 0);
 
+			for (int axisNumber = 0; axisNumber < 3; axisNumber++) {
+				FloatBuffer vertexBuffer = FloatBuffer.allocate(6);
+				vertexBuffer.put(origin);
 
-			int axisNumber = 0;
-			//--X
-			FloatBuffer vertexBuffer = FloatBuffer.allocate(6);
-			vertexBuffer.put(origin);
-			float[] dest = {2f,0f,0f};
-			vertexBuffer.put(dest);
-			vertexBuffer.flip();
+				float[] dest = origin.clone();
+				dest[axisNumber] += length;
 
-			gl.glBindBuffer(GL_ARRAY_BUFFER, legendVertexHandles[axisNumber]);
-			gl.glBufferData(GL_ARRAY_BUFFER, 2 * 3 * 4, vertexBuffer, GL_STATIC_DRAW);
+				vertexBuffer.put(dest);
+				vertexBuffer.flip();
 
-			FloatBuffer colorBuffer = FloatBuffer.allocate(8);
-			float[] red = {1f, 0f, 0f, 0f};
-			colorBuffer.put(dest);
-			colorBuffer.flip();
+				gl.glBindBuffer(GL_ARRAY_BUFFER, legendVertexHandles[axisNumber]);
+				gl.glBufferData(GL_ARRAY_BUFFER, 2 * 3 * 4, vertexBuffer, GL_STATIC_DRAW);
 
-			gl.glBindBuffer(GL_ARRAY_BUFFER, legendColorHandles[axisNumber]);
-			gl.glBufferData(GL_ARRAY_BUFFER, 4 * 4, vertexBuffer, GL_STATIC_DRAW);
+				FloatBuffer colorBuffer = FloatBuffer.allocate(8);
+				float[] col = {0.3f, 0.3f, 0.3f, 1f};
+				col[axisNumber] = 1f;
+				colorBuffer.put(col);
+
+				float[] black = {0f, 0f, 0f, 0f};
+				colorBuffer.put(black);
+				colorBuffer.flip();
+
+				gl.glBindBuffer(GL_ARRAY_BUFFER, legendColorHandles[axisNumber]);
+				gl.glBufferData(GL_ARRAY_BUFFER, 2 * 4 * 4, colorBuffer, GL_STATIC_DRAW);
+			}
+			first = false;
 		}
 
+		gl.glUseProgram(this.shaderProgramLegend);
+		gl.glUniformMatrix4fv(this.legendMvpUniformHandle, 1, false, mvp.getMatrix(), 0);
 
-//		int axisNumber = 0;
-//		gl.glEnableVertexAttribArray(0);
-//		gl.glBindBuffer(GL_ARRAY_BUFFER, legendVertexHandles[axisNumber]);
-//		gl.glVertexAttribPointer(0, 3, GL_FLOAT, true, 0, 1);
-//
-//		gl.glEnableVertexAttribArray(1);
-//		gl.glBindBuffer(GL_ARRAY_BUFFER, legendColorHandles[axisNumber]);
-//		gl.glVertexAttribPointer(1, 4, GL_FLOAT, false, 0, 1);
-//
-//		gl.glDrawArrays(GL_LINE, 0, 2);
+		gl.glDepthFunc(gl.GL_LESS);
+		for (int axisNumber = 0; axisNumber < 3; axisNumber ++) {
+			//--select the lines vertex buffer
+			gl.glEnableVertexAttribArray(0);
+			gl.glBindBuffer(GL_ARRAY_BUFFER, legendVertexHandles[axisNumber]);
+			gl.glVertexAttribPointer(0, 3, GL_FLOAT, true, 0, 0);
 
+			//--select the lines color buffer
+			gl.glEnableVertexAttribArray(1);
+			gl.glBindBuffer(GL_ARRAY_BUFFER, legendColorHandles[axisNumber]);
+			gl.glVertexAttribPointer(1, 4, GL_FLOAT, false, 0, 0);
+
+			gl.glDrawArrays(GL_LINES, 0, 2);
+		}
+		//--set the shader program back to the point clouds rendering one
+		gl.glUseProgram(this.shaderProgram);
+		gl.glDepthFunc(gl.GL_ALWAYS);
 	}
+
+
+
+
 	public void display() {
 
 		printFps();
@@ -271,9 +302,7 @@ public class Renderer {
     		gl.glPointSize(Math.max(pointRadius, 1f));
 			gl.glUniform1f(this.uniformPointAreaHandle, ptArea);
 
-			if (legendary) {
-				drawLegend();
-			}
+
 
 	    	Matrix4 m = new Matrix4();
 			m.loadIdentity();
@@ -296,6 +325,10 @@ public class Renderer {
 	    	gl.glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
 	    	
 	    	gl.glDrawArrays(GL_POINTS, 0, slice.numberOfPts);
+		}
+
+		if (legendary) {
+			drawLegend(baseMatrix);
 		}
 
     	gl.glEnableVertexAttribArray(0);
