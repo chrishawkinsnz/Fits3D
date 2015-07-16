@@ -48,7 +48,185 @@ public class RegionRepresentation {
 	public enum DataType {
 		FLOAT, DOUBLE, SHORT, INT, LONG,
 	}
-	
+	private RegionRepresentation() {
+
+	}
+
+
+	/**
+	 *
+	 * @param fits	The fits file to read.
+	 * @param fidelity The level of fidelity to read the cube at (note fidelity is interpreted cubically so 1 is 8 times larger than 0.5)
+	 * @param volume The unit volume of the fits file to read.
+	 * @return A representation of the asked for region.
+	 */
+	public static RegionRepresentation justTheSlicesPlease(Fits fits, float fidelity, Volume volume) {
+		RegionRepresentation rr = new RegionRepresentation();
+		rr.fidelity = fidelity;
+		long t0 = System.currentTimeMillis();
+		try {
+			ImageHDU hdu = (ImageHDU) fits.getHDU(0);
+			MinAndMax minAndMax = minAndMaxBasedOnRoughOnePercentRushThrough(hdu, volume, fits);
+			rr.estMax = minAndMax.max;
+			rr.estMin = minAndMax.min;
+
+			int sourceWidth = hdu.getAxes()[0];											//the length of the cube in points
+			int sourceHeight = hdu.getAxes()[1];											//the height of the cube in points
+			int sourceDepth = hdu.getAxes().length > 2? hdu.getAxes()[2] : 1;			//the depth of the cube in points
+
+			int stride = (int)(1.0f/fidelity);												//how many to step in each direction
+
+			int sourceStartX = (int)(volume.x * sourceWidth);							//the first point number x to read
+			int sourceStartY = (int)(volume.y * sourceHeight);							//the first point number y to read
+			int sourceStartZ = (int)(volume.z * sourceDepth);							//the first point number z to read
+
+			int sourceEndX = (int)((volume.x + volume.wd) * sourceWidth);				//the last point number x to read
+			int sourceEndY = (int)((volume.y + volume.ht) * sourceHeight);				//the last point number y to read
+			int sourceEndZ = (int)((volume.z + volume.dp) * sourceDepth);				//the last point number z to read
+
+			int repWidth = (sourceEndX - sourceStartX)/stride;
+			int repHeight = (sourceEndY - sourceStartY)/stride;
+			int repDepth = (sourceEndZ - sourceStartZ)/stride;
+
+			rr.numPtsX = repWidth;
+			rr.numPtsY = repHeight;
+			rr.numPtsZ = repDepth;
+
+			int yRemainder = sourceHeight - stride*(sourceHeight/stride);
+
+			DataType dataType;
+			int bitPix = hdu.getBitPix();
+			int typeSize = Math.abs(bitPix)/8;
+			float[] storagef = null;
+			double[] storaged = null;
+			switch (bitPix) {
+				case -64:
+					dataType = DataType.DOUBLE;
+					storaged = new double[sourceDepth];
+					break;
+				case -32:
+					dataType = DataType.FLOAT;
+					storagef = new float[sourceDepth];
+					break;
+				default:
+					throw new IOException("Whoops, no support forthat file format (BitPix = "+bitPix+") at the moment.  Floats and Doubles only sorry.");
+			}
+
+			int numNeg = 0;
+			int numTot = 0;
+			int nBuckets = 100;
+			rr.buckets = new int[nBuckets];
+			float min = minAndMax.min;
+			float max = minAndMax.max;
+			float stepSize = (max - min) / (float)nBuckets;
+
+			float minn = 999f;
+			float maxx = -999f;
+
+			rr.slices = new ArrayList<>();
+
+			Random r = new Random(1);
+			float xStride = 1.0f/(float)repWidth;
+			float yStride = 1.0f/(float)repHeight;
+			float zStride = 1.0f/(float)repDepth;
+			if (hdu.getData().reset()) {
+				ArrayDataInput adi = fits.getStream();
+				int planesToSkip = sourceStartX;
+				adi.skipBytes(sourceDepth * sourceHeight * planesToSkip * typeSize);
+
+				for (int x = 0; x < repWidth; x ++) {
+					float xProportion = (float)x/(float)repWidth;
+					int pts = 0;
+					int maxPts = repHeight * repDepth;
+					FloatBuffer vertexBuffer = FloatBuffer.allocate(maxPts * 3);
+					FloatBuffer valueBuffer = FloatBuffer.allocate(maxPts);
+
+					for (int y = 0; y < repHeight; y ++) {
+						float yProportion = (float)y/(float)repHeight;
+
+
+						if (dataType == DataType.DOUBLE) {
+							adi.read(storaged, 0, storaged.length);
+
+						 	for (int z = 0; z < repDepth; z++) {
+									float zProportion = (float)z/(float)repDepth;
+
+									float val = (float)storaged[z * stride];
+									int bucketIndex = (int)(val - rr.estMin/stepSize);
+									if (bucketIndex >= 0 && bucketIndex < nBuckets && !Double.isNaN(val)){
+										rr.buckets[bucketIndex]++;
+									}
+
+									float fudge = r.nextFloat();
+									fudge = fudge - 0.5f;
+
+									vertexBuffer.put(x + fudge * xStride);
+									vertexBuffer.put(y + fudge * yStride);
+									vertexBuffer.put(z + fudge * zStride);
+									valueBuffer.put(val);
+									pts++;
+								}
+							}
+							else if (dataType == DataType.FLOAT) {
+								adi.read(storagef, 0, storagef.length);
+								for (int z = 0; z < repDepth; z++) {
+									float zProportion = (float)z/(float)repDepth;
+
+									float val = (float)storagef[z * stride];
+
+									int bucketIndex = (int)((val -rr.estMin)/stepSize);
+								if (bucketIndex >= 0 && bucketIndex < nBuckets && !Float.isNaN(val)){
+									rr.buckets[bucketIndex]++;
+								}
+
+								float fudge = r.nextFloat();
+								fudge = fudge - 0.5f;
+									fudge = 0f;
+
+								vertexBuffer.put(xProportion + fudge * xStride);
+								vertexBuffer.put(yProportion + fudge * yStride);
+								vertexBuffer.put(zProportion + fudge * zStride);
+								valueBuffer.put(val);
+								pts++;
+							}
+						}
+
+						if (y == repHeight-1 && yRemainder!=0) {
+							//is remainder zone
+							int linesToSkip = yRemainder + stride - 1;
+							adi.skipBytes(sourceDepth * linesToSkip * typeSize );
+						} else {
+							int linesToSkip = stride - 1;
+							adi.skipBytes(sourceDepth * linesToSkip * typeSize);
+						}
+					}
+
+					//--make a slice
+					vertexBuffer.flip();
+					valueBuffer.flip();
+
+					VertexBufferSlice vbs = new VertexBufferSlice();
+					vbs.vertexBuffer = vertexBuffer;
+					vbs.valueBuffer = valueBuffer;
+					vbs.numberOfPts = pts;
+					vbs.depthValue = xProportion;
+
+					rr.slices.add(vbs);
+					adi.skipBytes(sourceDepth * sourceHeight * (stride - 1) * typeSize);
+				}
+			}
+
+			System.out.println("fits file loaded " + repWidth + " x " + repHeight + " x " + repDepth);
+
+		}catch (Exception e) {
+			JOptionPane.showMessageDialog(null, e.getClass().getName()+": " + e.getMessage(), "Error!", JOptionPane.ERROR_MESSAGE);
+			e.printStackTrace();
+		}
+
+		long t1 = System.currentTimeMillis();
+		System.out.println("time taken to load file in new fancy way:" + (t1 - t0));
+		return rr;
+	}
 	public RegionRepresentation(Fits fits, float fidelity, Volume volume) {
 		this.fidelity = fidelity;
 		if (fidelity >=1.0) {
@@ -182,136 +360,7 @@ public class RegionRepresentation {
 		float min,max;
 	}
 	
-	private MinAndMax minAndMaxBasedOnHeader(ImageHDU hdu) {
-		double max = hdu.getMaximumValue();
-		double min = hdu.getMinimumValue();
-		MinAndMax mam = new MinAndMax();
-		mam.min = (float)min;
-		mam.max = (float)max;
-		return mam;
-	}
-	private MinAndMax minAndMaxBasedOnRoughOnePercentRushThrough(ImageHDU hdu, Volume volume, Fits fits) {
-		MinAndMax mam = new MinAndMax();
-		
-		long t0 = System.currentTimeMillis();
-		float minn = 999f;
-		float maxx = -999f;
-		
-		List<Float>allOfThemFloats =new ArrayList<Float>();
-		try{
-			float shittyFidelity = 0.1f;
 
-			int sourceMaxWidth = hdu.getAxes()[0];
-			int sourceMaxHeight = hdu.getAxes()[1];
-			int sourceMaxDepth = hdu.getAxes().length > 2? hdu.getAxes()[2] : 0;
-			
-			//stirde of 1 = full fidelity , stride of 2 = half fidelity
-			int stride = (int)(1.0f/shittyFidelity);
-			System.out.println("stride:"+stride);
-			
-			
-			int sourceStartX = (int)(volume.x * sourceMaxWidth);
-			int sourceStartY = (int)(volume.y * sourceMaxHeight);
-			int sourceStartZ = (int)(volume.z * sourceMaxDepth);
-			
-			int sourceEndX = (int)((volume.x + volume.wd) * sourceMaxWidth);
-			int sourceEndY = (int)((volume.y + volume.ht) * sourceMaxHeight);
-			int sourceEndZ = (int)((volume.z + volume.dp) * sourceMaxDepth);
-			
-			int maxWidth = (sourceEndX - sourceStartX)/stride;
-			int maxHeight = (sourceEndY - sourceStartY)/stride;
-			int maxDepth = (sourceEndZ - sourceStartZ)/stride;
-			
-			this.numPtsX = maxWidth;
-			this.numPtsY = maxHeight;
-			this.numPtsZ = maxDepth;
-			
-			int yRemainder = sourceMaxHeight - stride*(sourceMaxHeight/stride);			
-			
-			DataType dataType;
-			int bitPix = hdu.getBitPix();
-			int typeSize = Math.abs(bitPix)/8;
-			float[] storagef = null;
-			double[] storaged = null;
-			switch (bitPix) {
-			case -64:
-				dataType = DataType.DOUBLE;
-				storaged = new double[sourceMaxDepth];
-				break;
-			case -32:
-				dataType = DataType.FLOAT;
-				storagef = new float[sourceMaxDepth];
-				break;
-			default:
-				throw new IOException("Whoops, no support forthat file format (BitPix = "+bitPix+") at the moment.  Floats and Doubles only sorry.");
-			}
-			
-
-			if (hdu.getData().reset()) {
-				
-				ArrayDataInput adi = fits.getStream();
-				int planesToSkip = sourceStartX;
-				adi.skipBytes(sourceMaxDepth * sourceMaxHeight * planesToSkip * typeSize);
-
-				for (int x = 0; x < maxWidth; x ++) {
-					for (int y = 0; y < maxHeight; y ++) {
-						if (dataType == DataType.DOUBLE) {
-							adi.read(storaged, 0, storaged.length);
-							for (int z = 0; z < maxDepth; z++) {
-								float val = (float)storaged[z * stride];
-								if (Double.isNaN(val))
-									continue;
-								if (val < minn) minn = val;
-								if (val > maxx) maxx = val;
-
-								allOfThemFloats.add(val);
-							}
-						} 
-						else if (dataType == DataType.FLOAT) {
-							adi.read(storagef, 0, storagef.length);
-							for (int z = 0; z < maxDepth; z++) {
-								float val = (float)storagef[z * stride];
-								if (Float.isNaN(val))
-									continue;
-								if (val < minn) minn = val;
-								if (val > maxx) maxx = val;
-								allOfThemFloats.add(val);
-							}
-						}
-
-						if (y == maxHeight-1 && yRemainder!=0) {
-							//is remainder zone
-							int linesToSkip = yRemainder + stride - 1;
-							adi.skipBytes(sourceMaxDepth * linesToSkip * typeSize );
-						} else {
-							int linesToSkip = stride - 1;
-							adi.skipBytes(sourceMaxDepth * linesToSkip * typeSize);	
-						}
-					}
-					adi.skipBytes(sourceMaxDepth * sourceMaxHeight * (stride - 1) * typeSize);
-				}
-			}
-
-			System.out.println("fits file loaded " + maxWidth + " x " + maxHeight + " x " + maxDepth);
-			System.out.println("min" + minn);
-			System.out.println("max" + maxx);
-			allOfThemFloats.sort(new Comparator<Float>() {
-				@Override
-				public int compare(Float o1, Float o2) {
-					return Float.compare(o1.floatValue(), o2.floatValue());
-				}
-			});
-
-			
-	}catch(Exception e){
-		e.printStackTrace();
-	}
-		System.out.println("time taken to estimate min and max :" + (System.currentTimeMillis() - t0) + "ms");
-		mam.min = minn;
-		mam.max = maxx;
-		return mam;
-	}
-	
 	private VertexBufferSlice vertexAndValueBufferForSlice(float zProportion) {
 
 
@@ -327,7 +376,8 @@ public class RegionRepresentation {
 		
 		int pts = 0;
 		float z =  zProportion;
-		
+
+
 		for (float y = 0.0f; y < 1.0f; y += yStride) {
 			for (float x = 0.0f; x < 1.0f; x += xStride) {
 				float value = data[(int)(x * this.numPtsX)][(int)(y * this.numPtsY)][(int)(z * this.numPtsZ)];
@@ -363,25 +413,6 @@ public class RegionRepresentation {
 		vbs.depthValue = zProportion;
 		return vbs;
 	}
-	
-//	public List<VertexBufferSlice>getSlices() {
-//		if (this.slices == null) {
-//			this.slices = new ArrayList<VertexBufferSlice>();
-//			float zStride = 1.0f/(float)this.numPtsZ;
-//
-//
-//			double t0 = System.currentTimeMillis();
-//			for (float z = 0.0f; z < 1.0f; z += zStride) {
-//				VertexBufferSlice vbs = vertexAndValueBufferForSlice(z);
-//				this.slices.add(vbs);
-//			}
-//			double t1 = System.currentTimeMillis();
-//			double delta = t1 - t0;
-//			System.out.println("time taken : " + delta);
-//			this.data = null;
-//		}
-//		return this.slices;
-//	}
 
 	public List<VertexBufferSlice>getSlices() {
 		if (this.slices == null) {
@@ -432,6 +463,163 @@ public class RegionRepresentation {
 	public void clear() {
 		data = null;
 		slices = null;
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	private MinAndMax minAndMaxBasedOnHeader(ImageHDU hdu) {
+		double max = hdu.getMaximumValue();
+		double min = hdu.getMinimumValue();
+		MinAndMax mam = new MinAndMax();
+		mam.min = (float)min;
+		mam.max = (float)max;
+		return mam;
+	}
+	private static MinAndMax minAndMaxBasedOnRoughOnePercentRushThrough(ImageHDU hdu, Volume volume, Fits fits) {
+		MinAndMax mam = new MinAndMax();
+
+		long t0 = System.currentTimeMillis();
+		float minn = 999f;
+		float maxx = -999f;
+
+		List<Float>allOfThemFloats =new ArrayList<Float>();
+		try{
+			float shittyFidelity = 0.1f;
+
+			int sourceMaxWidth = hdu.getAxes()[0];
+			int sourceMaxHeight = hdu.getAxes()[1];
+			int sourceMaxDepth = hdu.getAxes().length > 2? hdu.getAxes()[2] : 0;
+
+			//stirde of 1 = full fidelity , stride of 2 = half fidelity
+			int stride = (int)(1.0f/shittyFidelity);
+			System.out.println("stride:"+stride);
+
+
+			int sourceStartX = (int)(volume.x * sourceMaxWidth);
+			int sourceStartY = (int)(volume.y * sourceMaxHeight);
+			int sourceStartZ = (int)(volume.z * sourceMaxDepth);
+
+			int sourceEndX = (int)((volume.x + volume.wd) * sourceMaxWidth);
+			int sourceEndY = (int)((volume.y + volume.ht) * sourceMaxHeight);
+			int sourceEndZ = (int)((volume.z + volume.dp) * sourceMaxDepth);
+
+			int maxWidth = (sourceEndX - sourceStartX)/stride;
+			int maxHeight = (sourceEndY - sourceStartY)/stride;
+			int maxDepth = (sourceEndZ - sourceStartZ)/stride;
+
+			int numPtsX = maxWidth;
+			int numPtsY = maxHeight;
+			int numPtsZ = maxDepth;
+
+			int yRemainder = sourceMaxHeight - stride*(sourceMaxHeight/stride);
+
+			DataType dataType;
+			int bitPix = hdu.getBitPix();
+			int typeSize = Math.abs(bitPix)/8;
+			float[] storagef = null;
+			double[] storaged = null;
+			switch (bitPix) {
+				case -64:
+					dataType = DataType.DOUBLE;
+					storaged = new double[sourceMaxDepth];
+					break;
+				case -32:
+					dataType = DataType.FLOAT;
+					storagef = new float[sourceMaxDepth];
+					break;
+				default:
+					throw new IOException("Whoops, no support forthat file format (BitPix = "+bitPix+") at the moment.  Floats and Doubles only sorry.");
+			}
+
+
+			if (hdu.getData().reset()) {
+
+				ArrayDataInput adi = fits.getStream();
+				int planesToSkip = sourceStartX;
+				adi.skipBytes(sourceMaxDepth * sourceMaxHeight * planesToSkip * typeSize);
+
+				for (int x = 0; x < maxWidth; x ++) {
+					for (int y = 0; y < maxHeight; y ++) {
+						if (dataType == DataType.DOUBLE) {
+							adi.read(storaged, 0, storaged.length);
+							for (int z = 0; z < maxDepth; z++) {
+								float val = (float)storaged[z * stride];
+								if (Double.isNaN(val))
+									continue;
+								if (val < minn) minn = val;
+								if (val > maxx) maxx = val;
+
+								allOfThemFloats.add(val);
+							}
+						}
+						else if (dataType == DataType.FLOAT) {
+							adi.read(storagef, 0, storagef.length);
+							for (int z = 0; z < maxDepth; z++) {
+								float val = (float)storagef[z * stride];
+								if (Float.isNaN(val))
+									continue;
+								if (val < minn) minn = val;
+								if (val > maxx) maxx = val;
+								allOfThemFloats.add(val);
+							}
+						}
+
+						if (y == maxHeight-1 && yRemainder!=0) {
+							//is remainder zone
+							int linesToSkip = yRemainder + stride - 1;
+							adi.skipBytes(sourceMaxDepth * linesToSkip * typeSize );
+						} else {
+							int linesToSkip = stride - 1;
+							adi.skipBytes(sourceMaxDepth * linesToSkip * typeSize);
+						}
+					}
+					adi.skipBytes(sourceMaxDepth * sourceMaxHeight * (stride - 1) * typeSize);
+				}
+			}
+
+			System.out.println("fits file loaded " + maxWidth + " x " + maxHeight + " x " + maxDepth);
+			System.out.println("min" + minn);
+			System.out.println("max" + maxx);
+			allOfThemFloats.sort(new Comparator<Float>() {
+				@Override
+				public int compare(Float o1, Float o2) {
+					return Float.compare(o1.floatValue(), o2.floatValue());
+				}
+			});
+
+
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		System.out.println("time taken to estimate min and max :" + (System.currentTimeMillis() - t0) + "ms");
+		mam.min = minn;
+		mam.max = maxx;
+		return mam;
 	}
 
 }

@@ -22,7 +22,8 @@ import com.jogamp.opengl.GL3.*;
 import com.jogamp.opengl.math.Matrix4;
 
 public class Renderer {
-	
+	private static long lastTime = 0;
+
 	//--CONSTANTS
 	public final float orthoHeight = 1.0f;
 	public final float orthoWidth = 1.0f;
@@ -119,9 +120,16 @@ public class Renderer {
 		gl.glDisable(GL_CULL_FACE);
 
 	}
+
+	private void printFps() {
+		long delta = System.nanoTime() - lastTime;
+		double fps = 1000_000_000 / (double)delta;
+		System.out.println("FPS: " + (int)fps);
+		lastTime = System.nanoTime();
+	}
 	
 	public void display() {
-		
+
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl.glUseProgram(this.shaderProgram);
 		
@@ -193,14 +201,14 @@ public class Renderer {
     		
     		float pointRadius = this.calculatePointRadiusInPixelsForSlice(slice) * baseScale;
     		float ptArea = 0.5f * pointRadius * pointRadius * (float)Math.PI;
-    		gl.glPointSize(Math.max(pointRadius,1f));
+    		gl.glPointSize(Math.max(pointRadius, 1f));
 			gl.glUniform1f(this.uniformPointAreaHandle, ptArea);
 
 	    	m.rotate(this.viewer.getySpin(), 1f, 0f, 0f);
 	    	m.rotate(this.viewer.getxSpin(), 0f, 1f, 0f);
 	    	m.scale(baseScale, baseScale, baseScale);
 	    	
-	    	m.translate(cr.volume.x, cr.volume.y, cr.volume.z + slice.depthValue);
+	    	m.translate(cr.volume.x + slice.depthValue, cr.volume.y, cr.volume.z);
 	    	m.scale(cr.volume.wd, cr.volume.ht, cr.volume.dp);
 	    	
 	    	m.translate(cloud.volume.x, cloud.volume.y, cloud.volume.z);

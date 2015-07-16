@@ -28,8 +28,10 @@ public class CloudRegion {
 		this.fits = fits;
 
 		
-		RegionRepresentation initialRepresentation = new RegionRepresentation(fits, initialFidelity, this.volume);
+//		RegionRepresentation initialRepresentation = new RegionRepresentation(fits, initialFidelity, this.volume);
+		RegionRepresentation initialRepresentation = RegionRepresentation.justTheSlicesPlease(fits, initialFidelity, this.volume);
 		this.bestRepresentation = initialRepresentation;
+
 		this.currentRepresentation = initialRepresentation;
 	}
 
