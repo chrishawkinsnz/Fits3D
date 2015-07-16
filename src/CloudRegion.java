@@ -27,8 +27,6 @@ public class CloudRegion {
 		this.depth = this.volume.origin.z + 0.5f * this.volume.dp;
 		this.fits = fits;
 
-		
-//		RegionRepresentation initialRepresentation = new RegionRepresentation(fits, initialFidelity, this.volume);
 		RegionRepresentation initialRepresentation = RegionRepresentation.justTheSlicesPlease(fits, initialFidelity, this.volume);
 		this.bestRepresentation = initialRepresentation;
 

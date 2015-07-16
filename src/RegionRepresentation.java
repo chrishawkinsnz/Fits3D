@@ -23,11 +23,10 @@ import nom.tam.util.ArrayDataInput;
  *
  */
 public class RegionRepresentation {
-	private float[][][] data;
 	public int[]buckets;
 	public float estMin;
 	public float estMax;
-	
+
 	public int numPtsX;
 	public int numPtsY;
 	public int numPtsZ;
@@ -36,9 +35,7 @@ public class RegionRepresentation {
 	public float fidelity;
 
 	private List<VertexBufferSlice>slices;
-	private int totalSlicesToSlice = 999;
-	private int seed;
-	
+
 	/**
 	 * 
 	 * @param fileName Filename of the original fits file
@@ -155,16 +152,18 @@ public class RegionRepresentation {
 									int bucketIndex = (int)(val - rr.estMin/stepSize);
 									if (bucketIndex >= 0 && bucketIndex < nBuckets && !Double.isNaN(val)){
 										rr.buckets[bucketIndex]++;
+
+										float fudge = r.nextFloat();
+										fudge = fudge - 0.5f;
+
+										vertexBuffer.put(x + fudge * xStride);
+										vertexBuffer.put(y + fudge * yStride);
+										vertexBuffer.put(z + fudge * zStride);
+										valueBuffer.put(val);
+										pts++;
 									}
 
-									float fudge = r.nextFloat();
-									fudge = fudge - 0.5f;
 
-									vertexBuffer.put(x + fudge * xStride);
-									vertexBuffer.put(y + fudge * yStride);
-									vertexBuffer.put(z + fudge * zStride);
-									valueBuffer.put(val);
-									pts++;
 								}
 							}
 							else if (dataType == DataType.FLOAT) {
@@ -177,17 +176,18 @@ public class RegionRepresentation {
 									int bucketIndex = (int)((val -rr.estMin)/stepSize);
 								if (bucketIndex >= 0 && bucketIndex < nBuckets && !Float.isNaN(val)){
 									rr.buckets[bucketIndex]++;
+
+									float fudge = r.nextFloat();
+									fudge = fudge - 0.5f;
+
+									vertexBuffer.put(xProportion + fudge * xStride);
+									vertexBuffer.put(yProportion + fudge * yStride);
+									vertexBuffer.put(zProportion + fudge * zStride);
+									valueBuffer.put(val);
+									pts++;
 								}
 
-								float fudge = r.nextFloat();
-								fudge = fudge - 0.5f;
-									fudge = 0f;
 
-								vertexBuffer.put(xProportion + fudge * xStride);
-								vertexBuffer.put(yProportion + fudge * yStride);
-								vertexBuffer.put(zProportion + fudge * zStride);
-								valueBuffer.put(val);
-								pts++;
 							}
 						}
 
@@ -227,270 +227,14 @@ public class RegionRepresentation {
 		System.out.println("time taken to load file in new fancy way:" + (t1 - t0));
 		return rr;
 	}
-	public RegionRepresentation(Fits fits, float fidelity, Volume volume) {
-		this.fidelity = fidelity;
-		if (fidelity >=1.0) {
-			isMaximumFidelity = true;
-		}
-		this.seed = new Random().nextInt();
-		long t0 = System.currentTimeMillis();
-		try{
-			ImageHDU hdu = (ImageHDU) fits.getHDU(0);
-			MinAndMax minAndMax = minAndMaxBasedOnRoughOnePercentRushThrough(hdu, volume, fits);
-			this.estMax = minAndMax.max;
-			this.estMin = minAndMax.min;
 
-			int sourceMaxWidth = hdu.getAxes()[0];
-			int sourceMaxHeight = hdu.getAxes()[1];
-			int sourceMaxDepth = hdu.getAxes().length > 2? hdu.getAxes()[2] : 1;
-
-			//stirde of 1 = full fidelity , stride of 2 = half fidelity
-			int stride = (int)(1.0f/fidelity);
-			System.out.println("stride:"+stride);
-			
-			
-			int sourceStartX = (int)(volume.x * sourceMaxWidth);
-			int sourceStartY = (int)(volume.y * sourceMaxHeight);
-			int sourceStartZ = (int)(volume.z * sourceMaxDepth);
-			
-			int sourceEndX = (int)((volume.x + volume.wd) * sourceMaxWidth);
-			int sourceEndY = (int)((volume.y + volume.ht) * sourceMaxHeight);
-			int sourceEndZ = (int)((volume.z + volume.dp) * sourceMaxDepth);
-			
-			int maxWidth = (sourceEndX - sourceStartX)/stride;
-			int maxHeight = (sourceEndY - sourceStartY)/stride;
-			int maxDepth = (sourceEndZ - sourceStartZ)/stride;
-			
-			this.numPtsX = maxWidth;
-			this.numPtsY = maxHeight;
-			this.numPtsZ = maxDepth;
-			
-			int yRemainder = sourceMaxHeight - stride*(sourceMaxHeight/stride);
-
-			this.data = new float[maxWidth][maxHeight][maxDepth];
-			
-			
-			DataType dataType;
-			int bitPix = hdu.getBitPix();
-			int typeSize = Math.abs(bitPix)/8;
-			float[] storagef = null;
-			double[] storaged = null;
-			switch (bitPix) {
-			case -64:
-				dataType = DataType.DOUBLE;
-				storaged = new double[sourceMaxDepth];
-				break;
-			case -32:
-				dataType = DataType.FLOAT;
-				storagef = new float[sourceMaxDepth];
-				break;
-			default:
-				throw new IOException("Whoops, no support forthat file format (BitPix = "+bitPix+") at the moment.  Floats and Doubles only sorry.");
-			}
-
-
-			int numNeg = 0;
-			int numTot = 0;
-			int nBuckets = 100;
-			buckets = new int[nBuckets];
-			float min = minAndMax.min;
-			float max = minAndMax.max;
-			float stepSize = (max - min) / (float)nBuckets; 
-
-			float minn = 999f;
-			float maxx = -999f;
-			if (hdu.getData().reset()) {
-				ArrayDataInput adi = fits.getStream();
-				int planesToSkip = sourceStartX;
-				adi.skipBytes(sourceMaxDepth * sourceMaxHeight * planesToSkip * typeSize);
-
-				for (int x = 0; x < maxWidth; x ++) {
-					for (int y = 0; y < maxHeight; y ++) {
-						if (dataType == DataType.DOUBLE) {
-							adi.read(storaged, 0, storaged.length);
-							for (int z = 0; z < maxDepth; z++) {
-								float val = (float)storaged[z * stride];
-								System.out.println(val);
-								int bucketIndex = (int)(val - estMin/stepSize);
-								if (bucketIndex >= 0 && bucketIndex < nBuckets && !Double.isNaN(val)){
-									buckets[bucketIndex]++;	
-								}
-								
-								data[x][y][z] = val; 
-							}
-						} 
-						else if (dataType == DataType.FLOAT) {
-							adi.read(storagef, 0, storagef.length);
-							for (int z = 0; z < maxDepth; z++) {
-								float val = (float)storagef[z * stride];
-
-								int bucketIndex = (int)((val - estMin)/stepSize);
-								if (bucketIndex >= 0 && bucketIndex < nBuckets && !Float.isNaN(val)){
-									buckets[bucketIndex]++;	
-								} 
-								data[x][y][z] = val;
-							}
-						}
-
-						if (y == maxHeight-1 && yRemainder!=0) {
-							//is remainder zone
-							int linesToSkip = yRemainder + stride - 1;
-							adi.skipBytes(sourceMaxDepth * linesToSkip * typeSize );
-						} else {
-							int linesToSkip = stride - 1;
-							adi.skipBytes(sourceMaxDepth * linesToSkip * typeSize);	
-						}
-					}
-					adi.skipBytes(sourceMaxDepth * sourceMaxHeight * (stride - 1) * typeSize);
-				}
-			}
-
-			System.out.println("fits file loaded " + maxWidth + " x " + maxHeight + " x " + maxDepth);
-
-		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null, e.getClass().getName()+": " + e.getMessage(), "Error!", JOptionPane.ERROR_MESSAGE);
-			e.printStackTrace();
-		}
-		long t1 = System.currentTimeMillis();
-		System.out.println("took "+(t1-t0) + " ms to read in data");
-		
-	}
-	
 	private static class MinAndMax{
 		float min,max;
 	}
-	
-
-	private VertexBufferSlice vertexAndValueBufferForSlice(float zProportion) {
-
-
-		Random r = new Random(this.seed);
-		long t0 = System.currentTimeMillis();
-		int extras = 100;
-		float[] vertexData = new float[this.numPtsX * this.numPtsY * 3 * 1 + extras * 3];
-		float[] valueData = new float[this.numPtsX * this.numPtsY * 1 * 1 + extras * 1];
-		
-		float xStride = 1.0f/(float)this.numPtsX;
-		float yStride = 1.0f/(float)this.numPtsY;
-		float zStride = 1.0f/(float)this.numPtsZ;
-		
-		int pts = 0;
-		float z =  zProportion;
-
-
-		for (float y = 0.0f; y < 1.0f; y += yStride) {
-			for (float x = 0.0f; x < 1.0f; x += xStride) {
-				float value = data[(int)(x * this.numPtsX)][(int)(y * this.numPtsY)][(int)(z * this.numPtsZ)];
-				if (!Float.isNaN(value) ) {
-//				if (!Float.isNaN(value) && value > 0.0f) {
-					float fudge = r.nextFloat();
-					fudge = fudge - 0.5f;
-
-					vertexData[pts * 3 + 0] = x + fudge * xStride;
-					vertexData[pts * 3 + 1] = y + fudge * yStride;;
-					vertexData[pts * 3 + 2] = z + fudge * zStride;;
-				
-					valueData[pts] = value;
-					pts++;
-				}
-			}	
-		}
-
-		FloatBuffer vertexBuffer = FloatBuffer.allocate(pts * 3);
-		vertexBuffer.put(vertexData, 0, pts * 3);
-		vertexBuffer.flip();
-		
-		FloatBuffer valueBuffer = FloatBuffer.allocate(pts);
-		valueBuffer.put(valueData, 0, pts);
-		valueBuffer.flip();
-		long t1 = System.currentTimeMillis();
-		System.out.println("took "+(t1-t0) + " ms to load " + pts + "into buffers (" + (int)(zProportion * 100) + "% read)");
-		
-		VertexBufferSlice vbs = new VertexBufferSlice();
-		vbs.vertexBuffer = vertexBuffer;
-		vbs.valueBuffer = valueBuffer;
-		vbs.numberOfPts = pts;
-		vbs.depthValue = zProportion;
-		return vbs;
-	}
-
-	public List<VertexBufferSlice>getSlices() {
-		if (this.slices == null) {
-			this.slices = new ArrayList<VertexBufferSlice>();
-			double t0 = System.currentTimeMillis();
-			ExecutorService executor = Executors.newFixedThreadPool(16);
-			float zStride = 1.0f/(float)this.numPtsZ;
-
-			//--be a big stupid baby and figure out how many slices there will be for sure.
-			totalSlicesToSlice = 0;
-
-			List<Callable<VertexBufferSlice>>workers = new ArrayList<>();
-			for (float z = 0.0f; z < 1.0f; z += zStride) {
-				workers.add(new SlicingWorker(z));
-			}
-			try {
-				List<Future<VertexBufferSlice>> answers = executor.invokeAll(workers);
-				for (Future<VertexBufferSlice>futureSlice : answers) {
-					this.slices.add(futureSlice.get());
-				}
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			} catch (ExecutionException e) {
-				e.printStackTrace();
-			}
-			double t1 = System.currentTimeMillis();
-			double delta = t1 - t0;
-			System.out.println("time taken : " + delta);
-
-		}
-		return this.slices;
-	}
-
-	public class SlicingWorker implements Callable<VertexBufferSlice> {
-		private float z;
-
-		public SlicingWorker(float z__) {
-			this.z = z__;
-		}
-
-		@Override
-		public VertexBufferSlice call() throws Exception {
-			VertexBufferSlice vbs = vertexAndValueBufferForSlice(z);
-			return vbs;
-		}
-	}
 
 	public void clear() {
-		data = null;
 		slices = null;
 	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 	private MinAndMax minAndMaxBasedOnHeader(ImageHDU hdu) {
 		double max = hdu.getMaximumValue();
@@ -500,6 +244,11 @@ public class RegionRepresentation {
 		mam.max = (float)max;
 		return mam;
 	}
+
+	public List<VertexBufferSlice> getSlices() {
+		return this.slices;
+	}
+
 	private static MinAndMax minAndMaxBasedOnRoughOnePercentRushThrough(ImageHDU hdu, Volume volume, Fits fits) {
 		MinAndMax mam = new MinAndMax();
 

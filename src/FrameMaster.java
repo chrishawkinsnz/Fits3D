@@ -299,7 +299,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
     		renderer.informOfResolution(width, height);
     	}
     }
-    
+
+
     public static void setNeedsDisplay() {
     	singleFrameMaster.canvas.display();
     }
