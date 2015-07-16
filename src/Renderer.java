@@ -22,6 +22,8 @@ import com.jogamp.opengl.GL3bc;
 import com.jogamp.opengl.GL3.*;
 import com.jogamp.opengl.math.Matrix4;
 
+import com.jogamp.opengl.util.gl2.GLUT;
+
 public class Renderer {
 	private static long lastTime = 0;
 
@@ -61,6 +63,14 @@ public class Renderer {
 	private int uniformFilterMaxX;
 	private int uniformFilterGradient;
 	private int uniformFilterConstant;
+
+
+
+
+
+	//--DEBUG FLAGS
+	private boolean legendary = true;
+	private	boolean gay = false;
 
 
 	public Renderer(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl){
@@ -128,7 +138,51 @@ public class Renderer {
 		System.out.println("FPS: " + (int)fps);
 		lastTime = System.nanoTime();
 	}
-	
+
+	int[] legendVertexHandles = new int[3];
+	int[] legendColorHandles = new int[3];
+
+	private void drawLegend() {
+
+		float[] origin = {0f, 0f, 0f};
+		if (legendVertexHandles.length == 0) {
+			gl.glGenBuffers(3, legendVertexHandles, 0);
+			gl.glGenBuffers(3, legendColorHandles, 0);
+
+
+			int axisNumber = 0;
+			//--X
+			FloatBuffer vertexBuffer = FloatBuffer.allocate(6);
+			vertexBuffer.put(origin);
+			float[] dest = {2f,0f,0f};
+			vertexBuffer.put(dest);
+			vertexBuffer.flip();
+
+			gl.glBindBuffer(GL_ARRAY_BUFFER, legendVertexHandles[axisNumber]);
+			gl.glBufferData(GL_ARRAY_BUFFER, 2 * 3 * 4, vertexBuffer, GL_STATIC_DRAW);
+
+			FloatBuffer colorBuffer = FloatBuffer.allocate(8);
+			float[] red = {1f, 0f, 0f, 0f};
+			colorBuffer.put(dest);
+			colorBuffer.flip();
+
+			gl.glBindBuffer(GL_ARRAY_BUFFER, legendColorHandles[axisNumber]);
+			gl.glBufferData(GL_ARRAY_BUFFER, 4 * 4, vertexBuffer, GL_STATIC_DRAW);
+		}
+
+
+//		int axisNumber = 0;
+//		gl.glEnableVertexAttribArray(0);
+//		gl.glBindBuffer(GL_ARRAY_BUFFER, legendVertexHandles[axisNumber]);
+//		gl.glVertexAttribPointer(0, 3, GL_FLOAT, true, 0, 1);
+//
+//		gl.glEnableVertexAttribArray(1);
+//		gl.glBindBuffer(GL_ARRAY_BUFFER, legendColorHandles[axisNumber]);
+//		gl.glVertexAttribPointer(1, 4, GL_FLOAT, false, 0, 1);
+//
+//		gl.glDrawArrays(GL_LINE, 0, 2);
+
+	}
 	public void display() {
 
 		printFps();
@@ -140,8 +194,8 @@ public class Renderer {
 		//--figure out if looking back to front
 		float pi = (float)Math.PI;
 		float spin = Math.abs(this.viewer.getxSpin() % (2f * pi));
-		boolean flippityFlop = spin > pi/2f && spin < 3f*pi/2f ;
-//		boolean flippityFlop = spin > 0f && spin < pi ;
+//		boolean flippityFlop = spin > pi/2f && spin < 3f*pi/2f ;
+		boolean flippityFlop = spin > 0f && spin < pi ;
 		if (this.isTrippy == true) {
 			flippityFlop = true;
 		}
@@ -152,7 +206,7 @@ public class Renderer {
 				continue;
 			for (CloudRegion cr: cloud.getRegions()) {
 				for (VertexBufferSlice slice: cr.getSlices()) {
-					slice.scratchDepth = cr.volume.z + cr.volume.dp * slice.depthValue;
+					slice.scratchDepth = cr.volume.x + cr.volume.wd * slice.depthValue;
 					slice.region = cr;
 					slice.cloud = cloud;
 				}
@@ -163,12 +217,20 @@ public class Renderer {
 		
 		class RegionOrderer implements Comparator<VertexBufferSlice> {
 			public int compare(VertexBufferSlice a, VertexBufferSlice b) {
-				return a.scratchDepth < b.scratchDepth ? -1 : 1;
+				return a.scratchDepth < b.scratchDepth ? 1 : -1;
 			}
 		}
 		Collections.sort(allSlicesLikeEver, new RegionOrderer());
 
-			
+		Matrix4 baseMatrix = new Matrix4();
+		baseMatrix.makeOrtho(orthoOrigX - orthoWidth, orthoOrigX + orthoWidth, orthoOrigY - orthoHeight, orthoOrigY + orthoHeight, -6f, 6f);
+		baseMatrix.rotate(this.viewer.getySpin(), 1f, 0f, 0f);
+		baseMatrix.rotate(this.viewer.getxSpin(), 0f, 1f, 0f);
+		float baseScale = 1.0f / this.viewer.getRadius();
+
+		baseMatrix.scale(baseScale, baseScale, baseScale);
+
+
 		for (int i = 0; i < allSlicesLikeEver.size(); i++){
 			
 			//-if Z is now pointing out of the screen take slices from the back of the list forward
@@ -193,24 +255,29 @@ public class Renderer {
 			
 			gl.glUniform1f(this.uniformFilterGradient, gradient);
 			gl.glUniform1f(this.uniformFilterConstant, constant);
-			
-			gl.glUniform4f(this.uniformColorHandle, cloud.color.getRed(), cloud.color.getGreen(), cloud.color.getBlue(), cloud.color.getAlpha());
-	    	Matrix4 m = new Matrix4();
-	    	
 
-    		m.makeOrtho(orthoOrigX - orthoWidth, orthoOrigX + orthoWidth, orthoOrigY - orthoHeight,orthoOrigY + orthoHeight, -6f, 6f);
+			Color[] cols = {Color.red, Color.orange, Color.yellow, Color.green, Color.blue, Color.cyan, Color.magenta};
+			Color col = cloud.color;
+			if (gay) {
+				col = cols[i%cols.length];
+			}
+
+			gl.glUniform4f(this.uniformColorHandle, col.getRed(), col.getGreen(), col.getBlue(), col.getAlpha());
+
     		
-    		float baseScale = 1.0f / this.viewer.getRadius();
-    		
+
     		float pointRadius = this.calculatePointRadiusInPixelsForSlice(slice) * baseScale;
-    		float ptArea = 0.5f * pointRadius * pointRadius * (float)Math.PI;
+			float ptArea = 0.5f * pointRadius * pointRadius * (float)Math.PI;
     		gl.glPointSize(Math.max(pointRadius, 1f));
 			gl.glUniform1f(this.uniformPointAreaHandle, ptArea);
 
-	    	m.rotate(this.viewer.getySpin(), 1f, 0f, 0f);
-	    	m.rotate(this.viewer.getxSpin(), 0f, 1f, 0f);
-	    	m.scale(baseScale, baseScale, baseScale);
-	    	
+			if (legendary) {
+				drawLegend();
+			}
+
+	    	Matrix4 m = new Matrix4();
+			m.loadIdentity();
+			m.multMatrix(baseMatrix);
 	    	m.translate(cr.volume.x + slice.depthValue, cr.volume.y, cr.volume.z);
 	    	m.scale(cr.volume.wd, cr.volume.ht, cr.volume.dp);
 	    	
