@@ -58,7 +58,13 @@ public class PointCloud {
 		quality.callback = (obj) -> {
 			float newQuality = ((Float)obj).floatValue();
 			System.out.println("quality is now :" + newQuality);
-			loadRegionAtFidelity(newQuality);
+
+			Runnable r = new Runnable() {
+				public void run() {
+					loadRegionAtFidelity(newQuality);
+				}
+			};
+			new Thread(r).start();
 		};
 		attributes.add(quality);
 
@@ -112,6 +118,7 @@ public class PointCloud {
 		CloudRegion cr = new CloudRegion(fits, v, fidelity);
 
 		this.pendingRegion = cr;
+		FrameMaster.setNeedsDisplay();
 	}
 	
 	public List<CloudRegion> getRegions() {

@@ -130,6 +130,8 @@ public class Renderer {
 	
 	public void display() {
 
+		printFps();
+
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl.glUseProgram(this.shaderProgram);
 		
