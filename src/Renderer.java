@@ -8,11 +8,7 @@ import static com.jogamp.opengl.GL.GL_TRIANGLES;
 import java.awt.Color;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import static com.jogamp.opengl.GL2.*;
 
@@ -66,7 +62,13 @@ public class Renderer {
 
 
 
-
+	//--Primitives
+	private List<Line>backLines = new ArrayList<Line>();
+	private List<Line>frontLines = new ArrayList<Line>();
+	private List<Line>bottomLines = new ArrayList<Line>();
+	private List<Line>topLines = new ArrayList<Line>();
+	private List<Line>rightLines = new ArrayList<Line>();
+	private List<Line>leftLines = new ArrayList<Line>();
 
 	//--DEBUG FLAGS
 	private boolean legendary = true;
@@ -125,13 +127,14 @@ public class Renderer {
 		this.uniformFilterGradient = gl.glGetUniformLocation(this.shaderProgram, "filterGradient");
 		this.uniformFilterConstant = gl.glGetUniformLocation(this.shaderProgram, "filterConstant");
 		gl.glEnable(GL_BLEND);
-		gl.glEnable(gl.GL_DEPTH_TEST);
-		gl.glDepthFunc(gl.GL_ALWAYS);
+//		gl.glEnable(gl.GL_DEPTH_TEST);
+//		gl.glDepthFunc(gl.GL_ALWAYS);
 
 		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		gl.glBlendEquation(GL_FUNC_ADD);
 		gl.glDisable(GL_CULL_FACE);
 
+		setupLegend();
 	}
 
 	private void printFps() {
@@ -144,30 +147,63 @@ public class Renderer {
 
 	boolean first = true;
 
-	private Line[] legendLines;
+
 	private int legendMvpUniformHandle;
 	private int shaderProgramLegend;
-	private void drawLegend(Matrix4 mvp) {
 
+	private void setupLegend() {
 		float length = 10f;
-		if (legendLines == null) {
-			legendLines = new Line[3];
-			for (int axisNumber = 0; axisNumber < 3; axisNumber++) {
-				float[] origin = {-1f, -1f, -1f};
-				float[] dest = origin.clone();
-				dest[axisNumber] += length;
+		Line[] legendLines = new Line[3];
+		for (int axisNumber = 0; axisNumber < 3; axisNumber++) {
+			float[] origin = {-1f, -1f, -1f};
+			float[] dest = origin.clone();
+			dest[axisNumber] += length;
 
-				FloatBuffer colorBuffer = FloatBuffer.allocate(8);
-				float[] col = {0.3f, 0.3f, 0.3f, 1f};
-				col[axisNumber] = 1f;
-				float[] black = {0f, 0f, 0f, 0f};
-				legendLines[axisNumber] = makeLine(origin, dest, col, black);
-			}
+			FloatBuffer colorBuffer = FloatBuffer.allocate(8);
+			float[] col = {0.3f, 0.3f, 0.3f, 1f};
+			col[axisNumber] = 1f;
+			float[] black = {0f, 0f, 0f, 0f};
+			legendLines[axisNumber] = makeLine(origin, dest, col, black);
+		}
+		this.backLines.add(legendLines[0]);	//--add red x axis line
+		this.backLines.add(legendLines[1]);	//--add green y axis line
+		this.leftLines.add(legendLines[2]);	//--add blue z axis line
+
+	}
+	private void renderPrimitives(Matrix4 mvp, float spin, boolean firstPass) {
+
+		float zero = 0f;
+		float halfPi = 3.141592f/2f;
+		float pi = 3.141592f;
+		float piAndAHalf = 3.141592f * 1.5f;
+
+		Set<Line> front= new HashSet<>();
+		Set<Line> back= new HashSet<>();
+
+		//--back
+		if (spin < halfPi || spin >piAndAHalf) {
+			front.addAll(frontLines);
+			back.addAll(backLines);
+		}
+		if (spin < pi) {
+			front.addAll(rightLines);
+			back.addAll(leftLines);
+		}
+		if (spin > halfPi && spin < piAndAHalf) {
+			front.addAll(backLines);
+			back.addAll(frontLines);
+		}
+		if (spin > pi) {
+			front.addAll(leftLines);
+			back.addAll(rightLines);
 		}
 
-		renderLines(legendLines, mvp);
-
-		gl.glUseProgram(this.shaderProgram);
+		if (firstPass) {
+			renderLines(back, mvp);
+		}
+		else {
+			renderLines(front, mvp);
+		}
 	}
 
 	public static class Line{
@@ -212,6 +248,15 @@ public class Renderer {
 	private void renderLine(Line line, Matrix4 mvp) {
 		Line[] temp = {line};
 		renderLines(temp, mvp);
+	}
+
+	private void renderLines(Collection<Line>lines, Matrix4 mvp) {
+		Line[]larray = new Line[lines.size()];
+		int idx = 0;
+		for (Line line : lines) {
+			larray[idx++] = line;
+		}
+		renderLines(larray, mvp);
 	}
 
 	private void renderLines(Line[] lines, Matrix4 mvp) {
@@ -259,6 +304,7 @@ public class Renderer {
 		float spin = Math.abs(this.viewer.getxSpin() % (2f * pi));
 //		boolean flippityFlop = spin > pi/2f && spin < 3f*pi/2f ;
 		boolean flippityFlop = spin > 0f && spin < pi ;
+		System.out.println(spin);
 		if (this.isTrippy == true) {
 			flippityFlop = true;
 		}
@@ -292,6 +338,10 @@ public class Renderer {
 		float baseScale = 1.0f / this.viewer.getRadius();
 
 		baseMatrix.scale(baseScale, baseScale, baseScale);
+
+
+		renderPrimitives(baseMatrix, spin, true);
+
 
 
 		for (int i = 0; i < allSlicesLikeEver.size(); i++){
@@ -359,9 +409,9 @@ public class Renderer {
 	    	gl.glDrawArrays(GL_POINTS, 0, slice.numberOfPts);
 		}
 
-		if (legendary) {
-			drawLegend(baseMatrix);
-		}
+
+		renderPrimitives(baseMatrix, spin, false);
+
 
     	gl.glEnableVertexAttribArray(0);
     	gl.glDisableVertexAttribArray(1);
