@@ -1,3 +1,4 @@
+import com.sun.tools.doclint.HtmlTag;
 import nom.tam.fits.Fits;
 import nom.tam.fits.ImageHDU;
 
@@ -39,6 +40,7 @@ public class PointCloud {
 	public Attribute.BinaryAttribute isVisible;
 	public Attribute.SteppedRangeAttribute quality;
 	private Attribute.FilterSelectionAttribute filterSelection;
+	public Attribute.BinaryAttribute isSelected;
 
 	//--static attributes
 	public Attribute.TextAttribute fileName;
@@ -70,7 +72,10 @@ public class PointCloud {
 
 		isVisible = new Attribute.BinaryAttribute("Visible", true, true);
 		attributes.add(isVisible);
-		
+
+		isSelected = new Attribute.BinaryAttribute("Selected", false, true);
+		attributes.add(isSelected);
+
 		Christogram.Filter data = new Christogram.Filter(0f,1f,0f,1f,false);
 		filterSelection = new Attribute.FilterSelectionAttribute("Filter", false, data);
 		attributes.add(filterSelection);
@@ -112,9 +117,10 @@ public class PointCloud {
 			e.printStackTrace();
 		}
 	}
-	
+	static int c = 0;
 	public void loadRegionAtFidelity(float fidelity) {
-		Volume v = new Volume(0f, 0f, 0f, 1f, 1f, 1f);
+		Volume[] volumes = {new Volume(0f, 0f, 0f, 1f, 1f, 1f), new Volume(0.5f, 0.5f, 0f, 0.5f, 0.5f, 0.5f), new Volume(0.75f, 0f, 0f, 1f, 1f, 0.05f)};
+		Volume v = volumes[c++];
 		CloudRegion cr = new CloudRegion(fits, v, fidelity);
 
 		this.pendingRegion = cr;

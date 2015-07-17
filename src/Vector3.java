@@ -12,11 +12,32 @@ public class Vector3 {
 	public final float x;
 	public final float y;
 	public final float z;
-	
+
+	public Vector3(float[] arr) {
+		this.x = arr[0];
+		this.y = arr[1];
+		this.z = arr[2];
+	}
+
 	public Vector3(float x, float y, float z) {
 		this.x = x;
 		this.y = y;
 		this.z = z;
+	}
+
+	public float[] toArray() {
+		float[] result = {x, y ,z};
+		return result;
+	}
+
+	public Vector3 add(Vector3 rhs) {
+		Vector3 result = new Vector3(x + rhs.x, y + rhs.y, z + rhs.z);
+		return result;
+	}
+
+	public Vector3 scale(float scale) {
+		Vector3 result = new Vector3(x * scale, y * scale, z *  scale);
+		return result;
 	}
 	
 }

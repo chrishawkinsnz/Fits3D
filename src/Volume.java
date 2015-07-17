@@ -33,4 +33,37 @@ public class Volume {
 	public static Volume unitVolume() {
 		return new Volume(Vector3.zeros, Vector3.ones);
 	}
+
+	public Vector3 a() {
+		return origin;
+	}
+
+	public Vector3 b() {
+		return origin.add(Vector3.right.scale(wd));
+	}
+
+	public Vector3 c() {
+		return origin.add(Vector3.up.scale(ht));
+	}
+
+	public Vector3 d() {
+		return c().add(Vector3.right.scale(wd));
+	}
+
+	public Vector3 e() {
+		return a().add(Vector3.in.scale(dp));
+	}
+
+	public Vector3 f() {
+		return b().add(Vector3.in.scale(dp));
+	}
+
+	public Vector3 g() {
+		return c().add(Vector3.in.scale(dp));
+	}
+
+	public Vector3 h() {
+		return d().add(Vector3.in.scale(dp));
+	}
+
 }

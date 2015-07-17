@@ -70,6 +70,12 @@ public class Renderer {
 	private List<Line>rightLines = new ArrayList<Line>();
 	private List<Line>leftLines = new ArrayList<Line>();
 
+
+	//--SELECTIOn
+	private Volume selectionVolume = Volume.unitVolume();
+
+
+
 	//--DEBUG FLAGS
 	private boolean legendary = true;
 	private	boolean gay = false;
@@ -113,8 +119,6 @@ public class Renderer {
 			}
 		}
 
-//		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "/Users/chrishawkins/shaders/shader2.vert", "/Users/chrishawkins/shaders/shader2.frag");
-		//this.shaderProgram = ShaderHelper.programWithShaders2(gl, "bin/shaders/shader2.vert", "bin/shaders/shader2.frag");
 		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "shader2.vert", "shader2.frag");
 
 		this.uniformMvpHandle = gl.glGetUniformLocation(this.shaderProgram, "mvp");
@@ -127,8 +131,6 @@ public class Renderer {
 		this.uniformFilterGradient = gl.glGetUniformLocation(this.shaderProgram, "filterGradient");
 		this.uniformFilterConstant = gl.glGetUniformLocation(this.shaderProgram, "filterConstant");
 		gl.glEnable(GL_BLEND);
-//		gl.glEnable(gl.GL_DEPTH_TEST);
-//		gl.glDepthFunc(gl.GL_ALWAYS);
 
 		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		gl.glBlendEquation(GL_FUNC_ADD);
@@ -206,10 +208,33 @@ public class Renderer {
 		}
 	}
 
+	private void renderOutline(Matrix4 mvp, Volume v) {
+		float[] col = {0.7f, 0.7f, 0.7f, 1.0f};
+		Line one 	= makeLine(v.a(), v.b(), col, col);
+		Line two 	= makeLine(v.a(), v.c(), col, col);
+		Line three 	= makeLine(v.c(), v.d(), col, col);
+		Line four 	= makeLine(v.b(), v.d(), col, col);
+		Line five	= makeLine(v.e(), v.f(), col, col);
+		Line six	= makeLine(v.e(), v.g(), col, col);
+		Line seven 	= makeLine(v.g(), v.h(), col, col);
+		Line eight	= makeLine(v.f(), v.h(), col, col);
+		Line nine	= makeLine(v.a(), v.e(), col, col);
+		Line ten 	= makeLine(v.b(), v.f(), col, col);
+		Line eleven = makeLine(v.c(), v.g(), col, col);
+		Line twelve = makeLine(v.d(), v.h(), col, col);
+
+		Line[] lines = {one, two, three, four, five, six, seven, eight, nine, ten, eleven, twelve};
+		renderLines(lines, mvp);
+	}
+
 	public static class Line{
 		public Line(int vertHandle_, int colHandle_) {vertHandle = vertHandle_; colHandle = colHandle_;}
 		int vertHandle;
 		int colHandle;
+	}
+
+	private Line makeLine(Vector3 posa, Vector3 posb, float[] cola, float[] colb) {
+		return makeLine(posa.toArray(), posb.toArray(), cola, colb);
 	}
 
 	private Line makeLine(float[]posa, float[]posb, float []cola, float[]colb) {
@@ -238,7 +263,7 @@ public class Renderer {
 		colorBuffer.put(cola);
 		colorBuffer.put(colb);
 		colorBuffer.flip();
-
+		
 		gl.glBindBuffer(GL_ARRAY_BUFFER, colHandle[0]);
 		gl.glBufferData(GL_ARRAY_BUFFER, 2 * 4 * 4, colorBuffer, GL_STATIC_DRAW);
 
@@ -287,9 +312,6 @@ public class Renderer {
 		gl.glUseProgram(this.shaderProgram);
 		gl.glDepthFunc(previousDepthFunc[0]);
 	}
-
-
-
 
 	public void display() {
 
@@ -389,7 +411,7 @@ public class Renderer {
 	    	Matrix4 m = new Matrix4();
 			m.loadIdentity();
 			m.multMatrix(baseMatrix);
-	    	m.translate(cr.volume.x + slice.depthValue, cr.volume.y, cr.volume.z);
+	    	m.translate(cr.volume.x, cr.volume.y, cr.volume.z);
 	    	m.scale(cr.volume.wd, cr.volume.ht, cr.volume.dp);
 	    	
 	    	m.translate(cloud.volume.x, cloud.volume.y, cloud.volume.z);
@@ -407,12 +429,20 @@ public class Renderer {
 	    	gl.glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
 	    	
 	    	gl.glDrawArrays(GL_POINTS, 0, slice.numberOfPts);
+
+
 		}
+
+
 
 
 		renderPrimitives(baseMatrix, spin, false);
 
-
+		//--draw outlines
+		for (PointCloud pc : this.pointClouds) {
+			if (pc.isSelected.value)
+			renderOutline(baseMatrix, pc.volume);
+		}
     	gl.glEnableVertexAttribArray(0);
     	gl.glDisableVertexAttribArray(1);
     	
