@@ -406,11 +406,13 @@ public class Renderer {
 	    	Matrix4 m = new Matrix4();
 			m.loadIdentity();
 			m.multMatrix(baseMatrix);
-	    	m.translate(cr.volume.x, cr.volume.y, cr.volume.z);
+
 
 	    	m.translate(cloud.volume.x, cloud.volume.y, cloud.volume.z);
 	    	m.scale(cloud.volume.wd, cloud.volume.ht, cloud.volume.dp);
-	    	
+
+			//m.translate(cr.volume.x, cr.volume.y, cr.volume.z);
+
 	    	//--pass that matrix to the shader
 	    	gl.glUniformMatrix4fv(this.uniformMvpHandle, 1, false, m.getMatrix(), 0);
 	

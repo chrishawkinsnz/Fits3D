@@ -32,19 +32,12 @@ public class RegionRepresentation {
 
 	private List<VertexBufferSlice>slices;
 
-	/**
-	 * 
-	 * @param fileName Filename of the original fits file
-	 * @param fidelity Fidelity of the represenation (1 being perfect, 0 being emtpy)
-	 * @param volume a volume cube indicating the area of the data to sample (full sample is == new volume(0,0,0,1,1,1));
-	 */
 	public enum DataType {
 		FLOAT, DOUBLE, SHORT, INT, LONG,
 	}
 	private RegionRepresentation() {
 
 	}
-
 
 	public RegionRepresentation generateSubrepresentation(Volume volume, boolean replaceValues) {
 		RegionRepresentation rr = new RegionRepresentation();
@@ -67,10 +60,10 @@ public class RegionRepresentation {
 			ShortBuffer sVerts = ss.vertexBuffer;
 			FloatBuffer sValues = ss.valueBuffer;
 
-			ShortBuffer subsectionVerts = ShortBuffer.allocate(ss.numberOfPts * 3);
-			ShortBuffer cloneVerts = ShortBuffer.allocate(ss.numberOfPts * 3);
-			FloatBuffer subsectionValues = FloatBuffer.allocate(ss.numberOfPts * 1);
-			FloatBuffer cloneValues = FloatBuffer.allocate(ss.numberOfPts * 1);
+			ShortBuffer subsectionVerts 	= ShortBuffer.allocate(ss.numberOfPts * 3);
+			ShortBuffer cloneVerts			= ShortBuffer.allocate(ss.numberOfPts * 3);
+			FloatBuffer subsectionValues 	= FloatBuffer.allocate(ss.numberOfPts * 1);
+			FloatBuffer cloneValues 		= FloatBuffer.allocate(ss.numberOfPts * 1);
 
 			int subsectionCount = 0;
 			int cloneCount = 0;

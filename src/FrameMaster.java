@@ -115,7 +115,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     		JLabel title = new JLabel("Coud "+cloudIndex);
         	title.setFont(new Font("Dialog", Font.BOLD, 24));
         	attributPanel.add(title, "span 2");	
-    		for (Attribute attribute : pc.attributes) {
+    		for (Attribute attribute : pc.getAttributes()) {
     			
     			AttributeDisplayer tweakable = this.attributeDisplayManager.tweakableForAttribute(attribute, pc);
     			if (tweakable == null) {continue;}
@@ -232,7 +232,12 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		this.pleaseSelectThisNextChanceYouGet = pc;
 		setNeedsDisplay();
     }
-    
+
+	private void test() {
+		this.pointClouds.get(0).makeSomeStupidSubregion();
+		reloadAttributePanel();
+	}
+
     private JMenuBar makeMenuBar() {
 
 
@@ -252,10 +257,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         return menuBar;
     }
 
-	private void test() {
-		this.pointClouds.get(0).makeSomeStupidSubregion();
-		reloadAttributePanel();
-	}
+
     
     private static void setKeyboardShortcutTo(int key, JMenuItem menuItem){
     	String os = System.getProperty("os.name").toLowerCase();	
