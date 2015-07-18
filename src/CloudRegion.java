@@ -1,5 +1,6 @@
 import java.awt.Color;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 import nom.tam.fits.Fits;
@@ -15,21 +16,29 @@ public class CloudRegion {
 	public RegionRepresentation bestRepresentation;
 	public RegionRepresentation currentRepresentation;
 	
-	public final float depth;
+	public float depth;
 	
-	public final Volume volume;
+	public Volume volume;
 	private Fits fits;
-	
+
+	public Attribute.BinaryAttribute isVisible;
+	public List<Attribute>attributes = new ArrayList<Attribute>();
+
 	public final static Color[] cols = {Color.blue, Color.green, Color.pink, Color.orange};
 
+	private CloudRegion() {
+		Attribute.BinaryAttribute visibleAttr = new Attribute.BinaryAttribute("Visble Region", true, false);
+		this.isVisible = visibleAttr;
+		attributes.add(visibleAttr);
+	}
 	private CloudRegion (Volume volume ) {
+		this();
 		this.volume = volume;
 		this.depth = this.volume.origin.z + 0.5f * this.volume.dp;
 	}
 
 	public CloudRegion (Fits fits, Volume volume, float initialFidelity) {
-		this.volume = volume;
-		this.depth = this.volume.origin.x + 0.5f * this.volume.dp;
+		this(volume);
 		this.fits = fits;
 
 		RegionRepresentation initialRepresentation = RegionRepresentation.justTheSlicesPlease(fits, initialFidelity, this.volume);

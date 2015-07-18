@@ -141,12 +141,12 @@ public class PointCloud {
 	
 	public void addRegion (CloudRegion cr, List<CloudRegion>existingRegions) {
 		existingRegions.add(cr);
-		class RegionOrderer implements Comparator<CloudRegion> {
-			public int compare(CloudRegion a, CloudRegion b) {
-				return a.depth < b.depth ? -1 : 1;
-			}
-		}
-		Collections.sort(existingRegions, new RegionOrderer());
+//		class RegionOrderer implements Comparator<CloudRegion> {
+//			public int compare(CloudRegion a, CloudRegion b) {
+//				return a.depth < b.depth ? -1 : 1;
+//			}
+//		}
+//		Collections.sort(existingRegions, new RegionOrderer());
 	}
 
 	public void clearRegions() {

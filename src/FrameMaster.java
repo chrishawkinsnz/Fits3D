@@ -17,20 +17,7 @@ import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLCanvas;
 
-import javax.swing.BorderFactory;
-import javax.swing.DefaultListModel;
-import javax.swing.JButton;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.KeyStroke;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -142,6 +129,31 @@ public class FrameMaster extends JFrame implements GLEventListener {
     			formatString = tweakable.isDoubleLiner() ? "width ::250, span 2" : "gapleft 16, width ::150";
     			attributPanel.add(tweakable.getComponent(), formatString);
     		}
+
+			if (pc.regions.size() > 1) {
+				for (int i = 0; i < pc.regions.size(); i++) {
+					JSeparator separator = new JSeparator();
+					attributPanel.add(separator, "span 2");
+
+					JLabel label = new JLabel("Region " + i);
+					label.setFont(new Font("Dialog", Font.BOLD, 14));
+					attributPanel.add(label, "span 2");
+
+					CloudRegion cr = pc.regions.get(i);
+					for (Attribute attribute : cr.attributes) {
+						AttributeDisplayer tweakable = this.attributeDisplayManager.tweakableForAttribute(attribute, pc);
+						if (tweakable == null) {continue;}
+						String formatString = tweakable.isDoubleLiner() ? "span 2" : "";
+
+						label = new JLabel(attribute.displayName);
+						label.setFont(new Font("Dialog", Font.BOLD, 12));
+						attributPanel.add(label, formatString);
+
+						formatString = tweakable.isDoubleLiner() ? "width ::250, span 2" : "gapleft 16, width ::150";
+						attributPanel.add(tweakable.getComponent(), formatString);
+					}
+				}
+			}
     	}
 
     	attributPanel.setMinimumSize(lilDimension);
@@ -242,6 +254,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 	private void test() {
 		this.pointClouds.get(0).makeSomeStupidSubregion();
+		reloadAttributePanel();
 	}
     
     private static void setKeyboardShortcutTo(int key, JMenuItem menuItem){

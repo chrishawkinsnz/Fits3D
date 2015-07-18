@@ -327,9 +327,10 @@ public class Renderer {
 		
 		List<VertexBufferSlice> allSlicesLikeEver = new ArrayList<VertexBufferSlice>();
 		for (PointCloud cloud : this.pointClouds){
-			if (cloud.isVisible.value == false) 
-				continue;
+			if (cloud.isVisible.value == false) {continue;}
 			for (CloudRegion cr: cloud.getRegions()) {
+				if (cr.isVisible.value == false) {continue;}
+
 				for (VertexBufferSlice slice: cr.getSlices()) {
 					slice.scratchX = cr.volume.x + cr.volume.wd * slice.x;
 					slice.region = cr;
