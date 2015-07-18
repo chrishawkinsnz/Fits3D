@@ -13,6 +13,8 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
  *
  */
 public class CloudRegion {
+	public final static float startingFidelity = 0.15f;
+
 	public RegionRepresentation bestRepresentation;
 	public RegionRepresentation currentRepresentation;
 	
@@ -22,14 +24,30 @@ public class CloudRegion {
 	private Fits fits;
 
 	public Attribute.BinaryAttribute isVisible;
+	public Attribute.SteppedRangeAttribute quality;
 	public List<Attribute>attributes = new ArrayList<Attribute>();
 
 	public final static Color[] cols = {Color.blue, Color.green, Color.pink, Color.orange};
 
 	private CloudRegion() {
-		Attribute.BinaryAttribute visibleAttr = new Attribute.BinaryAttribute("Visble Region", true, false);
+		Attribute.BinaryAttribute visibleAttr = new Attribute.BinaryAttribute("Visble", true, false);
 		this.isVisible = visibleAttr;
 		attributes.add(visibleAttr);
+
+		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, startingFidelity, 10, true);
+		quality.callback = (obj) -> {
+			float newQuality = ((Float)obj).floatValue();
+			System.out.println("quality is now :" + newQuality);
+
+			Runnable r = new Runnable() {
+				public void run() {
+
+					//loadRegionAtFidelity(newQuality);
+				}
+			};
+			new Thread(r).start();
+		};
+		attributes.add(quality);
 	}
 	private CloudRegion (Volume volume ) {
 		this();

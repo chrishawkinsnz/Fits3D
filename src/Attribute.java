@@ -42,7 +42,7 @@ public abstract class Attribute {
 		public float max;
 		public int steps;
 		
-		public PointCloud pointCloud;
+		private PointCloud pointCloud;
 		
 		public SteppedRangeAttribute(String displayName, float min, float max, float initialValue, int steps, boolean shouldAggregate) {
 			super(displayName, shouldAggregate);

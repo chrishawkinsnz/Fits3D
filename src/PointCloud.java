@@ -56,7 +56,6 @@ public class PointCloud {
 		attributes.add(intensity);
 		
 		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, startingFidelity, 10, true);
-		quality.pointCloud = this;
 		quality.callback = (obj) -> {
 			float newQuality = ((Float)obj).floatValue();
 			System.out.println("quality is now :" + newQuality);

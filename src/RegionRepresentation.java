@@ -67,42 +67,59 @@ public class RegionRepresentation {
 			ShortBuffer sVerts = ss.vertexBuffer;
 			FloatBuffer sValues = ss.valueBuffer;
 
-			ShortBuffer destVerts = ShortBuffer.allocate(ss.numberOfPts * 3);
-			FloatBuffer destValues = FloatBuffer.allocate(ss.numberOfPts * 1);
-			List<Integer>movedPoints = new ArrayList<>();
+			ShortBuffer subsectionVerts = ShortBuffer.allocate(ss.numberOfPts * 3);
+			ShortBuffer cloneVerts = ShortBuffer.allocate(ss.numberOfPts * 3);
+			FloatBuffer subsectionValues = FloatBuffer.allocate(ss.numberOfPts * 1);
+			FloatBuffer cloneValues = FloatBuffer.allocate(ss.numberOfPts * 1);
 
+			int subsectionCount = 0;
+			int cloneCount = 0;
 			for (int i = 0; i < ss.numberOfPts; i++) {
 				short y = sVerts.get(i * 3 + 1);
-				if (y < minY) {continue;}
-				if (y > maxY) {continue;}
-
 				short z = sVerts.get(i * 3 + 2);
-				if (z < minZ) {continue;}
-				if (z > maxZ) {continue;}
+				boolean withinYBounds = y > minY && y < maxY;
+				boolean withinZBounds = z > minY && z < maxZ;
+				boolean withinSubsection = withinYBounds && withinZBounds;
+
+				if (!withinSubsection && !replaceValues) {
+					continue;
+				}
 
 				short x = sVerts.get(i * 3);
 				float value = sValues.get(i);
 
-				destVerts.put(x);
-				destVerts.put(y);
-				destVerts.put(z);
-				destValues.put(value);
 
-				movedPoints.add(i);
+				ShortBuffer destinationVertBuffer = withinSubsection ? subsectionVerts : cloneVerts;
+				FloatBuffer destinationValueBuffer = withinSubsection ? subsectionValues : cloneValues;
+
+				if (withinSubsection)
+					subsectionCount++;
+				else
+					cloneCount++;
+
+				destinationVertBuffer.put(x);
+				destinationVertBuffer.put(y);
+				destinationVertBuffer.put(z);
+				destinationValueBuffer.put(value);
 			}
 
-			destVerts.flip();
-			destValues.flip();
+			subsectionVerts.flip();
+			subsectionValues.flip();
+			cloneVerts.flip();
+			cloneValues.flip();
 
 			VertexBufferSlice newSlice = new VertexBufferSlice();
-			newSlice.numberOfPts = movedPoints.size();
+			newSlice.numberOfPts = subsectionCount;
 			newSlice.x = ss.x;
-			newSlice.vertexBuffer = destVerts;
-			newSlice.valueBuffer = destValues;
+			newSlice.vertexBuffer = subsectionVerts;
+			newSlice.valueBuffer = subsectionValues;
 
+			if (replaceValues) {
+				ss.numberOfPts = cloneCount;
+				ss.vertexBuffer = cloneVerts;
+				ss.valueBuffer = cloneValues;
+			}
 			newSlices.add(newSlice);
-
-			int sourceCapacity = ss.numberOfPts;
 		}
 		rr.fidelity = fidelity;
 		rr.isMaximumFidelity = isMaximumFidelity;
