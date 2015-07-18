@@ -118,8 +118,9 @@ public class PointCloud implements  AttributeProvider {
 	}
 	static int c = 0;
 	public void loadRegionAtFidelity(float fidelity) {
-		Volume[] volumes = {new Volume(0f, 0f, 0f, 1f, 1f, 1f), new Volume(0.5f, 0.5f, 0f, 0.4f, 0.4f, 0.4f), new Volume(0.75f, 0f, 0f, 1f, 1f, 0.05f)};
-		Volume v = volumes[c];
+		Volume[] volumes = {new Volume(0f, 0f, 0f, 1f, 1f, 1f), new Volume(0.25f, 0.25f, 0f, 0.5f, 0.5f, 1f), new Volume(0.75f, 0f, 0f, 1f, 1f, 0.05f)};
+		Volume v = volumes[c++];
+
 		CloudRegion cr = new CloudRegion(fits, v, fidelity);
 
 		this.pendingRegion = cr;
@@ -157,11 +158,17 @@ public class PointCloud implements  AttributeProvider {
 
 	public void makeSomeStupidSubregion() {
 		Volume corner = new Volume(0.25f, 0.25f, 0.25f, 0.5f, 0.5f, 0.5f);
-		CloudRegion newRegion = this.regions.get(0).subRegion(corner, true);
+		CloudRegion newRegion = this.regions.get(0).subRegion(corner, this.regions.get(0).bestRepresentation.fidelity, true);
 		this.pendingRegion = newRegion;
 		FrameMaster.setNeedsDisplay();
 	}
 
+	public void makeSomeStupidOtherSubregion() {
+		Volume corner = new Volume(0.25f, 0.25f, 0.25f, 0.5f, 0.5f, 0.5f);
+		CloudRegion newRegion = this.regions.get(0).subRegion(corner, 1.0f, true);
+		this.pendingRegion = newRegion;
+		FrameMaster.setNeedsDisplay();
+	}
 
 	public String toString() {
 		return this.fileName.value;

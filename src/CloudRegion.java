@@ -75,16 +75,22 @@ public class CloudRegion {
 	 * @param subVolume volume is unit volume that is relative to the overall fits file (not the existing region)
 	 * @return
 	 */
-	public CloudRegion subRegion(Volume subVolume, boolean replaceValues) {
+	public CloudRegion subRegion(Volume subVolume, float fidelity, boolean replaceValues) {
 		CloudRegion cr = new CloudRegion(subVolume);
 		assert (subVolume.origin.x >= this.volume.origin.x);
 		assert (subVolume.origin.y >= this.volume.origin.y);
 		assert (subVolume.origin.z >= this.volume.origin.z);
 
+		if (fidelity == this.currentRepresentation.fidelity) {
+			RegionRepresentation subRepresentation = currentRepresentation.generateSubrepresentation(subVolume, replaceValues);
+			cr.bestRepresentation = subRepresentation;
+			cr.currentRepresentation = subRepresentation;
+		}
+		else {
+			cr.bestRepresentation = RegionRepresentation.justTheSlicesPlease(this.fits, fidelity, subVolume);
+			cr.currentRepresentation = cr.bestRepresentation;
 
-		RegionRepresentation subRepresentation = currentRepresentation.generateSubrepresentation(subVolume, replaceValues);
-		cr.bestRepresentation = subRepresentation;
-		cr.currentRepresentation = subRepresentation;
+		}
 
 		return cr;
 	}

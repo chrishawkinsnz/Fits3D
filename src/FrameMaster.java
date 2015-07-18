@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Event;
 import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.ArrayList;
@@ -237,6 +239,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		this.pointClouds.get(0).makeSomeStupidSubregion();
 		reloadAttributePanel();
 	}
+	private void test2() {
+		this.pointClouds.get(0).makeSomeStupidOtherSubregion();
+		reloadAttributePanel();
+	}
 
     private JMenuBar makeMenuBar() {
 
@@ -252,6 +258,21 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		JMenuItem test = new JMenuItem("test");
 		test.addActionListener(e -> this.test());
 		fileMenu.add(test);
+
+		JMenuItem test2 = new JMenuItem("test2");
+		test2.addActionListener(e -> this.test2());
+		fileMenu.add(test2);
+
+		JMenuItem gay = new JMenuItem("gay?");
+
+		gay.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				FrameMaster.this.renderer.gay = !FrameMaster.this.renderer.gay;
+				setNeedsDisplay();
+			}
+		});
+		fileMenu.add(gay);
 
         menuBar.add(fileMenu);
         return menuBar;

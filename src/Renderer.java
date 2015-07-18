@@ -27,11 +27,9 @@ public class Renderer {
 	public boolean isOrthographic = true;
 	private int width;
 	private int height;
-	
 
 	//--OPEN GL
 	private GL3 gl;
-	
 	
 	//--OPEN GL HANDLES
 	private int shaderProgram;
@@ -72,7 +70,7 @@ public class Renderer {
 
 	//--DEBUG FLAGS
 	private boolean legendary = true;
-	private	boolean gay = false;
+	public	boolean gay = false;
 
 
 	public Renderer(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl){

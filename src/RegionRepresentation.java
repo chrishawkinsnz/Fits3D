@@ -200,19 +200,25 @@ public class RegionRepresentation {
 			float zStride = 1.0f/(float)repDepth;
 			if (hdu.getData().reset()) {
 				ArrayDataInput adi = fits.getStream();
-				int planesToSkip = sourceStartX;
-				adi.skipBytes(sourceDepth * sourceHeight * planesToSkip * typeSize);
+
+				//--skip whole planes at the start if the volume doesn't start at zero x
+				adi.skipBytes(sourceDepth * sourceHeight * sourceStartX * typeSize);
 
 				for (int x = 0; x < repWidth; x ++) {
 					float xProportion = (float)x/(float)repWidth;
+					float xPosition = volume.x + volume.wd * xProportion;
 					int pts = 0;
 					int maxPts = repHeight * repDepth;
+
+					//--skip whole lines at the start if the volume doesn't start at zero ys
+					adi.skipBytes(sourceDepth * sourceStartY * typeSize);
 
 					ShortBuffer vertexBuffer = ShortBuffer.allocate(maxPts * 3);
 					FloatBuffer valueBuffer = FloatBuffer.allocate(maxPts);
 
 					for (int y = 0; y < repHeight; y ++) {
 						float yProportion = (float)y/(float)repHeight;
+						float yPosition = volume.y + volume.ht * yProportion;
 
 						if (dataType == DataType.DOUBLE)
 							adi.read(storaged, 0, storaged.length);
@@ -221,6 +227,7 @@ public class RegionRepresentation {
 
 						for (int z = 0; z < repDepth; z++) {
 							float zProportion = (float)z/(float)repDepth;
+							float zPosition = volume.z + volume.dp * zProportion;
 
 							float val;
 							if (dataType == DataType.DOUBLE) {
@@ -235,23 +242,29 @@ public class RegionRepresentation {
 								float fudge = r.nextFloat();
 								fudge = fudge - 0.5f;
 
-								vertexBuffer.put((short) ((xProportion + fudge * xStride) * Short.MAX_VALUE));
-								vertexBuffer.put((short) ((yProportion + fudge * yStride) * Short.MAX_VALUE));
-								vertexBuffer.put((short) ((zProportion + fudge * zStride) * Short.MAX_VALUE));
+								vertexBuffer.put((short) ((xPosition + fudge * xStride) * Short.MAX_VALUE));
+								vertexBuffer.put((short) ((yPosition + fudge * yStride) * Short.MAX_VALUE));
+								vertexBuffer.put((short) ((zPosition + fudge * zStride) * Short.MAX_VALUE));
 								valueBuffer.put(val);
 								pts++;
 							}
 						}
 
-						if (y == repHeight-1 && yRemainder!=0) {
-							//is remainder zone
-							int linesToSkip = yRemainder + stride - 1;
-							adi.skipBytes(sourceDepth * linesToSkip * typeSize );
-						} else {
+						//--figure out the current line on
+
+//						if (y == repHeight-1 && yRemainder!=0) {
+//							//is remainder zone
+//							int linesToSkip = yRemainder + stride - 1;
+//							adi.skipBytes(sourceDepth * linesToSkip * typeSize );
+//						} else {
 							int linesToSkip = stride - 1;
 							adi.skipBytes(sourceDepth * linesToSkip * typeSize);
-						}
+//						}
 					}
+					//--skip to end of slice
+					int currentLine = stride * repHeight + sourceStartY;
+					int linesToSkip = sourceHeight - currentLine;
+					adi.skip(sourceDepth * linesToSkip * typeSize);
 
 					//--make a vbo slice
 					vertexBuffer.flip();
