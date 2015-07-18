@@ -71,7 +71,7 @@ public class RegionRepresentation {
 				short y = sVerts.get(i * 3 + 1);
 				short z = sVerts.get(i * 3 + 2);
 				boolean withinYBounds = y > minY && y < maxY;
-				boolean withinZBounds = z > minY && z < maxZ;
+				boolean withinZBounds = z > minZ && z < maxZ;
 				boolean withinSubsection = withinYBounds && withinZBounds;
 
 				if (!withinSubsection && !replaceValues) {
@@ -231,12 +231,12 @@ public class RegionRepresentation {
 
 							float val;
 							if (dataType == DataType.DOUBLE) {
-								val = (float)storaged[z * stride];
+								val = (float)storaged[sourceStartZ + z * stride];
 							} else {
-								val = storagef[z * stride];
+								val = storagef[sourceStartZ + z * stride];
 							}
 							int bucketIndex = (int)(val - rr.estMin/stepSize);
-							if (bucketIndex >= 0 && bucketIndex < nBuckets && !Double.isNaN(val)){
+							if (bucketIndex >= 0 && bucketIndex < nBuckets && !Double.isNaN(val)){	//--TODO should the buckets really be stopping points from being added ???
 								rr.buckets[bucketIndex]++;
 
 								float fudge = r.nextFloat();
@@ -250,16 +250,9 @@ public class RegionRepresentation {
 							}
 						}
 
-						//--figure out the current line on
-
-//						if (y == repHeight-1 && yRemainder!=0) {
-//							//is remainder zone
-//							int linesToSkip = yRemainder + stride - 1;
-//							adi.skipBytes(sourceDepth * linesToSkip * typeSize );
-//						} else {
-							int linesToSkip = stride - 1;
-							adi.skipBytes(sourceDepth * linesToSkip * typeSize);
-//						}
+						//--stride over to the next line
+						int linesToSkip = stride - 1;
+						adi.skipBytes(sourceDepth * linesToSkip * typeSize);
 					}
 					//--skip to end of slice
 					int currentLine = stride * repHeight + sourceStartY;
