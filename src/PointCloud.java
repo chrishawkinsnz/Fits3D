@@ -120,7 +120,7 @@ public class PointCloud {
 	static int c = 0;
 	public void loadRegionAtFidelity(float fidelity) {
 		Volume[] volumes = {new Volume(0f, 0f, 0f, 1f, 1f, 1f), new Volume(0.5f, 0.5f, 0f, 0.5f, 0.5f, 0.5f), new Volume(0.75f, 0f, 0f, 1f, 1f, 0.05f)};
-		Volume v = volumes[c++];
+		Volume v = volumes[c];
 		CloudRegion cr = new CloudRegion(fits, v, fidelity);
 
 		this.pendingRegion = cr;
@@ -154,6 +154,13 @@ public class PointCloud {
 			region.clear();
 		}
 		regions.clear();
+	}
+
+	public void makeSomeStupidSubregion() {
+		Volume corner = new Volume(0f, 0f, 0f, 0.5f, 0.5f, 0.5f);
+		CloudRegion newRegion = this.regions.get(0).subRegion(corner, true);
+		this.pendingRegion = newRegion;
+		FrameMaster.setNeedsDisplay();
 	}
 
 

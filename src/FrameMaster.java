@@ -231,10 +231,18 @@ public class FrameMaster extends JFrame implements GLEventListener {
         setKeyboardShortcutTo(KeyEvent.VK_O, loadItem);
         loadItem.addActionListener(e -> this.showOpenDialog());
         fileMenu.add(loadItem);
-        
+
+		JMenuItem test = new JMenuItem("test");
+		test.addActionListener(e -> this.test());
+		fileMenu.add(test);
+
         menuBar.add(fileMenu);
         return menuBar;
     }
+
+	private void test() {
+		this.pointClouds.get(0).makeSomeStupidSubregion();
+	}
     
     private static void setKeyboardShortcutTo(int key, JMenuItem menuItem){
     	String os = System.getProperty("os.name").toLowerCase();	
@@ -263,7 +271,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		//--check all the point clouds and if they have a pending region create a new renderer.
 		for (PointCloud pc : this.pointClouds) {
 			if (pc.pendingRegion != null) {
-				pc.clearRegions();
+//				pc.clearRegions();
+				//TODO
 				pc.addRegion(pc.pendingRegion, pc.regions);
 				pc.pendingRegion = null;
 				needsFreshRenderer = true;

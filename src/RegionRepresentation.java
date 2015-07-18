@@ -5,17 +5,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.*;
-import java.util.concurrent.Future;
 
 import javax.swing.JOptionPane;
 
 
-import com.sun.corba.se.impl.orbutil.closure.*;
 import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
 import nom.tam.fits.ImageHDU;
-import nom.tam.fits.header.IFitsHeader.HDU;
 import nom.tam.util.ArrayDataInput;
 
 /**
@@ -51,6 +46,72 @@ public class RegionRepresentation {
 	}
 
 
+	public RegionRepresentation generateSubrepresentation(Volume volume, boolean replaceValues) {
+		RegionRepresentation rr = new RegionRepresentation();
+		List<VertexBufferSlice>newSlices = new ArrayList<>();
+
+		//--shortify the volume limits
+		short minY = (short) (volume.origin.y * Short.MAX_VALUE);
+		short maxY = (short) ((volume.origin.y + volume.ht) * Short.MAX_VALUE);
+
+		short minZ = (short) (volume.origin.z * Short.MAX_VALUE);
+		short maxZ = (short) ((volume.origin.z + volume.dp) * Short.MAX_VALUE);
+
+		for (VertexBufferSlice ss : this.slices) {
+
+			//guard against whole slice being outisde bounds
+			if(ss.x < volume.origin.x) { continue;}
+			if(ss.x >= volume.origin.x + volume.wd) { continue;}
+
+			//--TODO currently assuming nothing about the order of the vertices so not skipping or anything
+			ShortBuffer sVerts = ss.vertexBuffer;
+			FloatBuffer sValues = ss.valueBuffer;
+
+			ShortBuffer destVerts = ShortBuffer.allocate(ss.numberOfPts * 3);
+			FloatBuffer destValues = FloatBuffer.allocate(ss.numberOfPts * 1);
+			List<Integer>movedPoints = new ArrayList<>();
+
+			for (int i = 0; i < ss.numberOfPts; i++) {
+				short y = sVerts.get(i * 3 + 1);
+				if (y < minY) {continue;}
+				if (y > maxY) {continue;}
+
+				short z = sVerts.get(i * 3 + 2);
+				if (z < minZ) {continue;}
+				if (z > maxZ) {continue;}
+
+				short x = sVerts.get(i * 3);
+				float value = sValues.get(i);
+
+				destVerts.put(x);
+				destVerts.put(y);
+				destVerts.put(z);
+				destValues.put(value);
+
+				movedPoints.add(i);
+			}
+
+			destVerts.flip();
+			destValues.flip();
+
+			VertexBufferSlice newSlice = new VertexBufferSlice();
+			newSlice.numberOfPts = movedPoints.size();
+			newSlice.x = ss.x;
+			newSlice.vertexBuffer = destVerts;
+			newSlice.valueBuffer = destValues;
+
+			newSlices.add(newSlice);
+
+			int sourceCapacity = ss.numberOfPts;
+		}
+		rr.fidelity = fidelity;
+		rr.isMaximumFidelity = isMaximumFidelity;
+		rr.slices = newSlices;
+		rr.numPtsX = (((int)(volume.wd * this.numPtsX)));
+		rr.numPtsY = (((int)(volume.ht * this.numPtsY)));
+		rr.numPtsZ = (((int)(volume.dp * this.numPtsZ)));
+		return rr;
+	}
 	/**
 	 *
 	 * @param fits	The fits file to read.
@@ -190,7 +251,7 @@ public class RegionRepresentation {
 					vbs.vertexBuffer = vertexBuffer;
 					vbs.valueBuffer = valueBuffer;
 					vbs.numberOfPts = pts;
-					vbs.depthValue = xProportion;
+					vbs.x = xProportion;
 					rr.slices.add(vbs);
 
 					//--skip to the next slice
@@ -353,5 +414,8 @@ public class RegionRepresentation {
 		mam.max = maxx;
 		return mam;
 	}
+
+
+
 
 }

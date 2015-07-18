@@ -3,7 +3,6 @@ import static com.jogamp.opengl.GL.GL_COLOR_BUFFER_BIT;
 import static com.jogamp.opengl.GL.GL_DEPTH_BUFFER_BIT;
 import static com.jogamp.opengl.GL.GL_FLOAT;
 import static com.jogamp.opengl.GL.GL_STATIC_DRAW;
-import static com.jogamp.opengl.GL.GL_TRIANGLES;
 
 import java.awt.Color;
 import java.nio.FloatBuffer;
@@ -12,13 +11,8 @@ import java.util.*;
 
 import static com.jogamp.opengl.GL2.*;
 
-import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GL3;
-import com.jogamp.opengl.GL3bc;
-import com.jogamp.opengl.GL3.*;
 import com.jogamp.opengl.math.Matrix4;
-
-import com.jogamp.opengl.util.gl2.GLUT;
 
 public class Renderer {
 	private static long lastTime = 0;
@@ -263,7 +257,7 @@ public class Renderer {
 		colorBuffer.put(cola);
 		colorBuffer.put(colb);
 		colorBuffer.flip();
-		
+
 		gl.glBindBuffer(GL_ARRAY_BUFFER, colHandle[0]);
 		gl.glBufferData(GL_ARRAY_BUFFER, 2 * 4 * 4, colorBuffer, GL_STATIC_DRAW);
 
@@ -337,7 +331,7 @@ public class Renderer {
 				continue;
 			for (CloudRegion cr: cloud.getRegions()) {
 				for (VertexBufferSlice slice: cr.getSlices()) {
-					slice.scratchDepth = cr.volume.x + cr.volume.wd * slice.depthValue;
+					slice.scratchX = cr.volume.x + cr.volume.wd * slice.x;
 					slice.region = cr;
 					slice.cloud = cloud;
 				}
@@ -348,7 +342,7 @@ public class Renderer {
 		
 		class RegionOrderer implements Comparator<VertexBufferSlice> {
 			public int compare(VertexBufferSlice a, VertexBufferSlice b) {
-				return a.scratchDepth < b.scratchDepth ? 1 : -1;
+				return a.scratchX < b.scratchX ? 1 : -1;
 			}
 		}
 		Collections.sort(allSlicesLikeEver, new RegionOrderer());
@@ -412,8 +406,7 @@ public class Renderer {
 			m.loadIdentity();
 			m.multMatrix(baseMatrix);
 	    	m.translate(cr.volume.x, cr.volume.y, cr.volume.z);
-	    	m.scale(cr.volume.wd, cr.volume.ht, cr.volume.dp);
-	    	
+
 	    	m.translate(cloud.volume.x, cloud.volume.y, cloud.volume.z);
 	    	m.scale(cloud.volume.wd, cloud.volume.ht, cloud.volume.dp);
 	    	
@@ -429,8 +422,6 @@ public class Renderer {
 	    	gl.glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
 	    	
 	    	gl.glDrawArrays(GL_POINTS, 0, slice.numberOfPts);
-
-
 		}
 
 

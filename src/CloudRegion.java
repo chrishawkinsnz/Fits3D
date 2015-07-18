@@ -18,13 +18,18 @@ public class CloudRegion {
 	public final float depth;
 	
 	public final Volume volume;
-	private final Fits fits;
+	private Fits fits;
 	
 	public final static Color[] cols = {Color.blue, Color.green, Color.pink, Color.orange};
-	
-	public CloudRegion (Fits fits, Volume volume, float initialFidelity) {
+
+	private CloudRegion (Volume volume ) {
 		this.volume = volume;
 		this.depth = this.volume.origin.z + 0.5f * this.volume.dp;
+	}
+
+	public CloudRegion (Fits fits, Volume volume, float initialFidelity) {
+		this.volume = volume;
+		this.depth = this.volume.origin.x + 0.5f * this.volume.dp;
 		this.fits = fits;
 
 		RegionRepresentation initialRepresentation = RegionRepresentation.justTheSlicesPlease(fits, initialFidelity, this.volume);
@@ -36,7 +41,26 @@ public class CloudRegion {
 	public List<VertexBufferSlice>getSlices() {
 		return this.currentRepresentation.getSlices();
 	}
-	
+
+
+	/**
+	 *
+	 * @param subVolume volume is unit volume that is relative to the overall fits file (not the existing region)
+	 * @return
+	 */
+	public CloudRegion subRegion(Volume subVolume, boolean replaceValues) {
+		CloudRegion cr = new CloudRegion(subVolume);
+		assert (subVolume.origin.x >= this.volume.origin.x);
+		assert (subVolume.origin.y >= this.volume.origin.y);
+		assert (subVolume.origin.z >= this.volume.origin.z);
+
+
+		RegionRepresentation subRepresentation = currentRepresentation.generateSubrepresentation(subVolume, replaceValues);
+		cr.bestRepresentation = subRepresentation;
+		cr.currentRepresentation = subRepresentation;
+
+		return cr;
+	}
 	public void clear() {
 		this.bestRepresentation.clear();
 		this.currentRepresentation.clear();
