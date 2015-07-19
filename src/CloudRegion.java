@@ -89,7 +89,9 @@ public class CloudRegion {
 		else {
 			cr.bestRepresentation = RegionRepresentation.justTheSlicesPlease(this.fits, fidelity, subVolume);
 			cr.currentRepresentation = cr.bestRepresentation;
-
+			if (replaceValues) {
+				this.bestRepresentation.eraseRegion(subVolume);
+			}
 		}
 
 		return cr;

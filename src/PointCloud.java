@@ -170,6 +170,13 @@ public class PointCloud implements  AttributeProvider {
 		FrameMaster.setNeedsDisplay();
 	}
 
+	public void blastVolumeWithQuality(Volume volume) {
+		Volume subRegion = this.volume.normalisedProportionVolume(volume);
+		CloudRegion newRegion = this.regions.get(0).subRegion(subRegion, 1.0f, true);
+		this.pendingRegion = newRegion;
+		FrameMaster.setNeedsDisplay();
+	}
+
 	public String toString() {
 		return this.fileName.value;
 	}

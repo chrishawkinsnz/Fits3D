@@ -39,5 +39,12 @@ public class Vector3 {
 		Vector3 result = new Vector3(x * scale, y * scale, z *  scale);
 		return result;
 	}
+
+	public float get(int idx) {
+		if (idx == 0) {return x;}
+		if (idx == 1) {return y;}
+		if (idx == 2) {return z;}
+		return 0f;
+	}
 	
 }

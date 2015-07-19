@@ -39,6 +39,68 @@ public class RegionRepresentation {
 
 	}
 
+	public void eraseRegion(Volume volume) {
+		//--shortify the volume limits
+		short minX = (short) (volume.origin.x * Short.MAX_VALUE);
+		short maxX = (short) ((volume.origin.x + volume.wd) * Short.MAX_VALUE);
+
+		short minY = (short) (volume.origin.y * Short.MAX_VALUE);
+		short maxY = (short) ((volume.origin.y + volume.ht) * Short.MAX_VALUE);
+
+		short minZ = (short) (volume.origin.z * Short.MAX_VALUE);
+		short maxZ = (short) ((volume.origin.z + volume.dp) * Short.MAX_VALUE);
+
+		List<VertexBufferSlice>newSlices = new ArrayList<>();
+		for (VertexBufferSlice ss : this.slices) {
+			//guard against whole slice being outisde bounds
+
+			//--TODO currently assuming nothing about the order of the vertices so not skipping or anything
+			ShortBuffer sVerts = ss.vertexBuffer;
+			FloatBuffer sValues = ss.valueBuffer;
+
+			ShortBuffer cloneVerts			= ShortBuffer.allocate(ss.numberOfPts * 3);
+			FloatBuffer cloneValues 		= FloatBuffer.allocate(ss.numberOfPts * 1);
+
+			int cloneCount = 0;
+			for (int i = 0; i < ss.numberOfPts; i++) {
+				short x = sVerts.get(i * 3 + 0);
+				short y = sVerts.get(i * 3 + 1);
+				short z = sVerts.get(i * 3 + 2);
+				boolean withinYBounds = y > minY && y < maxY;
+				boolean withinZBounds = z > minZ && z < maxZ;
+				boolean withinXBounds = x > minX && x < maxX;
+
+				boolean withinSubsection = withinYBounds && withinZBounds && withinXBounds;
+
+				if (withinSubsection) {
+					continue;
+				}
+
+				float value = sValues.get(i);
+
+				cloneCount++;
+
+				cloneVerts.put(x);
+				cloneVerts.put(y);
+				cloneVerts.put(z);
+				cloneValues.put(value);
+			}
+
+			cloneVerts.flip();
+			cloneValues.flip();
+
+			VertexBufferSlice newSlice = new VertexBufferSlice();
+			newSlice.numberOfPts = cloneCount;
+			newSlice.x = ss.x;
+			newSlice.vertexBuffer = cloneVerts;
+			newSlice.valueBuffer = cloneValues;
+
+			newSlices.add(newSlice);
+		}
+
+		this.slices = newSlices;
+	}
+
 	public RegionRepresentation generateSubrepresentation(Volume volume, boolean replaceValues) {
 		RegionRepresentation rr = new RegionRepresentation();
 		List<VertexBufferSlice>newSlices = new ArrayList<>();
@@ -122,6 +184,8 @@ public class RegionRepresentation {
 		rr.numPtsZ = (((int)(volume.dp * this.numPtsZ)));
 		return rr;
 	}
+
+
 	/**
 	 *
 	 * @param fits	The fits file to read.

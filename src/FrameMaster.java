@@ -37,6 +37,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 	private Renderer renderer;
 	private WorldViewer viewer;
+	private Selection selection;
 	private GL3 gl;
 
 	private PointCloud pleaseSelectThisNextChanceYouGet;
@@ -244,6 +245,11 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		reloadAttributePanel();
 	}
 
+	private void test3() {
+		this.pointClouds.get(0).blastVolumeWithQuality(this.selection.getVolume());
+		reloadAttributePanel();
+	}
+
     private JMenuBar makeMenuBar() {
 
 
@@ -262,6 +268,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		JMenuItem test2 = new JMenuItem("test2");
 		test2.addActionListener(e -> this.test2());
 		fileMenu.add(test2);
+
+		JMenuItem test3 = new JMenuItem("test3");
+		test3.addActionListener(e -> this.test3());
+		fileMenu.add(test3);
 
 		JMenuItem gay = new JMenuItem("gay?");
 
@@ -317,6 +327,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	if (needsFreshRenderer){
 			if (this.renderer == null) {
 				this.renderer = new Renderer(this.pointClouds, this.viewer, this.gl);
+				this.selection = new Selection();
+				this.renderer.selection = this.selection;
 			}
 			else {
 				this.renderer.setupWith(this.pointClouds, this.viewer, this.gl);

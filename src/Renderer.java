@@ -45,12 +45,19 @@ public class Renderer {
 	
 	//--MODEL STUFF
 	private WorldViewer viewer;
+	public Selection selection;
+
 	private List<PointCloud> pointClouds;
 	public boolean isTrippy;
+
+
+
 	private int uniformFilterMinX;
 	private int uniformFilterMaxX;
 	private int uniformFilterGradient;
 	private int uniformFilterConstant;
+
+
 
 
 
@@ -200,8 +207,13 @@ public class Renderer {
 		}
 	}
 
-	private void renderOutline(Matrix4 mvp, Volume v) {
-		float[] col = {0.7f, 0.7f, 0.7f, 1.0f};
+	private void renderOutline(Matrix4 mvp, Volume v, Color color) {
+		float[] col = new float[4];
+		col[0] = (float) color.getRed() / 255;
+		col[1] = (float) color.getGreen() / 255;
+		col[2] = (float) color.getBlue() / 255;
+		col[3] = (float) color.getAlpha() / 255;
+
 		Line one 	= makeLine(v.a(), v.b(), col, col);
 		Line two 	= makeLine(v.a(), v.c(), col, col);
 		Line three 	= makeLine(v.c(), v.d(), col, col);
@@ -432,9 +444,12 @@ public class Renderer {
 
 		//--draw outlines
 		for (PointCloud pc : this.pointClouds) {
-			if (pc.isSelected.value)
-			renderOutline(baseMatrix, pc.volume);
+			if (pc.isSelected.value) {
+				renderOutline(baseMatrix, pc.volume, pc.color);
+			}
 		}
+
+		renderOutline(baseMatrix, this.selection.getVolume(), Color.white);
     	gl.glEnableVertexAttribArray(0);
     	gl.glDisableVertexAttribArray(1);
     	

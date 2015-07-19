@@ -66,4 +66,20 @@ public class Volume {
 		return d().add(Vector3.in.scale(dp));
 	}
 
+	public Volume normalisedProportionVolume(Volume selection) {
+		float[] newOrigin = new float[3];
+		for (int i = 0; i < 3; i++) {
+			newOrigin[i] = (selection.origin.get(i) - this.origin.get(i))/ this.size.get(i);
+		}
+		Vector3 newOriginVec = new Vector3(newOrigin);
+
+		float[] newSize = new float[3];
+		for (int i = 0; i < 3; i++) {
+			newSize[i] = selection.size.get(i) / this.size.get(i);
+		}
+		Vector3 newSizeVec = new Vector3(newSize);
+
+		Volume newVolume = new Volume(newOriginVec, newSizeVec);
+		return newVolume;
+	}
 }
