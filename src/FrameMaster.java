@@ -44,6 +44,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	private boolean debug = false;
 	
 	private MouseController mouseController;
+
+	private KeyboardSelectionController selectionController;
 	
 	private int drawableWidth = 0;
 	private int drawableHeight = 0;
@@ -96,9 +98,14 @@ public class FrameMaster extends JFrame implements GLEventListener {
     private void attachControlsToCanvas(Canvas canvas) {
         this.viewer = new WorldViewer();
         this.mouseController = new MouseController(this.viewer);
+
+		this.selection = new Selection();
+		this.selectionController = new KeyboardSelectionController(this.selection);
+
         canvas.addMouseMotionListener(this.mouseController);
         canvas.addMouseListener(this.mouseController);
         canvas.addMouseWheelListener(this.mouseController);
+		canvas.addKeyListener(this.selectionController);
     }
     
 	public AttributeDisplayManager  attributeDisplayManager = new AttributeDisplayManager();
@@ -327,7 +334,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	if (needsFreshRenderer){
 			if (this.renderer == null) {
 				this.renderer = new Renderer(this.pointClouds, this.viewer, this.gl);
-				this.selection = new Selection();
 				this.renderer.selection = this.selection;
 			}
 			else {
