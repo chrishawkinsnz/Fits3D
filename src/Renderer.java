@@ -292,11 +292,11 @@ public class Renderer {
 
 		gl.glUseProgram(this.shaderProgramLegend);
 		gl.glUniformMatrix4fv(this.legendMvpUniformHandle, 1, false, mvp.getMatrix(), 0);
-
-		int[] previousDepthFunc = new int[1];
-		gl.glGetIntegerv(GL_DEPTH_FUNC, previousDepthFunc, 0);
-
-		gl.glDepthFunc(gl.GL_LESS);
+//
+//		int[] previousDepthFunc = new int[1];
+//		gl.glGetIntegerv(GL_DEPTH_FUNC, previousDepthFunc, 0);
+//
+//		gl.glDepthFunc(gl.GL_LESS);
 
 		for (Line line : lines) {
 			//--select the lines vertex buffer
@@ -314,12 +314,13 @@ public class Renderer {
 
 		//--set the shader program back to the point clouds rendering one
 		gl.glUseProgram(this.shaderProgram);
-		gl.glDepthFunc(previousDepthFunc[0]);
+//		gl.glDepthFunc(previousDepthFunc[0]);
 	}
 
+	private boolean lastFlippity = true;
 	public void display() {
 
-		printFps();
+//		printFps();
 
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl.glUseProgram(this.shaderProgram);
@@ -327,22 +328,36 @@ public class Renderer {
 		
 		//--figure out if looking back to front
 		float pi = (float)Math.PI;
-		float spin = Math.abs(this.viewer.getxSpin() % (2f * pi));
-//		boolean flippityFlop = spin > pi/2f && spin < 3f*pi/2f ;
-		boolean flippityFlop = spin > 0f && spin < pi ;
+
+		float moddedSpin = this.viewer.getxSpin() % (2f * pi);
+		float spin = moddedSpin < 0f ? (2f * pi) + moddedSpin : moddedSpin;
+
+		boolean flippityFlop = spin > pi;
 		System.out.println(spin);
-		if (this.isTrippy == true) {
-			flippityFlop = true;
+
+		if (lastFlippity != flippityFlop) {
+			for (int i = 0; i < 100; i++) System.err.println("FLIPPITY FLOP!");
 		}
+		lastFlippity = flippityFlop;
 		
 		List<VertexBufferSlice> allSlicesLikeEver = new ArrayList<VertexBufferSlice>();
+
+		float minScratchX =  Float.MAX_VALUE;
+		float maxScractchX = Float.MIN_VALUE;
 		for (PointCloud cloud : this.pointClouds){
 			if (cloud.isVisible.value == false) {continue;}
 			for (CloudRegion cr: cloud.getRegions()) {
 				if (cr.isVisible.value == false) {continue;}
 
 				for (VertexBufferSlice slice: cr.getSlices()) {
-					slice.scratchX = cr.volume.x + cr.volume.wd * slice.x;
+
+					slice.scratchX = (cr.volume.x + cr.volume.wd * slice.x) * cloud.volume.wd + cloud.volume.x;
+					if (slice.scratchX > maxScractchX) {
+						maxScractchX = slice.scratchX;
+					}
+					if (slice.scratchX < minScratchX) {
+						minScratchX = slice.scratchX;
+					}
 					slice.region = cr;
 					slice.cloud = cloud;
 				}
@@ -399,10 +414,16 @@ public class Renderer {
 			Color[] cols = {Color.red, Color.orange, Color.yellow, Color.green, Color.blue, Color.cyan, Color.magenta};
 			Color col = cloud.color;
 			if (gay) {
+				float proportion = (slice.scratchX - minScratchX) / (maxScractchX - minScratchX);
+				col = new Color(0.1f + 0.8f * proportion, 0.9f - 0.8f * proportion, 0.0f, 1.0f);
+				System.out.println(col);
+
 				col = cols[i%cols.length];
 			}
 
-			gl.glUniform4f(this.uniformColorHandle, col.getRed(), col.getGreen(), col.getBlue(), col.getAlpha());
+			float[] colArray = new float[4];
+			col.getComponents(colArray);
+			gl.glUniform4f(this.uniformColorHandle, colArray[0], colArray[1], colArray[2], colArray[3]);
 
     		
 
@@ -448,8 +469,9 @@ public class Renderer {
 				renderOutline(baseMatrix, pc.volume, pc.color);
 			}
 		}
-
-		renderOutline(baseMatrix, this.selection.getVolume(), Color.white);
+		if (!FrameMaster.vain) {
+			renderOutline(baseMatrix, this.selection.getVolume(), Color.white);
+		}
     	gl.glEnableVertexAttribArray(0);
     	gl.glDisableVertexAttribArray(1);
     	

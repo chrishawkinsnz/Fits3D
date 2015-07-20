@@ -1,12 +1,11 @@
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.JCheckBox;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JSlider;
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -21,7 +20,7 @@ import sun.security.x509.DeltaCRLIndicatorExtension;
  * @author chrishawkins
  *
  */
-public abstract class Tweakable {
+public abstract class Tweakable implements  AttributeDisplayer{
 	public List<Attribute>attributes = new ArrayList<Attribute>();
 	
 	
@@ -170,7 +169,44 @@ public abstract class Tweakable {
 			return false;
 		}
 	}
-	
+
+	public static class DropDown extends Tweakable implements ActionListener{
+		private JComboBox<Object>comboBox;
+
+		public DropDown(Attribute attribute, List<Object>choices, Object currentChoice) {
+			this.attributes.add(attribute);
+			comboBox = new JComboBox<Object>(choices.toArray());
+			comboBox.setSelectedItem(currentChoice);
+			comboBox.addActionListener(this);
+		}
+
+
+		@Override
+		public Object getValue() {
+			return comboBox.getSelectedItem();
+		}
+
+		@Override
+		public void setValue(Object value) {
+			comboBox.setSelectedItem(value);
+		}
+
+		@Override
+		public JComponent getComponent() {
+			return this.comboBox;
+		}
+
+		@Override
+		public boolean isDoubleLiner() {
+			return false;
+		}
+
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			notifyAttributes();
+		}
+	}
 	/**
 	 * A simple un-editable label that displays a value
 	 * @author chrishawkins

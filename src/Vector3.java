@@ -35,8 +35,18 @@ public class Vector3 {
 		return result;
 	}
 
+	public Vector3 minus(Vector3 rhs) {
+		Vector3 result = new Vector3(x - rhs.x, y - rhs.y, z - rhs.z);
+		return result;
+	}
+
 	public Vector3 scale(float scale) {
 		Vector3 result = new Vector3(x * scale, y * scale, z *  scale);
+		return result;
+	}
+
+	public Vector3 scale(Vector3 scale) {
+		Vector3 result = new Vector3( x * scale.x, y * scale.y, z * scale.z);
 		return result;
 	}
 
@@ -46,5 +56,5 @@ public class Vector3 {
 		if (idx == 2) {return z;}
 		return 0f;
 	}
-	
+
 }

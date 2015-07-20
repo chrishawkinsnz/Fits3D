@@ -24,7 +24,9 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import com.jogamp.opengl.util.FPSAnimator;
 import net.miginfocom.swing.MigLayout;
+import nom.tam.fits.ImageHDU;
 
 public class FrameMaster extends JFrame implements GLEventListener {
 
@@ -55,7 +57,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	private JPanel attributPanel;
 	private GLCanvas canvas;
 
-	
+	public static boolean vain = false;
+
+	private FPSAnimator animator;
 	private static Color colorBackground = new Color(238, 238, 238, 255);
     public FrameMaster() {
     	super("Very Good Honours Project");
@@ -91,20 +95,32 @@ public class FrameMaster extends JFrame implements GLEventListener {
         canvas.addGLEventListener(this);
         canvas.setMinimumSize(new Dimension());
         canvas.requestFocusInWindow();
+		if (vain) {
+			this.animator = new FPSAnimator(canvas, 120);
+			this.animator.setUpdateFPSFrames(100, System.out);
+			this.animator.start();
+		}
 
-        return canvas;
+
+		return canvas;
     }
     
     private void attachControlsToCanvas(Canvas canvas) {
-        this.viewer = new WorldViewer();
+
+		if (vain) {
+			this.viewer = new VanitySpinnerViewer();
+		} else {
+			this.viewer = new WorldViewer();
+		}
+
         this.mouseController = new MouseController(this.viewer);
 
 		this.selection = new Selection();
 		this.selectionController = new KeyboardSelectionController(this.selection);
 
-        canvas.addMouseMotionListener(this.mouseController);
-        canvas.addMouseListener(this.mouseController);
-        canvas.addMouseWheelListener(this.mouseController);
+		canvas.addMouseMotionListener(this.mouseController);
+		canvas.addMouseListener(this.mouseController);
+		canvas.addMouseWheelListener(this.mouseController);
 		canvas.addKeyListener(this.selectionController);
     }
     
@@ -142,7 +158,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 			if (pc.regions.size() > 1) {
 				for (int i = 0; i < pc.regions.size(); i++) {
-					JSeparator separator = new JSeparator();
+					JSeparator separator = new JSeparator(SwingConstants.HORIZONTAL);
 					attributPanel.add(separator, "span 2");
 
 					JLabel label = new JLabel("Region " + i);
@@ -237,6 +253,19 @@ public class FrameMaster extends JFrame implements GLEventListener {
     private void loadFile(String fileName) {
     	PointCloud pc = new PointCloud(fileName);
     	this.pointClouds.add(pc);
+
+		for (PointCloud p: this.pointClouds) {
+			List<Object>choicesForRelativeToDropDown = new ArrayList<>();
+			choicesForRelativeToDropDown.add("-");
+			for (PointCloud pp: this.pointClouds) {
+				if (pp != p) {
+					choicesForRelativeToDropDown.add(pp);
+				}
+			}
+			p.relativeTo.choices = choicesForRelativeToDropDown;
+			p.relativeTo.notifyWithValue(p.relativeTo.choice);
+		}
+
     	pc.readFits();
     	this.listModel.addElement(pc);
 		this.pleaseSelectThisNextChanceYouGet = pc;
@@ -248,7 +277,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		reloadAttributePanel();
 	}
 	private void test2() {
-		this.pointClouds.get(0).makeSomeStupidOtherSubregion();
+		this.pointClouds.get(0).makeSomeStupidOtherSubregion(this.selection.getVolume());
 		reloadAttributePanel();
 	}
 
@@ -272,11 +301,11 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		test.addActionListener(e -> this.test());
 		fileMenu.add(test);
 
-		JMenuItem test2 = new JMenuItem("test2");
+		JMenuItem test2 = new JMenuItem("cut it out");
 		test2.addActionListener(e -> this.test2());
 		fileMenu.add(test2);
 
-		JMenuItem test3 = new JMenuItem("test3");
+		JMenuItem test3 = new JMenuItem("enhance!");
 		test3.addActionListener(e -> this.test3());
 		fileMenu.add(test3);
 
@@ -367,4 +396,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
     public static void setNeedsDisplay() {
     	singleFrameMaster.canvas.display();
     }
+
+
 }

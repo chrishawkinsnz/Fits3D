@@ -39,6 +39,8 @@ public class RegionRepresentation {
 
 	}
 
+	static int count = 0;
+
 	public void eraseRegion(Volume volume) {
 		//--shortify the volume limits
 		short minX = (short) (volume.origin.x * Short.MAX_VALUE);

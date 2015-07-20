@@ -30,6 +30,10 @@ public class AttributeDisplayManager {
     		Attribute.FilterSelectionAttribute fsAttribute = (Attribute.FilterSelectionAttribute)attribute;
     		tweakable = new Tweakable.ChristogramTweakable(pc.getHistBuckets(), fsAttribute, pc.getHistMin(), pc.getHistMax());
     	}
+		else if (attribute instanceof Attribute.MultiChoiceAttribute) {
+			Attribute.MultiChoiceAttribute mcAttribute = (Attribute.MultiChoiceAttribute)attribute;
+			tweakable = new Tweakable.DropDown(mcAttribute, mcAttribute.choices, mcAttribute.choice);
+		}
     	else {
     		tweakable = null;
     	}

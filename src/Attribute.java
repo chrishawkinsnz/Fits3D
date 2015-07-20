@@ -1,3 +1,8 @@
+import com.sun.tools.doclint.HtmlTag;
+
+import javax.smartcardio.ATR;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public abstract class Attribute {
@@ -109,5 +114,27 @@ public abstract class Attribute {
 			Christogram.Filter filter = (Christogram.Filter)obj;
 			this.filter = filter;
 		}
+	}
+
+	public static class MultiChoiceAttribute extends Attribute {
+		public List<Object> choices;
+		public Object choice;
+
+		public MultiChoiceAttribute(String displayName, List<Object>possibleChoices, Object initialChoice) {
+			super(displayName, false);
+			this.choices = possibleChoices;
+			this.choice = initialChoice;
+		}
+
+		@Override
+		public void notifyWithValue(Object obj) {
+			super.notifyWithValue(obj);
+			this.choice = obj;
+		}
+
+		public void updateChoices(List<Object>newChoices) {
+			this.choices = newChoices;
+		}
+
 	}
 }
