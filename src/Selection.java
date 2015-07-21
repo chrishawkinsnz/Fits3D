@@ -34,6 +34,7 @@ public class Selection {
 
     public void scaleAddX(float scaleDeltaX){
         Vector3 scaleDelta = new Vector3(scaleDeltaX, 0f, 0f);
+
         scale(scaleDelta);
     }
 
@@ -48,6 +49,12 @@ public class Selection {
     }
 
     public void scale(Vector3 scaleDelta) {
+        Vector3 newSize = volume.size.add(scaleDelta);
+        for (int axis = 0; axis < 3; axis++) {
+            if (newSize.get(axis) < 0f) {
+                return;
+            }
+        }
         this.volume = new Volume(volume.origin, volume.size.add(scaleDelta));
     }
 }

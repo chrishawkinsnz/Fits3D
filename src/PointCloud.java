@@ -269,12 +269,6 @@ public class PointCloud implements  AttributeProvider {
 		Volume vol = this.volume;
 
 		Vector3 realDist = galVol.origin.minus(parGalVol.origin);
-//		float[]result = new float[3];
-//		for (int i = 0; i < 3; i++) {
-//			result[i] = galVol.size.get(i) / parGalVol.size.get(i);
-//		}
-//
-//		Vector3 realScaleFactor = new Vector3(result);
 
 		float[] realToDisplayFactorArray = new float[3];
 		for (int i = 0; i < 3; i++) {
