@@ -346,10 +346,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	else 
     		this.gl = drawable.getGL().getGL3();	
     }
-    
+
+	static boolean needsFreshRenderer = false;
     @Override
     public void display(GLAutoDrawable drawable) {
-		boolean needsFreshRenderer = false;
 		//--check all the point clouds and if they have a pending region create a new renderer.
 		for (PointCloud pc : this.pointClouds) {
 			if (pc.pendingRegion != null) {
@@ -370,6 +370,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
 				System.gc();
 			}
     		this.renderer.informOfResolution(this.drawableWidth, this.drawableHeight);
+
+			this.needsFreshRenderer = false;
     	}
 		if (this.pleaseSelectThisNextChanceYouGet != null) {
 			this.list.setSelectedValue(pleaseSelectThisNextChanceYouGet, true);
@@ -396,6 +398,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
     public static void setNeedsDisplay() {
     	singleFrameMaster.canvas.display();
     }
+
+	public static void setNeedsNewRenderer() {
+		singleFrameMaster.needsFreshRenderer = true;
+	}
 
 
 }

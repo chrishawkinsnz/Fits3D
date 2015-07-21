@@ -82,4 +82,12 @@ public class Volume {
 		Volume newVolume = new Volume(newOriginVec, newSizeVec);
 		return newVolume;
 	}
+
+	public boolean containsPoint(Vector3 point) {
+		for (int axis = 0; axis < 3; axis++) {
+			if (point.get(axis) < this.origin.get(axis)) return false;
+			if (point.get(axis) > this.origin.add(this.size).get(axis)) return false;
+		}
+		return true;
+	}
 }

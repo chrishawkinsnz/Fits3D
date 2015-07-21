@@ -172,12 +172,31 @@ public class PointCloud implements  AttributeProvider {
 	}
 	static int c = 0;
 	public void loadRegionAtFidelity(float fidelity) {
-		Volume[] volumes = {new Volume(0f, 0f, 0f, 1f, 1f, 1f), new Volume(0.25f, 0.25f, 0.25f, 0.5f, 0.5f, 0.5f), new Volume(0.75f, 0f, 0f, 1f, 1f, 0.05f)};
-		Volume v = volumes[c];
+		if (regions.size() == 0) {
+			Volume v = new Volume(0f,0f,0f,1f,1f,1f);
+			CloudRegion region = new CloudRegion(fits, v, fidelity);
+			regions.add(region);
+		}else {
+			int rindex = 0;
+			CloudRegion region = regions.get(rindex);
+			Volume v = region.volume;
 
-		CloudRegion cr = new CloudRegion(fits, v, fidelity);
+			//--if you're the top dog then clear out the children as well
+			List<CloudRegion>chrilden = new ArrayList<>();
+			for (CloudRegion potentialChild : this.regions) {
+				Vector3 origin    = potentialChild.volume.origin;
+				Vector3 extremety = origin.add(potentialChild.volume.size);
+				boolean containsOrigin = region.volume.containsPoint(origin);
+				boolean containsExtremety = region.volume.containsPoint(extremety);
+				boolean isNotParadox = region != potentialChild;
+				if (containsOrigin && containsExtremety && isNotParadox) {
+					chrilden.add(potentialChild);
+				}
+			}
+			this.regions.set(rindex, new CloudRegion(fits, v, fidelity, chrilden));
+		}
 
-		this.pendingRegion = cr;
+		FrameMaster.setNeedsNewRenderer();
 		FrameMaster.setNeedsDisplay();
 	}
 	

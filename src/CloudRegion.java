@@ -7,6 +7,7 @@ import nom.tam.fits.Fits;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
+
 /**
  * A region of the data
  * @author chrishawkins
@@ -65,6 +66,14 @@ public class CloudRegion {
 		this.currentRepresentation = initialRepresentation;
 	}
 
+	public CloudRegion (Fits fits, Volume volume, float initialFidelity, List<CloudRegion> minusRegions) {
+		this(fits, volume, initialFidelity);
+		for (CloudRegion region : minusRegions) {
+			this.currentRepresentation.eraseRegion(region.volume);
+		}
+
+
+	}
 	public List<VertexBufferSlice>getSlices() {
 		return this.currentRepresentation.getSlices();
 	}
