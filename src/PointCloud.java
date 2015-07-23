@@ -15,7 +15,7 @@ import java.util.List;
 public class PointCloud implements  AttributeProvider {
 	private final static String[] axesNames = {"X", "Y", "Z"};
 	private final static Color[] colors = {Color.GREEN, Color.RED, Color.BLUE, Color.ORANGE, Color.PINK};
-	public final static float startingFidelity = 0.2f;
+	public final static float startingFidelity = 0.075f;
 
 	private static int clouds = 0;
 

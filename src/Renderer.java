@@ -130,7 +130,7 @@ public class Renderer {
 		this.uniformFilterGradient = gl.glGetUniformLocation(this.shaderProgram, "filterGradient");
 		this.uniformFilterConstant = gl.glGetUniformLocation(this.shaderProgram, "filterConstant");
 		gl.glEnable(GL_BLEND);
-
+gl.glDisable(GL_POINT_SMOOTH);
 		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		gl.glBlendEquation(GL_FUNC_ADD);
 		gl.glDisable(GL_CULL_FACE);
@@ -320,7 +320,7 @@ public class Renderer {
 	private boolean lastFlippity = true;
 	public void display() {
 
-//		printFps();
+		printFps();
 
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl.glUseProgram(this.shaderProgram);
@@ -333,11 +333,10 @@ public class Renderer {
 		float spin = moddedSpin < 0f ? (2f * pi) + moddedSpin : moddedSpin;
 
 		boolean flippityFlop = spin > pi;
-		System.out.println(spin);
 
-		if (lastFlippity != flippityFlop) {
-			for (int i = 0; i < 100; i++) System.err.println("FLIPPITY FLOP!");
-		}
+//		if (lastFlippity != flippityFlop) {
+//			for (int i = 0; i < 100; i++) System.err.println("FLIPPITY FLOP!");
+//		}
 		lastFlippity = flippityFlop;
 		
 		List<VertexBufferSlice> allSlicesLikeEver = new ArrayList<VertexBufferSlice>();
@@ -381,9 +380,9 @@ public class Renderer {
 
 		baseMatrix.scale(baseScale, baseScale, baseScale);
 
-
-		renderPrimitives(baseMatrix, spin, true);
-
+		if (FrameMaster.vain == false) {
+			renderPrimitives(baseMatrix, spin, true);
+		}
 
 
 		for (int i = 0; i < allSlicesLikeEver.size(); i++){
@@ -446,7 +445,7 @@ public class Renderer {
 
 	    	//--pass that matrix to the shader
 	    	gl.glUniformMatrix4fv(this.uniformMvpHandle, 1, false, m.getMatrix(), 0);
-	
+
 	    	gl.glEnableVertexAttribArray(0);
 	    	gl.glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandles[slice.index]);
 	    	gl.glVertexAttribPointer(0, 3, GL_SHORT, true, 0, 0);
@@ -460,8 +459,9 @@ public class Renderer {
 
 
 
-
-		renderPrimitives(baseMatrix, spin, false);
+		if (FrameMaster.vain == false) {
+			renderPrimitives(baseMatrix, spin, false);
+		}
 
 		//--draw outlines
 		for (PointCloud pc : this.pointClouds) {
@@ -487,6 +487,7 @@ public class Renderer {
 	
 	private float calculatePointRadiusInPixelsForSlice(VertexBufferSlice slice) {
 		CloudRegion cr = slice.region;
+		//TODO actually consider the z pixel size yo
 		float pointWidth = (float)this.width* this.orthoWidth*cr.volume.wd/ (float)cr.ptWidth(); 
 		float pointHeight = (float)this.height* this.orthoHeight*cr.volume.ht / (float)cr.ptHeight();
 		float sz =  pointWidth < pointHeight ? pointWidth : pointHeight;
