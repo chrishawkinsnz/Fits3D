@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 
 import com.jogamp.opengl.GL3;
@@ -23,8 +24,12 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.tree.*;
 
 import com.jogamp.opengl.util.FPSAnimator;
+import com.sun.xml.internal.ws.api.streaming.XMLStreamReaderFactory;
 import net.miginfocom.swing.MigLayout;
 import nom.tam.fits.ImageHDU;
 
@@ -52,10 +57,16 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	private int drawableWidth = 0;
 	private int drawableHeight = 0;
 	
-	private DefaultListModel<PointCloud> listModel;
-	private JList<PointCloud> list;
+//	private DefaultListModel<PointCloud> listModel;
+//	private JList<PointCloud> list;
+
+
+	private JTree tree;
+	private DefaultMutableTreeNode treeRoot;
+	private DefaultTreeModel treeModel;
 	private JPanel attributPanel;
 	private GLCanvas canvas;
+
 
 	public static boolean vain = false;
 
@@ -80,7 +91,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
         canvas = makeCanvas();
         attachControlsToCanvas(canvas);
         
-        this.add(canvas,BorderLayout.CENTER);
+        this.add(canvas, BorderLayout.CENTER);
         this.add(filePanel(), BorderLayout.WEST);
         
         reloadAttributePanel();
@@ -192,46 +203,57 @@ public class FrameMaster extends JFrame implements GLEventListener {
     
     
     private JPanel filePanel() {
-    	listModel = new DefaultListModel<PointCloud>();
+//    	listModel = new DefaultListModel<PointCloud>();
     	
-        list = new JList<PointCloud>(listModel);
-        list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        list.setSelectedIndex(0);
-        list.addListSelectionListener(new ListSelectionListener() {
+//        list = new JList<PointCloud>(listModel);
+		this.treeRoot = new DefaultMutableTreeNode("Point Clouds");
+		this.treeModel = new DefaultTreeModel(treeRoot);
+
+		tree = new JTree(treeModel);
+//		tree.setRootVisible(false);
+
+		tree.getSelectionModel().setSelectionMode
+				(TreeSelectionModel.SINGLE_TREE_SELECTION);
+		tree.setShowsRootHandles(true);
+		tree.addTreeSelectionListener(new TreeSelectionListener() {
 			@Override
-			public void valueChanged(ListSelectionEvent e) {
-				List<PointCloud> selectedPointClouds = list.getSelectedValuesList();
-				if (selectedPointClouds != null && e.getValueIsAdjusting() == false) {
-					FrameMaster.this.currentPointClouds = selectedPointClouds;
-					FrameMaster.this.reloadAttributePanel();
+			public void valueChanged(TreeSelectionEvent e) {
+				TreePath path = e.getPath();
+				Object obj = e.getPath().getLastPathComponent();
+				FrameMaster.this.currentPointClouds.clear();
+				if (obj instanceof DefaultMutableTreeNode) {
+					DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) obj;
+
+					Object contents = treeNode.getUserObject();
+					if (contents instanceof PointCloud) {
+						List<PointCloud> selectedPointClouds = new ArrayList<PointCloud>();
+						selectedPointClouds.add((PointCloud) contents);
+						FrameMaster.this.currentPointClouds = selectedPointClouds;
+					}
 				}
-				else if (e.getValueIsAdjusting() == false){
-					FrameMaster.this.currentPointClouds = new ArrayList<PointCloud>();
-					FrameMaster.this.reloadAttributePanel();
-				}
+				FrameMaster.this.reloadAttributePanel();
 			}
 		});
-        list.setMinimumSize(new Dimension(240, 200));
-        list.setPreferredSize(new Dimension(240, 2000));
-//        list.setFixedCellWidth(240);
-        
-        
-        list.setBorder(BorderFactory.createTitledBorder("Fits Files"));
-        
+
+
+		tree.setMinimumSize(new Dimension(240, 200));
+		tree.setPreferredSize(new Dimension(240, 2000));
+		tree.setBorder(BorderFactory.createTitledBorder("Fits Files"));
+		tree.setBackground(colorBackground);
+
         JPanel filePanel = new JPanel(new MigLayout("flowy"));
-        
-        
-        Dimension lilDimension = new Dimension(240, 600);
+
+
+		Dimension lilDimension = new Dimension(240, 600);
         filePanel.setMaximumSize(lilDimension);
         filePanel.setPreferredSize(lilDimension);
 
-        filePanel.add(list);
-        
-        JButton buttonAddFitsFile = new JButton("Open New Fits File");
-        buttonAddFitsFile.addActionListener(e -> this.showOpenDialog());
+		filePanel.add(tree);
+
+		JButton buttonAddFitsFile = new JButton("Open New Fits File");
+		buttonAddFitsFile.addActionListener(e -> this.showOpenDialog());
         filePanel.add(buttonAddFitsFile, "grow");
-        
-        list.setBackground(colorBackground);
+
         filePanel.setBackground(colorBackground);
         filePanel.setPreferredSize(new Dimension(260, 500));
 
@@ -267,7 +289,12 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		}
 
     	pc.readFits();
-    	this.listModel.addElement(pc);
+		MutableTreeNode newNode = new DefaultMutableTreeNode(pc);
+		this.treeModel.insertNodeInto(newNode, this.treeRoot, 0);
+		for (CloudRegion region : pc.regions) {
+			addRegionToTree(pc, region);
+		}
+//    	this.listModel.addElement(pc);
 		this.pleaseSelectThisNextChanceYouGet = pc;
 		setNeedsDisplay();
     }
@@ -356,7 +383,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
 //				pc.clearRegions();
 				//TODO
 				pc.addRegion(pc.pendingRegion, pc.regions);
+				addRegionToTree(pc, pc.pendingRegion);
 				pc.pendingRegion = null;
+
 				needsFreshRenderer = true;
 			}
 		}
@@ -374,7 +403,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
 			this.needsFreshRenderer = false;
     	}
 		if (this.pleaseSelectThisNextChanceYouGet != null) {
-			this.list.setSelectedValue(pleaseSelectThisNextChanceYouGet, true);
+//			this.list.setSelectedValue(pleaseSelectThisNextChanceYouGet, true);
+
+			TreePath selectionPath = new TreePath(this.pleaseSelectThisNextChanceYouGet);
+			this.tree.setSelectionPath(selectionPath);
 			pleaseSelectThisNextChanceYouGet = null;
 		}
 
@@ -398,6 +430,25 @@ public class FrameMaster extends JFrame implements GLEventListener {
     public static void setNeedsDisplay() {
     	singleFrameMaster.canvas.display();
     }
+
+	public static void addRegionToTree(PointCloud pointCloud, CloudRegion cr) {
+		DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(cr);
+		TreePath pathToParent = find(singleFrameMaster.treeRoot, pointCloud);
+		MutableTreeNode parentNode = (MutableTreeNode) pathToParent.getLastPathComponent();
+		singleFrameMaster.treeModel.insertNodeInto(newNode, parentNode, pointCloud.regions.size() - 1);
+	}
+
+	private static TreePath find(DefaultMutableTreeNode root, Object obj) {
+		@SuppressWarnings("unchecked")
+		Enumeration<DefaultMutableTreeNode> e = root.depthFirstEnumeration();
+		while (e.hasMoreElements()) {
+			DefaultMutableTreeNode node = e.nextElement();
+			if (node.getUserObject() == obj) {
+				return new TreePath(node.getPath());
+			}
+		}
+		return null;
+	}
 
 	public static void setNeedsNewRenderer() {
 		singleFrameMaster.needsFreshRenderer = true;

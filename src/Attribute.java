@@ -92,6 +92,13 @@ public abstract class Attribute {
 			super(displayName, shouldAggregate);
 			this.value = value;
 		}
+
+		@Override
+		public void notifyWithValue(Object obj) {
+			super.notifyWithValue(obj);
+			String str = (String)obj;
+			this.value = str;
+		}
 	}
 	
 	public static class PathName extends TextAttribute {

@@ -57,7 +57,7 @@ public class PointCloud implements  AttributeProvider {
 		this.regions = new ArrayList<CloudRegion>();
 		this.volume = new Volume(boxOrigX, boxOrigY, boxOrigZ, boxWidth, boxHeight, boxDepth);
 		this.backupVolume = this.volume;
-		fileName = new Attribute.PathName("File TextAttribute", pathName, false);
+		fileName = new Attribute.PathName("Filename", pathName, false);
 		attributes.add(fileName);
 		
 		intensity = new Attribute.RangedAttribute("Visibility", 0.001f, 1f, 0.5f, true);
@@ -172,13 +172,16 @@ public class PointCloud implements  AttributeProvider {
 	}
 	static int c = 0;
 	public void loadRegionAtFidelity(float fidelity) {
+		CloudRegion region;
 		if (regions.size() == 0) {
 			Volume v = new Volume(0f,0f,0f,1f,1f,1f);
-			CloudRegion region = new CloudRegion(fits, v, fidelity);
+			region = new CloudRegion(fits, v, fidelity);
+
+
 			regions.add(region);
 		}else {
 			int rindex = 0;
-			CloudRegion region = regions.get(rindex);
+			region = regions.get(rindex);
 			Volume v = region.volume;
 
 			//--if you're the top dog then clear out the children as well
@@ -194,8 +197,11 @@ public class PointCloud implements  AttributeProvider {
 				}
 			}
 			this.regions.set(rindex, new CloudRegion(fits, v, fidelity, chrilden));
+
+			//--change the name of the original region
 		}
 
+		region.setName("Region"+regions.size());
 		FrameMaster.setNeedsNewRenderer();
 		FrameMaster.setNeedsDisplay();
 	}

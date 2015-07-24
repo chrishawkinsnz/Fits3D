@@ -3,6 +3,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.sun.tools.doclint.HtmlTag;
 import nom.tam.fits.Fits;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
@@ -26,6 +27,7 @@ public class CloudRegion {
 
 	public Attribute.BinaryAttribute isVisible;
 	public Attribute.SteppedRangeAttribute quality;
+	public Attribute.TextAttribute nameAttribute;
 	public List<Attribute>attributes = new ArrayList<Attribute>();
 
 	public final static Color[] cols = {Color.blue, Color.green, Color.pink, Color.orange};
@@ -48,6 +50,8 @@ public class CloudRegion {
 			};
 			new Thread(r).start();
 		};
+		this.nameAttribute = new Attribute.TextAttribute("Name", "Region0", false);
+		this.attributes.add(this.nameAttribute);
 		attributes.add(quality);
 	}
 	private CloudRegion (Volume volume ) {
@@ -123,5 +127,13 @@ public class CloudRegion {
 	
 	public int ptDepth() {
 		return this.currentRepresentation.numPtsZ;
+	}
+
+	public void setName(String name) {
+		this.nameAttribute.notifyWithValue(name);
+	}
+
+	public String toString() {
+		return this.nameAttribute.value;
 	}
 }
