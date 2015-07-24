@@ -1,11 +1,11 @@
-import java.awt.image.BufferedImage;
+import java.awt.*;
 import java.io.*;
+import java.net.URL;
 import java.nio.FloatBuffer;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.*;
 
 import com.apple.eawt.Application;
 
@@ -19,13 +19,7 @@ public class Fits3D {
 	        	System.setProperty("apple.laf.useScreenMenuBar", "true");
 	        	System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Fits3D");	        	
 	        	System.setProperty("com.apple.mrj.application.apple.menu.about.version", "0.1");
-	        	BufferedImage img = null;
-	        	try {
-	        	    img = ImageIO.read(new File("resources/stupidSpaceIcon.png"));
-	        	    
-	        	    Application.getApplication().setDockIconImage(img);
-	        	} catch (IOException e) {
-	        	}
+				Application.getApplication().setDockIconImage(ImageLoader.loadImageNamed("stupidSpaceIcon.png"));
 	        }
 	            
 	        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
