@@ -201,7 +201,7 @@ public class PointCloud implements  AttributeProvider {
 			//--change the name of the original region
 		}
 
-		region.setName("Region"+regions.size());
+//		region.setName("Region"+regions.size());
 		FrameMaster.setNeedsNewRenderer();
 		FrameMaster.setNeedsDisplay();
 	}

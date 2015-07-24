@@ -14,7 +14,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
  * @author chrishawkins
  *
  */
-public class CloudRegion {
+public class CloudRegion implements  AttributeProvider{
 	public final static float startingFidelity = 0.15f;
 
 	public RegionRepresentation bestRepresentation;
@@ -135,5 +135,10 @@ public class CloudRegion {
 
 	public String toString() {
 		return this.nameAttribute.value;
+	}
+
+	@Override
+	public List<Attribute> getAttributes() {
+		return this.attributes;
 	}
 }

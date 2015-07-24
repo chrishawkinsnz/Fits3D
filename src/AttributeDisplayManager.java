@@ -1,6 +1,6 @@
 
 public class AttributeDisplayManager {
-	public  AttributeDisplayer tweakableForAttribute(Attribute attribute, PointCloud pc) {
+	public  AttributeDisplayer tweakableForAttribute(Attribute attribute, AttributeProvider attributeDisplayer) {
     	//--listen okay we are just going to assume it is foo for the moment
     	AttributeDisplayer tweakable;
     	if (attribute instanceof Attribute.RangedAttribute) {
@@ -28,6 +28,7 @@ public class AttributeDisplayManager {
     	}
     	else if (attribute instanceof Attribute.FilterSelectionAttribute) {
     		Attribute.FilterSelectionAttribute fsAttribute = (Attribute.FilterSelectionAttribute)attribute;
+			PointCloud pc = (PointCloud)attributeDisplayer;
     		tweakable = new Tweakable.ChristogramTweakable(pc.getHistBuckets(), fsAttribute, pc.getHistMin(), pc.getHistMax());
     	}
 		else if (attribute instanceof Attribute.MultiChoiceAttribute) {

@@ -42,6 +42,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	private List<PointCloud> pointClouds = new ArrayList<PointCloud>();
 	private List<PointCloud> currentPointClouds  = new ArrayList<PointCloud>();;
 
+	private AttributeProvider selectedAttributeProvider = null;
+
 	private Renderer renderer;
 	private WorldViewer viewer;
 	private Selection selection;
@@ -146,52 +148,53 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	MigLayout mlLayout = new MigLayout("wrap 2");
     	this.attributPanel = new JPanel(mlLayout);
     	attributPanel.setBorder(new EmptyBorder(0, 8, 8, 8));
-    	
-    	for (PointCloud pc: this.currentPointClouds) {
-    		int cloudIndex = this.pointClouds.indexOf(pc);
-    		JLabel title = new JLabel("Coud "+cloudIndex);
-        	title.setFont(new Font("Dialog", Font.BOLD, 24));
-        	attributPanel.add(title, "span 2");	
-    		for (Attribute attribute : pc.getAttributes()) {
-    			
-    			AttributeDisplayer tweakable = this.attributeDisplayManager.tweakableForAttribute(attribute, pc);
-    			if (tweakable == null) {continue;}
-    			String formatString = tweakable.isDoubleLiner() ? "span 2" : "";
-    			
-    			JLabel label = new JLabel(attribute.displayName);
-    			label.setFont(new Font("Dialog", Font.BOLD, 12));
-    			attributPanel.add(label, formatString);
-    			
-    			
-    			formatString = tweakable.isDoubleLiner() ? "width ::250, span 2" : "gapleft 16, width ::150";
-    			attributPanel.add(tweakable.getComponent(), formatString);
-    		}
 
-			if (pc.regions.size() > 1) {
-				for (int i = 0; i < pc.regions.size(); i++) {
-					JSeparator separator = new JSeparator(SwingConstants.HORIZONTAL);
-					attributPanel.add(separator, "span 2");
+		JLabel title = new JLabel("Attributes");
+		title.setFont(new Font("Dialog", Font.BOLD, 24));
+		attributPanel.add(title, "span 2");
+		if (selectedAttributeProvider != null) {
+			for (Attribute attribute : selectedAttributeProvider.getAttributes()) {
 
-					JLabel label = new JLabel("Region " + i);
-					label.setFont(new Font("Dialog", Font.BOLD, 14));
-					attributPanel.add(label, "span 2");
-
-					CloudRegion cr = pc.regions.get(i);
-					for (Attribute attribute : cr.attributes) {
-						AttributeDisplayer tweakable = this.attributeDisplayManager.tweakableForAttribute(attribute, pc);
-						if (tweakable == null) {continue;}
-						String formatString = tweakable.isDoubleLiner() ? "span 2" : "";
-
-						label = new JLabel(attribute.displayName);
-						label.setFont(new Font("Dialog", Font.BOLD, 12));
-						attributPanel.add(label, formatString);
-
-						formatString = tweakable.isDoubleLiner() ? "width ::250, span 2" : "gapleft 16, width ::150";
-						attributPanel.add(tweakable.getComponent(), formatString);
-					}
+				AttributeDisplayer tweakable = this.attributeDisplayManager.tweakableForAttribute(attribute, selectedAttributeProvider);
+				if (tweakable == null) {
+					continue;
 				}
+				String formatString = tweakable.isDoubleLiner() ? "span 2" : "";
+
+				JLabel label = new JLabel(attribute.displayName);
+				label.setFont(new Font("Dialog", Font.BOLD, 12));
+				attributPanel.add(label, formatString);
+
+
+				formatString = tweakable.isDoubleLiner() ? "width ::250, span 2" : "gapleft 16, width ::150";
+				attributPanel.add(tweakable.getComponent(), formatString);
 			}
-    	}
+		}
+//		if (pc.regions.size() > 1) {
+//			for (int i = 0; i < pc.regions.size(); i++) {
+//				JSeparator separator = new JSeparator(SwingConstants.HORIZONTAL);
+//				attributPanel.add(separator, "span 2");
+//
+//				JLabel label = new JLabel("Region " + i);
+//				label.setFont(new Font("Dialog", Font.BOLD, 14));
+//				attributPanel.add(label, "span 2");
+//
+//				CloudRegion cr = pc.regions.get(i);
+//				for (Attribute attribute : cr.attributes) {
+//					AttributeDisplayer tweakable = this.attributeDisplayManager.tweakableForAttribute(attribute, pc);
+//					if (tweakable == null) {continue;}
+//					String formatString = tweakable.isDoubleLiner() ? "span 2" : "";
+//
+//					label = new JLabel(attribute.displayName);
+//					label.setFont(new Font("Dialog", Font.BOLD, 12));
+//					attributPanel.add(label, formatString);
+//
+//					formatString = tweakable.isDoubleLiner() ? "width ::250, span 2" : "gapleft 16, width ::150";
+//					attributPanel.add(tweakable.getComponent(), formatString);
+//				}
+//			}
+//		}
+
 
     	attributPanel.setMinimumSize(lilDimension);
     	attributPanel.setMaximumSize(lilDimension);
@@ -223,12 +226,11 @@ public class FrameMaster extends JFrame implements GLEventListener {
 				FrameMaster.this.currentPointClouds.clear();
 				if (obj instanceof DefaultMutableTreeNode) {
 					DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) obj;
-
 					Object contents = treeNode.getUserObject();
-					if (contents instanceof PointCloud) {
-						List<PointCloud> selectedPointClouds = new ArrayList<PointCloud>();
-						selectedPointClouds.add((PointCloud) contents);
-						FrameMaster.this.currentPointClouds = selectedPointClouds;
+					if (contents instanceof  AttributeProvider) {
+						FrameMaster.this.selectedAttributeProvider = (AttributeProvider)contents;
+					} else {
+						FrameMaster.this.selectedAttributeProvider = null;
 					}
 				}
 				FrameMaster.this.reloadAttributePanel();
