@@ -1,9 +1,4 @@
-import java.awt.BorderLayout;
-import java.awt.Canvas;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Event;
-import java.awt.Font;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -73,25 +68,34 @@ public class FrameMaster extends JFrame implements GLEventListener {
     public FrameMaster() {
     	super("Very Good Honours Project");
     	singleFrameMaster = this;
-        
+
+
+//		UIManager.put("Tree.rendererFillBackground", false);
+
 
         this.setName("Very Good Honours Project");
         
-        this.setMinimumSize(new Dimension(800,600));
-        this.setPreferredSize(new Dimension(1600,1000));
+        this.setMinimumSize(new Dimension(800, 600));
+        this.setPreferredSize(new Dimension(1600, 1000));
     	this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     	this.setVisible(true);
     	this.setResizable(true);
-    	this.setLayout(new BorderLayout());
+		BorderLayout bl = new BorderLayout();
+    	this.getContentPane().setLayout(bl);
        
         this.setJMenuBar(makeMenuBar());
 
         canvas = makeCanvas();
         attachControlsToCanvas(canvas);
         
-        this.add(canvas, BorderLayout.CENTER);
-        this.add(filePanel(), BorderLayout.WEST);
-        
+        this.getContentPane().add(canvas, BorderLayout.CENTER);
+        this.getContentPane().add(filePanel(), BorderLayout.WEST);
+
+		setDefaultLookAndFeelDecorated(true);
+
+		Component leftComponent = bl.getLayoutComponent(BorderLayout.WEST);
+		leftComponent.setBackground(Color.WHITE);
+
         reloadAttributePanel();
         
         this.pack();
@@ -197,20 +201,19 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		formatString = attributeDisplayer.isDoubleLiner() ? "width ::250, span 2" : "gapleft 16, width ::150";
 		attributPanel.add(attributeDisplayer.getComponent(), formatString);
 	}
-    
-    
-    private JPanel filePanel() {
-//    	listModel = new DefaultListModel<PointCloud>();
-    	
-//        list = new JList<PointCloud>(listModel);
+
+
+
+	private JPanel filePanel() {
 		this.treeRoot = new DefaultMutableTreeNode("Point Clouds");
 		this.treeModel = new DefaultTreeModel(treeRoot);
 
-		tree = new JTree(treeModel);
-//		tree.setRootVisible(false);
 
-		tree.getSelectionModel().setSelectionMode
-				(TreeSelectionModel.SINGLE_TREE_SELECTION);
+		tree = new JTree(treeModel);
+
+
+		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+
 		tree.setShowsRootHandles(true);
 		tree.addTreeSelectionListener(new TreeSelectionListener() {
 			@Override
@@ -221,8 +224,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
 				if (obj instanceof DefaultMutableTreeNode) {
 					DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) obj;
 					Object contents = treeNode.getUserObject();
-					if (contents instanceof  AttributeProvider) {
-						FrameMaster.this.selectedAttributeProvider = (AttributeProvider)contents;
+					if (contents instanceof AttributeProvider) {
+						FrameMaster.this.selectedAttributeProvider = (AttributeProvider) contents;
 					} else {
 						FrameMaster.this.selectedAttributeProvider = null;
 					}
@@ -235,7 +238,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		tree.setMinimumSize(new Dimension(240, 200));
 		tree.setPreferredSize(new Dimension(240, 2000));
 		tree.setBorder(BorderFactory.createTitledBorder("Fits Files"));
-		tree.setBackground(colorBackground);
+//		tree.setBackground(colorBackground);
 
         JPanel filePanel = new JPanel(new MigLayout("flowy"));
 
@@ -248,9 +251,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 		JButton buttonAddFitsFile = new JButton("Open New Fits File");
 		buttonAddFitsFile.addActionListener(e -> this.showOpenDialog());
-        filePanel.add(buttonAddFitsFile, "grow");
+		filePanel.add(buttonAddFitsFile, "grow");
 
-        filePanel.setBackground(colorBackground);
+//        filePanel.setBackground(colorBackground);
         filePanel.setPreferredSize(new Dimension(260, 500));
 
         return filePanel;        
