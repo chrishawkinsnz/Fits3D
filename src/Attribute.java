@@ -8,9 +8,12 @@ import java.util.function.Consumer;
 public abstract class Attribute {
 	public String displayName;
 	public boolean isAggregatable;
-	
+
+	private Object value;
+
 	public Consumer<Object>callback = (obj)->{};
-	
+
+	private Object savedState;
 	private Attribute(String displayName, boolean isAggregatable) {
 		this.displayName = displayName;
 		this.isAggregatable = isAggregatable;
@@ -20,11 +23,23 @@ public abstract class Attribute {
 		callback.accept(obj);
 		FrameMaster.setNeedsDisplay();
 	}
+	public Object getValue() {
+		return null;
+	}
+
+	public void saveState() {
+		this.savedState = getValue();
+	}
+
+	public void restoreState() {
+		this.notifyWithValue(this.savedState);
+		this.savedState = null;
+	}
 	
 	public static class RangedAttribute extends Attribute {
-		public float value;
-		public float min;
-		public float max;
+		private float value;
+		private float min;
+		private float max;
 		
 		public RangedAttribute(String displayName, float min, float max, float initialValue, boolean shouldAggregate) {
 			super(displayName, shouldAggregate);
@@ -39,16 +54,28 @@ public abstract class Attribute {
 			Float float1 = (Float)obj;
 			this.value = float1.floatValue();
 		}
+
+		@Override
+		public Float getValue() {
+			return this.value;
+		}
+
+		public Float getMin() {
+			return this.min;
+		}
+
+		public Float getMax() {
+			return this.max;
+		}
+
 	}
 	
 	public static class SteppedRangeAttribute extends Attribute{
-		public float value;
+		private float value;
 		public float min;
 		public float max;
 		public int steps;
-		
-		private PointCloud pointCloud;
-		
+
 		public SteppedRangeAttribute(String displayName, float min, float max, float initialValue, int steps, boolean shouldAggregate) {
 			super(displayName, shouldAggregate);
 			this.min = min;
@@ -62,16 +89,16 @@ public abstract class Attribute {
 			super.notifyWithValue(obj);
 			Float float1 = (Float)obj;
 			this.value = float1.floatValue();
-//			if (this.pointCloud != null) {
-//				FrameMaster.desiredPointCloudFidelity = value;
-//				FrameMaster.pointCloudToUpdate = this.pointCloud;
-//				FrameMaster.pointCloudNeedsUpdatedPointCloud = true;
-//			}
+		}
+
+		@Override
+		public Float getValue() {
+			return value;
 		}
 	}
 	
 	public static class BinaryAttribute extends Attribute {
-		public boolean value; 
+		private boolean value;
 		
 		public BinaryAttribute(String displayName, boolean initialValue, boolean shouldAggregate) {
 			super(displayName, shouldAggregate);
@@ -84,10 +111,15 @@ public abstract class Attribute {
 			Boolean boolean1 = (Boolean)obj;
 			this.value = boolean1.booleanValue();
 		}
+
+		@Override
+		public Boolean getValue(){
+			return this.value;
+		}
 	}
 	
 	public static class TextAttribute extends Attribute {
-		public String value;
+		private String value;
 		public TextAttribute(String displayName, String value, boolean shouldAggregate) {
 			super(displayName, shouldAggregate);
 			this.value = value;
@@ -99,6 +131,11 @@ public abstract class Attribute {
 			String str = (String)obj;
 			this.value = str;
 		}
+
+		@Override
+		public String getValue() {
+			return this.value;
+		}
 	}
 	
 	public static class PathName extends TextAttribute {
@@ -108,7 +145,7 @@ public abstract class Attribute {
 	}
 	
 	public static class FilterSelectionAttribute extends Attribute {
-		public Christogram.Filter filter;
+		private Christogram.Filter filter;
 		
 		public FilterSelectionAttribute(String displayName, boolean shouldAggregate, Christogram.Filter filter) {
 			super(displayName, shouldAggregate);
@@ -120,6 +157,11 @@ public abstract class Attribute {
 			super.notifyWithValue(obj);
 			Christogram.Filter filter = (Christogram.Filter)obj;
 			this.filter = filter;
+		}
+
+		@Override
+		public Christogram.Filter getValue() {
+			return this.filter;
 		}
 	}
 
@@ -141,6 +183,11 @@ public abstract class Attribute {
 
 		public void updateChoices(List<Object>newChoices) {
 			this.choices = newChoices;
+		}
+
+		@Override
+		public Object getValue() {
+			return this.choice;
 		}
 
 	}

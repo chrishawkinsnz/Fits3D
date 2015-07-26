@@ -23,6 +23,7 @@ public class Region implements  AttributeProvider{
 	private static int regionCount = 0;
 	public Attribute.BinaryAttribute isVisible;
 	public Attribute.SteppedRangeAttribute quality;
+	public Attribute.RangedAttribute intensity;
 	public Attribute.TextAttribute nameAttribute;
 	public List<Attribute>attributes = new ArrayList<Attribute>();
 
@@ -31,9 +32,15 @@ public class Region implements  AttributeProvider{
 
 	private Region(Volume volume) {
 
+		this.nameAttribute = new Attribute.TextAttribute("Name", "Region "+regionCount++, false);
+		this.attributes.add(this.nameAttribute);
+
 		Attribute.BinaryAttribute visibleAttr = new Attribute.BinaryAttribute("Visble", true, false);
 		this.isVisible = visibleAttr;
 		attributes.add(visibleAttr);
+
+		intensity = new Attribute.RangedAttribute("Visibility", 0.001f, 1f, 0.5f, false);
+		attributes.add(intensity);
 
 		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, startingFidelity, 10, true);
 		quality.callback = (obj) -> {
@@ -62,8 +69,8 @@ public class Region implements  AttributeProvider{
 		};
 
 
-		this.nameAttribute = new Attribute.TextAttribute("Name", "Region "+regionCount++, false);
-		this.attributes.add(this.nameAttribute);
+
+
 		attributes.add(quality);
 
 		this.volume = volume;
@@ -150,7 +157,7 @@ public class Region implements  AttributeProvider{
 	}
 
 	public String toString() {
-		return this.nameAttribute.value;
+		return this.nameAttribute.getValue();
 	}
 
 	@Override

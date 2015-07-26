@@ -344,9 +344,9 @@ gl.glDisable(GL_POINT_SMOOTH);
 		float minScratchX =  Float.MAX_VALUE;
 		float maxScractchX = Float.MIN_VALUE;
 		for (PointCloud cloud : this.pointClouds){
-			if (cloud.isVisible.value == false) {continue;}
+			if (cloud.isVisible.getValue() == false) {continue;}
 			for (Region cr: cloud.getRegions()) {
-				if (cr.isVisible.value == false) {continue;}
+				if (cr.isVisible.getValue() == false) {continue;}
 
 				for (VertexBufferSlice slice: cr.getSlices()) {
 
@@ -397,7 +397,7 @@ gl.glDisable(GL_POINT_SMOOTH);
 			PointCloud cloud = slice.cloud;
 			Region cr = slice.region;
 			
-			gl.glUniform1f(this.uniformAlphaFudgeHandle, cloud.intensity.value);
+			gl.glUniform1f(this.uniformAlphaFudgeHandle, cr.intensity.getValue() * cloud.intensity.getValue());
 			//--filtery doodle TODO probably move this out one level of the loop
 			
 			Christogram.Filter filter = cloud.getFilter();
@@ -465,7 +465,7 @@ gl.glDisable(GL_POINT_SMOOTH);
 
 		//--draw outlines
 		for (PointCloud pc : this.pointClouds) {
-			if (pc.isSelected.value) {
+			if (pc.isSelected.getValue()) {
 				renderOutline(baseMatrix, pc.volume, pc.color);
 			}
 		}

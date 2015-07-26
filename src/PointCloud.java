@@ -55,7 +55,7 @@ public class PointCloud implements  AttributeProvider {
 		fileName = new Attribute.PathName("Filename", pathName, false);
 		attributes.add(fileName);
 		
-		intensity = new Attribute.RangedAttribute("Visibility", 0.001f, 1f, 0.5f, true);
+		intensity = new Attribute.RangedAttribute("Visibility", 0.001f, 1f, 0.5f, false);
 		attributes.add(intensity);
 		
 		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, startingFidelity, 10, true);
@@ -101,12 +101,12 @@ public class PointCloud implements  AttributeProvider {
 	}
 	
 	public void readFits() {
-		readFitsAtQualityLevel(this.quality.value);
+		readFitsAtQualityLevel(this.quality.getValue());
 	}
 
 	private void readFitsAtQualityLevel(float proportionOfPerfect) {
 		try{
-			this.fits = new Fits(this.fileName.value);
+			this.fits = new Fits(this.fileName.getValue());
 
 
 
@@ -134,8 +134,8 @@ public class PointCloud implements  AttributeProvider {
 			for (Attribute attr : attributes) {
 				if (attr instanceof Attribute.TextAttribute) {
 					Attribute.TextAttribute namedAttr = (Attribute.TextAttribute)attr;
-					if (namedAttr.value == null || namedAttr.value.equals("") || namedAttr.value.equals("null"))
-						namedAttr.value = "?";
+					if (namedAttr.getValue() == null || namedAttr.getValue().equals("") || namedAttr.getValue().equals("null"))
+						namedAttr.notifyWithValue("?");
 				}
 			}
 
@@ -252,7 +252,7 @@ public class PointCloud implements  AttributeProvider {
 	}
 
 	public String toString() {
-		String[] components = this.fileName.value.split(File.separator);
+		String[] components = this.fileName.getValue().split(File.separator);
 		return components[components.length - 1];
 	}
 	
@@ -269,7 +269,7 @@ public class PointCloud implements  AttributeProvider {
 	}
 
 	public Christogram.Filter getFilter() {
-		return this.filterSelection.filter;
+		return this.filterSelection.getValue();
 	}
 
 
@@ -301,8 +301,8 @@ public class PointCloud implements  AttributeProvider {
 
 		//--ok so heres what's going to happen if the units don't match that of the real cube then it will just match the parent cube in that dimension.  So if none of the dimensions match both cubes should perfectly sit on top of each other.
 		for (int i = 0; i < 3; i++) {
-			if (this.unitTypes[i].value.equals(parent.unitTypes[i].value) == false) {
-				System.err.println("Cannot position clouds relative in "+axesNames[i]+" axis as there is a unit mismatch ("+this.unitTypes[i].value +" != " + parent.unitTypes[i].value+")");
+			if (this.unitTypes[i].getValue().equals(parent.unitTypes[i].getValue()) == false) {
+				System.err.println("Cannot position clouds relative in "+axesNames[i]+" axis as there is a unit mismatch ("+this.unitTypes[i].getValue() +" != " + parent.unitTypes[i].getValue()+")");
 				float []newOriginValues = displayOrigin.toArray();
 				newOriginValues[i] = parVol.origin.get(i);
 				displayOrigin = new Vector3(newOriginValues);
