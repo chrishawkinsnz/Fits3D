@@ -290,9 +290,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	pc.readFits();
 		MutableTreeNode newNode = new DefaultMutableTreeNode(pc);
 		this.treeModel.insertNodeInto(newNode, this.treeRoot, 0);
-		for (Region region : pc.regions) {
-			addRegionToTree(pc, region);
-		}
+//		for (Region region : pc.regions) {
+//			addRegionToTree(pc, region);
+//		}
 //    	this.listModel.addElement(pc);
 		this.pleaseSelectThisNextChanceYouGet = pc;
 		setNeedsDisplay();
@@ -382,6 +382,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
 //				pc.clearRegions();
 				//TODO
 				pc.addRegion(pc.pendingRegion, pc.regions);
+				if (pc.regions.size() == 2) {
+					addRegionToTree(pc, pc.regions.get(0));
+					//--TODO how do you sleep at night?
+				}
 				addRegionToTree(pc, pc.pendingRegion);
 				pc.pendingRegion = null;
 
@@ -436,7 +440,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(cr);
 		TreePath pathToParent = find(singleFrameMaster.treeRoot, pointCloud);
 		MutableTreeNode parentNode = (MutableTreeNode) pathToParent.getLastPathComponent();
-		singleFrameMaster.treeModel.insertNodeInto(newNode, parentNode, pointCloud.regions.size() - 1);
+		singleFrameMaster.treeModel.insertNodeInto(newNode, parentNode, pointCloud.regions.indexOf(cr));
 	}
 
 	private static TreePath find(DefaultMutableTreeNode root, Object obj) {
