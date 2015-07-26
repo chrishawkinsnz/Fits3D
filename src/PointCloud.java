@@ -4,6 +4,7 @@ import nom.tam.fits.ImageHDU;
 
 import java.awt.Color;
 import java.io.File;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,7 +66,21 @@ public class PointCloud implements  AttributeProvider {
 
 			Runnable r = new Runnable() {
 				public void run() {
-					loadRegionAtFidelity(newQuality);
+					//--TODO don't hack this maybe
+					Region primaryRegion = PointCloud.this.regions.get(0);
+					List<Region>children = primaryRegion.getMinusRegions();
+					primaryRegion.setMinusRegions(new ArrayList<>());
+					primaryRegion.getMeMyRepresentation(newQuality);
+					for (Region child : children) {
+						child.populateAsSubregion(primaryRegion, newQuality, true);
+					}
+
+					for (Region child : children) {
+						child.quality.notifyWithValue(newQuality);
+					}
+					primaryRegion.setMinusRegions(children);
+					FrameMaster.setNeedsNewRenderer();
+					FrameMaster.setNeedsDisplay();
 				}
 			};
 			new Thread(r).start();
@@ -159,47 +174,53 @@ public class PointCloud implements  AttributeProvider {
 
 			this.galacticVolume = new Volume(realOrigin, size);
 
-			loadRegionAtFidelity(proportionOfPerfect);
+			Volume v = new Volume(0f,0f,0f,1f,1f,1f);
+			Region region = new Region(fits, v, proportionOfPerfect);
+			this.addRegion(region, this.regions);
+
+			FrameMaster.setNeedsNewRenderer();
+			FrameMaster.setNeedsDisplay();
+//			loadRegionAtFidelity(proportionOfPerfect);
 			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 	static int c = 0;
-	public void loadRegionAtFidelity(float fidelity) {
-		Region region;
-		if (regions.size() == 0) {
-			Volume v = new Volume(0f,0f,0f,1f,1f,1f);
-			region = new Region(fits, v, fidelity);
-
-
-			regions.add(region);
-		}else {
-			int rindex = 0;
-			region = regions.get(rindex);
-			Volume v = region.volume;
-
-			//--if you're the top dog then clear out the children as well
-			List<Region>chrilden = new ArrayList<>();
-			for (Region potentialChild : this.regions) {
-				Vector3 origin    = potentialChild.volume.origin;
-				Vector3 extremety = origin.add(potentialChild.volume.size);
-				boolean containsOrigin = region.volume.containsPoint(origin);
-				boolean containsExtremety = region.volume.containsPoint(extremety);
-				boolean isNotParadox = region != potentialChild;
-				if (containsOrigin && containsExtremety && isNotParadox) {
-					chrilden.add(potentialChild);
-				}
-			}
-			this.regions.set(rindex, new Region(fits, v, fidelity, chrilden));
-
-			//--change the name of the original region
-		}
-
-//		region.setName("Region"+regions.size());
-		FrameMaster.setNeedsNewRenderer();
-		FrameMaster.setNeedsDisplay();
-	}
+//	public void loadRegionAtFidelity(float fidelity) {
+//		Region region;
+//		if (regions.size() == 0) {
+//			Volume v = new Volume(0f,0f,0f,1f,1f,1f);
+//			region = new Region(fits, v, fidelity);
+//
+//
+//			regions.add(region);
+//		}else {
+//			int rindex = 0;
+//			region = regions.get(rindex);
+//			Volume v = region.volume;
+//
+//			//--if you're the top dog then clear out the children as well
+//			List<Region>chrilden = new ArrayList<>();
+//			for (Region potentialChild : this.regions) {
+//				Vector3 origin    = potentialChild.volume.origin;
+//				Vector3 extremety = origin.add(potentialChild.volume.size);
+//				boolean containsOrigin = region.volume.containsPoint(origin);
+//				boolean containsExtremety = region.volume.containsPoint(extremety);
+//				boolean isNotParadox = region != potentialChild;
+//				if (containsOrigin && containsExtremety && isNotParadox) {
+//					chrilden.add(potentialChild);
+//				}
+//			}
+//			this.regions.set(rindex, new Region(fits, v, fidelity, chrilden));
+//
+//			//--change the name of the original region
+//		}
+//
+////		region.setName("Region"+regions.size());
+//		FrameMaster.setNeedsNewRenderer();
+//		FrameMaster.setNeedsDisplay();
+//	}
 	
 	public List<Region> getRegions() {
 		return regions;
@@ -215,6 +236,21 @@ public class PointCloud implements  AttributeProvider {
 	
 	public void addRegion (Region cr, List<Region>existingRegions) {
 		existingRegions.add(cr);
+
+		for (Region region : this.regions) {
+			List<Region>chrilden = new ArrayList<>();
+			for (Region potentialChild : this.regions) {
+				Vector3 origin = potentialChild.volume.origin;
+				Vector3 extremety = origin.add(potentialChild.volume.size);
+				boolean containsOrigin = region.volume.containsPoint(origin);
+				boolean containsExtremety = region.volume.containsPoint(extremety);
+				boolean isNotParadox = region != potentialChild;
+				if (containsOrigin && containsExtremety && isNotParadox) {
+					chrilden.add(potentialChild);
+				}
+			}
+			region.setMinusRegions(chrilden);
+		}
 //		class RegionOrderer implements Comparator<Region> {
 //			public int compare(Region a, Region b) {
 //				return a.depth < b.depth ? -1 : 1;
@@ -280,6 +316,11 @@ public class PointCloud implements  AttributeProvider {
 		visibleAttributes.addAll(this.attributes);
 
 		return visibleAttributes;
+	}
+
+	public List<AttributeProvider> getChildProviders() {
+		List<AttributeProvider>attributeProviders = new ArrayList<>(this.regions);
+		return attributeProviders;
 	}
 
 	public Volume volumeNormalisedToParent(PointCloud parent) {

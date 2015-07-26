@@ -39,7 +39,7 @@ public class Region implements  AttributeProvider{
 		this.isVisible = visibleAttr;
 		attributes.add(visibleAttr);
 
-		intensity = new Attribute.RangedAttribute("Visibility", 0.001f, 1f, 0.5f, false);
+		intensity = new Attribute.RangedAttribute("Visibility", 0.001f, 1f, 1f, false);
 		attributes.add(intensity);
 
 		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, startingFidelity, 10, true);
@@ -50,15 +50,17 @@ public class Region implements  AttributeProvider{
 			Runnable r = new Runnable() {
 				public void run() {
 					float newQuality = ((Float)obj).floatValue();
+					if (newQuality == Region.this.regionRepresentation.fidelity) {
+						return;
+					}
 					System.out.println("quality is now :" + newQuality);
 
 					Runnable r = new Runnable() {
 						public void run() {
-							Region.this.regionRepresentation = null;
-							System.gc();
 							Region.this.getMeMyRepresentation(newQuality);
 							FrameMaster.setNeedsNewRenderer();
 							FrameMaster.setNeedsDisplay();
+							System.gc();
 						}
 					};
 					new Thread(r).start();
@@ -115,24 +117,30 @@ public class Region implements  AttributeProvider{
 	 */
 	public Region subRegion(Volume subVolume, float fidelity, boolean replaceValues) {
 		Region cr = new Region(subVolume);
+		cr.fits = this.fits;
+
 		assert (subVolume.origin.x >= this.volume.origin.x);
 		assert (subVolume.origin.y >= this.volume.origin.y);
 		assert (subVolume.origin.z >= this.volume.origin.z);
 
-		if (fidelity == this.regionRepresentation.fidelity) {
-			RegionRepresentation subRepresentation = regionRepresentation.generateSubrepresentation(subVolume, replaceValues);
-			cr.regionRepresentation = subRepresentation;
-		}
-		else {
-			cr.regionRepresentation = RegionRepresentation.justTheSlicesPlease(this.fits, fidelity, subVolume);
-			if (replaceValues) {
-				this.regionRepresentation.eraseRegion(subVolume);
-			}
-		}
+		cr.populateAsSubregion(this, fidelity, replaceValues);
 
-		cr.fits = this.fits;
 		return cr;
 	}
+
+	public void populateAsSubregion(Region parentRegion, float fidelity, boolean replaceValues) {
+		if (fidelity == parentRegion.regionRepresentation.fidelity) {
+			RegionRepresentation subRepresentation = parentRegion.regionRepresentation.generateSubrepresentation(this.volume, replaceValues);
+			this.regionRepresentation = subRepresentation;
+		}
+		else {
+			this.regionRepresentation = RegionRepresentation.justTheSlicesPlease(this.fits, fidelity, this.volume);
+			if (replaceValues) {
+				parentRegion.regionRepresentation.eraseRegion(this.volume);
+			}
+		}
+	}
+
 	public void clear() {
 		this.regionRepresentation.clear();
 	}
@@ -164,4 +172,17 @@ public class Region implements  AttributeProvider{
 	public List<Attribute> getAttributes() {
 		return this.attributes;
 	}
+
+	@Override
+	public List<AttributeProvider> getChildProviders() { return new ArrayList<>();}
+
+	public void setMinusRegions(List<Region> minusRegions) {
+		this.minusRegions = minusRegions;
+	}
+
+	public List<Region> getMinusRegions() {
+		return this.minusRegions;
+	}
+
+
 }

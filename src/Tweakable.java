@@ -1,5 +1,4 @@
-import java.awt.Color;
-import java.awt.Dimension;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -235,6 +234,18 @@ public abstract class Tweakable implements  AttributeDisplayer{
 			return false;
 		}
 		
+	}
+
+	public static class ChrisTitle extends  ChrisLabel {
+		public ChrisTitle(String text) {
+			super(text);
+			label.setFont(new Font("Dialog", Font.BOLD, 24));
+		}
+
+		@Override
+		public boolean isDoubleLiner() {
+			return true;
+		}
 	}
 	
 	public static class ChristogramTweakable extends Tweakable implements AttributeDisplayer, ChangeListener {

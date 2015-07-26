@@ -150,22 +150,30 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		attributPanel.add(title, "span 2");
 		if (selectedAttributeProvider != null) {
 			for (Attribute attribute : selectedAttributeProvider.getAttributes()) {
+				AttributeDisplayer attributeDisplayer = this.attributeDisplayManager.tweakableForAttribute(attribute, selectedAttributeProvider);
+				addTweakableToAttributePanel(attributeDisplayer, attribute);
+			}
 
-				AttributeDisplayer tweakable = this.attributeDisplayManager.tweakableForAttribute(attribute, selectedAttributeProvider);
-				if (tweakable == null) {
-					continue;
+			//--now look for child providers
+			List<AttributeProvider> childProviders = selectedAttributeProvider.getChildProviders();
+			int minimumChildrenToDisplay = 2;
+			if (childProviders.size() >= minimumChildrenToDisplay) {
+				JLabel subsectionsTitle = new JLabel("Subsections");
+				subsectionsTitle.setFont(new Font("Dialog", Font.BOLD, 24));
+				attributPanel.add(subsectionsTitle, "span 2");
+				for (AttributeProvider childProvider : childProviders) {
+
+					for (Attribute attribute : childProvider.getAttributes()) {
+						AttributeDisplayer attributeDisplayer = this.attributeDisplayManager.tweakableForAttribute(attribute, childProvider);
+						addTweakableToAttributePanel(attributeDisplayer, attribute);
+					}
+					JLabel ssssh = new JLabel(" ");
+					ssssh.setFont(new Font("Dialog", Font.BOLD, 24));
+					attributPanel.add(ssssh, "span 2");
 				}
-				String formatString = tweakable.isDoubleLiner() ? "span 2" : "";
-
-				JLabel label = new JLabel(attribute.displayName);
-				label.setFont(new Font("Dialog", Font.BOLD, 12));
-				attributPanel.add(label, formatString);
-
-
-				formatString = tweakable.isDoubleLiner() ? "width ::250, span 2" : "gapleft 16, width ::150";
-				attributPanel.add(tweakable.getComponent(), formatString);
 			}
 		}
+
 
     	attributPanel.setMinimumSize(lilDimension);
     	attributPanel.setMaximumSize(lilDimension);
@@ -174,6 +182,21 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	SwingUtilities.updateComponentTreeUI(this);
     	this.getContentPane().repaint();
     }
+
+	void addTweakableToAttributePanel(AttributeDisplayer attributeDisplayer, Attribute attribute) {
+		if (attributeDisplayer == null) {
+			return;
+		}
+		String formatString = attributeDisplayer.isDoubleLiner() ? "span 2" : "";
+
+		JLabel label = new JLabel(attribute.displayName);
+		label.setFont(new Font("Dialog", Font.BOLD, 12));
+		attributPanel.add(label, formatString);
+
+
+		formatString = attributeDisplayer.isDoubleLiner() ? "width ::250, span 2" : "gapleft 16, width ::150";
+		attributPanel.add(attributeDisplayer.getComponent(), formatString);
+	}
     
     
     private JPanel filePanel() {

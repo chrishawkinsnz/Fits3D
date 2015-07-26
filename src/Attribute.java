@@ -120,8 +120,10 @@ public abstract class Attribute {
 	
 	public static class TextAttribute extends Attribute {
 		private String value;
+		public boolean isTitle;
 		public TextAttribute(String displayName, String value, boolean shouldAggregate) {
 			super(displayName, shouldAggregate);
+			this.isTitle = false;
 			this.value = value;
 		}
 

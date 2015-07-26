@@ -15,4 +15,7 @@ public interface AttributeProvider {
     }
 
     public List<Attribute> getAttributes();
+
+    public List<AttributeProvider> getChildProviders();
+
 }
