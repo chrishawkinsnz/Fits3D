@@ -91,7 +91,7 @@ public class Renderer {
 
 		int nSlices = 0;
 		for (PointCloud cloud : this.pointClouds)
-			for (CloudRegion cr : cloud.getRegions())
+			for (Region cr : cloud.getRegions())
 				nSlices += cr.getSlices().size();
 
 		this.vertexBufferHandles = new int[nSlices];
@@ -99,7 +99,7 @@ public class Renderer {
 		int index = 0;
 		int[] ptr = new int[2];
 		for (PointCloud cloud : this.pointClouds){
-			for (CloudRegion cr : cloud.getRegions()) {
+			for (Region cr : cloud.getRegions()) {
 				for (VertexBufferSlice vbs : cr.getSlices()) {
 					gl.glGenBuffers(2, ptr, 0);
 					this.vertexBufferHandles[index] = ptr[0];
@@ -345,7 +345,7 @@ gl.glDisable(GL_POINT_SMOOTH);
 		float maxScractchX = Float.MIN_VALUE;
 		for (PointCloud cloud : this.pointClouds){
 			if (cloud.isVisible.value == false) {continue;}
-			for (CloudRegion cr: cloud.getRegions()) {
+			for (Region cr: cloud.getRegions()) {
 				if (cr.isVisible.value == false) {continue;}
 
 				for (VertexBufferSlice slice: cr.getSlices()) {
@@ -395,7 +395,7 @@ gl.glDisable(GL_POINT_SMOOTH);
 
 			VertexBufferSlice slice = allSlicesLikeEver.get(sliceIndex);
 			PointCloud cloud = slice.cloud;
-			CloudRegion cr = slice.region;
+			Region cr = slice.region;
 			
 			gl.glUniform1f(this.uniformAlphaFudgeHandle, cloud.intensity.value);
 			//--filtery doodle TODO probably move this out one level of the loop
@@ -486,7 +486,7 @@ gl.glDisable(GL_POINT_SMOOTH);
 
 	
 	private float calculatePointRadiusInPixelsForSlice(VertexBufferSlice slice) {
-		CloudRegion cr = slice.region;
+		Region cr = slice.region;
 		//TODO actually consider the z pixel size yo
 		float pointWidth = (float)this.width* this.orthoWidth*cr.volume.wd/ (float)cr.ptWidth(); 
 		float pointHeight = (float)this.height* this.orthoHeight*cr.volume.ht / (float)cr.ptHeight();

@@ -22,16 +22,12 @@ import com.jogamp.opengl.awt.GLCanvas;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.*;
 
 import com.jogamp.opengl.util.FPSAnimator;
-import com.sun.xml.internal.ws.api.streaming.XMLStreamReaderFactory;
 import net.miginfocom.swing.MigLayout;
-import nom.tam.fits.ImageHDU;
 
 public class FrameMaster extends JFrame implements GLEventListener {
 
@@ -170,31 +166,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
 				attributPanel.add(tweakable.getComponent(), formatString);
 			}
 		}
-//		if (pc.regions.size() > 1) {
-//			for (int i = 0; i < pc.regions.size(); i++) {
-//				JSeparator separator = new JSeparator(SwingConstants.HORIZONTAL);
-//				attributPanel.add(separator, "span 2");
-//
-//				JLabel label = new JLabel("Region " + i);
-//				label.setFont(new Font("Dialog", Font.BOLD, 14));
-//				attributPanel.add(label, "span 2");
-//
-//				CloudRegion cr = pc.regions.get(i);
-//				for (Attribute attribute : cr.attributes) {
-//					AttributeDisplayer tweakable = this.attributeDisplayManager.tweakableForAttribute(attribute, pc);
-//					if (tweakable == null) {continue;}
-//					String formatString = tweakable.isDoubleLiner() ? "span 2" : "";
-//
-//					label = new JLabel(attribute.displayName);
-//					label.setFont(new Font("Dialog", Font.BOLD, 12));
-//					attributPanel.add(label, formatString);
-//
-//					formatString = tweakable.isDoubleLiner() ? "width ::250, span 2" : "gapleft 16, width ::150";
-//					attributPanel.add(tweakable.getComponent(), formatString);
-//				}
-//			}
-//		}
-
 
     	attributPanel.setMinimumSize(lilDimension);
     	attributPanel.setMaximumSize(lilDimension);
@@ -293,7 +264,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	pc.readFits();
 		MutableTreeNode newNode = new DefaultMutableTreeNode(pc);
 		this.treeModel.insertNodeInto(newNode, this.treeRoot, 0);
-		for (CloudRegion region : pc.regions) {
+		for (Region region : pc.regions) {
 			addRegionToTree(pc, region);
 		}
 //    	this.listModel.addElement(pc);
@@ -338,7 +309,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		test3.addActionListener(e -> this.test3());
 		fileMenu.add(test3);
 
-		JMenuItem gay = new JMenuItem("gay?");
+		JMenuItem gay = new JMenuItem("proud?");
 
 		gay.addActionListener(new ActionListener() {
 			@Override
@@ -405,7 +376,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 			this.needsFreshRenderer = false;
     	}
 		if (this.pleaseSelectThisNextChanceYouGet != null) {
-//			this.list.setSelectedValue(pleaseSelectThisNextChanceYouGet, true);
+
 
 			TreePath selectionPath = new TreePath(this.pleaseSelectThisNextChanceYouGet);
 			this.tree.setSelectionPath(selectionPath);
@@ -433,7 +404,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	singleFrameMaster.canvas.display();
     }
 
-	public static void addRegionToTree(PointCloud pointCloud, CloudRegion cr) {
+	public static void addRegionToTree(PointCloud pointCloud, Region cr) {
 		DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(cr);
 		TreePath pathToParent = find(singleFrameMaster.treeRoot, pointCloud);
 		MutableTreeNode parentNode = (MutableTreeNode) pathToParent.getLastPathComponent();

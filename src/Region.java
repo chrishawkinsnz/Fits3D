@@ -1,12 +1,8 @@
 import java.awt.Color;
-import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.sun.tools.doclint.HtmlTag;
 import nom.tam.fits.Fits;
-
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 
 /**
@@ -14,12 +10,11 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
  * @author chrishawkins
  *
  */
-public class CloudRegion implements  AttributeProvider{
+public class Region implements  AttributeProvider{
 	public final static float startingFidelity = 0.15f;
 
-	public RegionRepresentation bestRepresentation;
-	public RegionRepresentation currentRepresentation;
-	
+	public RegionRepresentation regionRepresentation;
+
 	public float depth;
 	
 	public Volume volume;
@@ -32,7 +27,7 @@ public class CloudRegion implements  AttributeProvider{
 
 	public final static Color[] cols = {Color.blue, Color.green, Color.pink, Color.orange};
 
-	private CloudRegion() {
+	private Region() {
 		Attribute.BinaryAttribute visibleAttr = new Attribute.BinaryAttribute("Visble", true, false);
 		this.isVisible = visibleAttr;
 		attributes.add(visibleAttr);
@@ -45,41 +40,43 @@ public class CloudRegion implements  AttributeProvider{
 			Runnable r = new Runnable() {
 				public void run() {
 
-					//loadRegionAtFidelity(newQuality);
+
 				}
 			};
 			new Thread(r).start();
 		};
+
+
 		this.nameAttribute = new Attribute.TextAttribute("Name", "Region0", false);
 		this.attributes.add(this.nameAttribute);
 		attributes.add(quality);
 	}
-	private CloudRegion (Volume volume ) {
+	private Region(Volume volume) {
 		this();
 		this.volume = volume;
 		this.depth = this.volume.origin.z + 0.5f * this.volume.dp;
 	}
 
-	public CloudRegion (Fits fits, Volume volume, float initialFidelity) {
+	public Region(Fits fits, Volume volume, float initialFidelity) {
 		this(volume);
 		this.fits = fits;
 
 		RegionRepresentation initialRepresentation = RegionRepresentation.justTheSlicesPlease(fits, initialFidelity, this.volume);
-		this.bestRepresentation = initialRepresentation;
+		this.regionRepresentation = initialRepresentation;
 
-		this.currentRepresentation = initialRepresentation;
+		this.regionRepresentation = initialRepresentation;
 	}
 
-	public CloudRegion (Fits fits, Volume volume, float initialFidelity, List<CloudRegion> minusRegions) {
+	public Region(Fits fits, Volume volume, float initialFidelity, List<Region> minusRegions) {
 		this(fits, volume, initialFidelity);
-		for (CloudRegion region : minusRegions) {
-			this.currentRepresentation.eraseRegion(region.volume);
+		for (Region region : minusRegions) {
+			this.regionRepresentation.eraseRegion(region.volume);
 		}
 
 
 	}
 	public List<VertexBufferSlice>getSlices() {
-		return this.currentRepresentation.getSlices();
+		return this.regionRepresentation.getSlices();
 	}
 
 
@@ -88,45 +85,42 @@ public class CloudRegion implements  AttributeProvider{
 	 * @param subVolume volume is unit volume that is relative to the overall fits file (not the existing region)
 	 * @return
 	 */
-	public CloudRegion subRegion(Volume subVolume, float fidelity, boolean replaceValues) {
-		CloudRegion cr = new CloudRegion(subVolume);
+	public Region subRegion(Volume subVolume, float fidelity, boolean replaceValues) {
+		Region cr = new Region(subVolume);
 		assert (subVolume.origin.x >= this.volume.origin.x);
 		assert (subVolume.origin.y >= this.volume.origin.y);
 		assert (subVolume.origin.z >= this.volume.origin.z);
 
-		if (fidelity == this.currentRepresentation.fidelity) {
-			RegionRepresentation subRepresentation = currentRepresentation.generateSubrepresentation(subVolume, replaceValues);
-			cr.bestRepresentation = subRepresentation;
-			cr.currentRepresentation = subRepresentation;
+		if (fidelity == this.regionRepresentation.fidelity) {
+			RegionRepresentation subRepresentation = regionRepresentation.generateSubrepresentation(subVolume, replaceValues);
+			cr.regionRepresentation = subRepresentation;
 		}
 		else {
-			cr.bestRepresentation = RegionRepresentation.justTheSlicesPlease(this.fits, fidelity, subVolume);
-			cr.currentRepresentation = cr.bestRepresentation;
+			cr.regionRepresentation = RegionRepresentation.justTheSlicesPlease(this.fits, fidelity, subVolume);
 			if (replaceValues) {
-				this.bestRepresentation.eraseRegion(subVolume);
+				this.regionRepresentation.eraseRegion(subVolume);
 			}
 		}
 
 		return cr;
 	}
 	public void clear() {
-		this.bestRepresentation.clear();
-		this.currentRepresentation.clear();
+		this.regionRepresentation.clear();
 	}
 	public int numberOfPoints() {
-		return this.currentRepresentation.validPts;
+		return this.regionRepresentation.validPts;
 	}
 	
 	public int ptWidth() {
-		return this.currentRepresentation.numPtsX;
+		return this.regionRepresentation.numPtsX;
 	}
 	
 	public int ptHeight() {
-		return this.currentRepresentation.numPtsY;
+		return this.regionRepresentation.numPtsY;
 	}
 	
 	public int ptDepth() {
-		return this.currentRepresentation.numPtsZ;
+		return this.regionRepresentation.numPtsZ;
 	}
 
 	public void setName(String name) {

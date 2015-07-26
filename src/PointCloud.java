@@ -1,15 +1,10 @@
-import com.sun.tools.doclint.HtmlTag;
 import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
 import nom.tam.fits.ImageHDU;
-import nom.tam.fits.header.IFitsHeader;
 
 import java.awt.Color;
 import java.io.File;
-import java.nio.file.FileSystem;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 public class PointCloud implements  AttributeProvider {
@@ -19,7 +14,7 @@ public class PointCloud implements  AttributeProvider {
 
 	private static int clouds = 0;
 
-	public CloudRegion pendingRegion;
+	public Region pendingRegion;
 
 	private Fits fits;
 
@@ -37,7 +32,7 @@ public class PointCloud implements  AttributeProvider {
 	
 	public final Color color;
 	
-	List<CloudRegion>regions;
+	List<Region>regions;
 	
 	private List<Attribute>attributes = new ArrayList<Attribute>();
 
@@ -54,7 +49,7 @@ public class PointCloud implements  AttributeProvider {
 	public Attribute.TextAttribute fileName;
 
 	public PointCloud(String pathName) {
-		this.regions = new ArrayList<CloudRegion>();
+		this.regions = new ArrayList<Region>();
 		this.volume = new Volume(boxOrigX, boxOrigY, boxOrigZ, boxWidth, boxHeight, boxDepth);
 		this.backupVolume = this.volume;
 		fileName = new Attribute.PathName("Filename", pathName, false);
@@ -172,10 +167,10 @@ public class PointCloud implements  AttributeProvider {
 	}
 	static int c = 0;
 	public void loadRegionAtFidelity(float fidelity) {
-		CloudRegion region;
+		Region region;
 		if (regions.size() == 0) {
 			Volume v = new Volume(0f,0f,0f,1f,1f,1f);
-			region = new CloudRegion(fits, v, fidelity);
+			region = new Region(fits, v, fidelity);
 
 
 			regions.add(region);
@@ -185,8 +180,8 @@ public class PointCloud implements  AttributeProvider {
 			Volume v = region.volume;
 
 			//--if you're the top dog then clear out the children as well
-			List<CloudRegion>chrilden = new ArrayList<>();
-			for (CloudRegion potentialChild : this.regions) {
+			List<Region>chrilden = new ArrayList<>();
+			for (Region potentialChild : this.regions) {
 				Vector3 origin    = potentialChild.volume.origin;
 				Vector3 extremety = origin.add(potentialChild.volume.size);
 				boolean containsOrigin = region.volume.containsPoint(origin);
@@ -196,7 +191,7 @@ public class PointCloud implements  AttributeProvider {
 					chrilden.add(potentialChild);
 				}
 			}
-			this.regions.set(rindex, new CloudRegion(fits, v, fidelity, chrilden));
+			this.regions.set(rindex, new Region(fits, v, fidelity, chrilden));
 
 			//--change the name of the original region
 		}
@@ -206,22 +201,22 @@ public class PointCloud implements  AttributeProvider {
 		FrameMaster.setNeedsDisplay();
 	}
 	
-	public List<CloudRegion> getRegions() {
+	public List<Region> getRegions() {
 		return regions;
 	}
 	
 	public List<VertexBufferSlice>getSlices() {
 		List<VertexBufferSlice>slices = new ArrayList<VertexBufferSlice>();
-		for (CloudRegion region:this.regions) {
+		for (Region region:this.regions) {
 			slices.addAll(region.getSlices());
 		}
 		return slices;
 	}
 	
-	public void addRegion (CloudRegion cr, List<CloudRegion>existingRegions) {
+	public void addRegion (Region cr, List<Region>existingRegions) {
 		existingRegions.add(cr);
-//		class RegionOrderer implements Comparator<CloudRegion> {
-//			public int compare(CloudRegion a, CloudRegion b) {
+//		class RegionOrderer implements Comparator<Region> {
+//			public int compare(Region a, Region b) {
 //				return a.depth < b.depth ? -1 : 1;
 //			}
 //		}
@@ -229,7 +224,7 @@ public class PointCloud implements  AttributeProvider {
 	}
 
 	public void clearRegions() {
-		for (CloudRegion region : regions) {
+		for (Region region : regions) {
 			region.clear();
 		}
 		regions.clear();
@@ -237,21 +232,21 @@ public class PointCloud implements  AttributeProvider {
 
 	public void makeSomeStupidSubregion() {
 		Volume corner = new Volume(0.25f, 0.25f, 0.25f, 0.5f, 0.5f, 0.5f);
-		CloudRegion newRegion = this.regions.get(0).subRegion(corner, this.regions.get(0).bestRepresentation.fidelity, true);
+		Region newRegion = this.regions.get(0).subRegion(corner, this.regions.get(0).regionRepresentation.fidelity, true);
 		this.pendingRegion = newRegion;
 		FrameMaster.setNeedsDisplay();
 	}
 
 	public void makeSomeStupidOtherSubregion(Volume volume) {
 		Volume subRegion = this.volume.normalisedProportionVolume(volume);
-		CloudRegion newRegion = this.regions.get(0).subRegion(subRegion, this.regions.get(0).bestRepresentation.fidelity, true);
+		Region newRegion = this.regions.get(0).subRegion(subRegion, this.regions.get(0).regionRepresentation.fidelity, true);
 		this.pendingRegion = newRegion;
 		FrameMaster.setNeedsDisplay();
 	}
 
 	public void blastVolumeWithQuality(Volume volume) {
 		Volume subRegion = this.volume.normalisedProportionVolume(volume);
-		CloudRegion newRegion = this.regions.get(0).subRegion(subRegion, 1.0f, true);
+		Region newRegion = this.regions.get(0).subRegion(subRegion, 1.0f, true);
 		this.pendingRegion = newRegion;
 		FrameMaster.setNeedsDisplay();
 	}
@@ -262,15 +257,15 @@ public class PointCloud implements  AttributeProvider {
 	}
 	
 	public int[] getHistBuckets() {
-		return this.regions.get(0).currentRepresentation.buckets;
+		return this.regions.get(0).regionRepresentation.buckets;
 	}
 
 	public float getHistMin() {
-		return this.regions.get(0).currentRepresentation.estMin;
+		return this.regions.get(0).regionRepresentation.estMin;
 	}
 
 	public float getHistMax() {
-		return this.regions.get(0).currentRepresentation.estMax;
+		return this.regions.get(0).regionRepresentation.estMax;
 	}
 
 	public Christogram.Filter getFilter() {
