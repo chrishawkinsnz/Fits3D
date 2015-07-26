@@ -27,6 +27,13 @@ public abstract class Attribute {
 			FrameMaster.setNeedsDisplay();
 		}
 	}
+
+	public void notifyWithValue(Object obj, boolean tempValue) {
+		boolean defaultValue = this.shouldUpdateRenderer;
+		shouldUpdateRenderer = tempValue;
+		notifyWithValue(obj);
+		shouldUpdateRenderer = defaultValue;
+	}
 	public Object getValue() {
 		return null;
 	}
@@ -36,8 +43,10 @@ public abstract class Attribute {
 	}
 
 	public void restoreState() {
-		this.notifyWithValue(this.savedState);
-		this.savedState = null;
+		if (this.savedState != null) {
+			this.notifyWithValue(this.savedState);
+			this.savedState = null;
+		}
 	}
 	
 	public static class RangedAttribute extends Attribute {

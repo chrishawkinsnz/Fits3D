@@ -76,10 +76,7 @@ public class PointCloud implements  AttributeProvider {
 					}
 
 					for (Region region : PointCloud.this.regions) {
-						boolean whatIsIt = region.quality.shouldUpdateRenderer;
-						region.quality.shouldUpdateRenderer = false;
-						region.quality.notifyWithValue(newQuality);
-						region.quality.shouldUpdateRenderer = whatIsIt;
+						region.quality.notifyWithValue(newQuality, false);
 					}
 
 
@@ -94,6 +91,7 @@ public class PointCloud implements  AttributeProvider {
 		attributes.add(quality);
 
 		isVisible = new Attribute.BinaryAttribute("Visible", true, true);
+
 		attributes.add(isVisible);
 
 		isSelected = new Attribute.BinaryAttribute("Selected", false, true);

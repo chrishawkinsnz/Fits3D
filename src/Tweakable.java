@@ -32,7 +32,7 @@ public abstract class Tweakable implements  AttributeDisplayer{
 	}
 		
 	protected abstract Object getValue();
-	
+
         
 	/**
 	 * A toggleable checkbox for selecting a boolean value
@@ -51,6 +51,8 @@ public abstract class Tweakable implements  AttributeDisplayer{
 		
 		@Override
 		protected Object getValue() {
+			boolean isSelected = checkBox.isSelected();
+			System.out.println(isSelected);
 			return new Boolean(checkBox.isSelected());
 		}
 
