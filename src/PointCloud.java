@@ -75,12 +75,18 @@ public class PointCloud implements  AttributeProvider {
 						child.populateAsSubregion(primaryRegion, newQuality, true);
 					}
 
-					for (Region child : children) {
-						child.quality.notifyWithValue(newQuality);
+					for (Region region : PointCloud.this.regions) {
+						boolean whatIsIt = region.quality.shouldUpdateRenderer;
+						region.quality.shouldUpdateRenderer = false;
+						region.quality.notifyWithValue(newQuality);
+						region.quality.shouldUpdateRenderer = whatIsIt;
 					}
+
+
 					primaryRegion.setMinusRegions(children);
 					FrameMaster.setNeedsNewRenderer();
 					FrameMaster.setNeedsDisplay();
+//					FrameMaster.setNeedsAttributesReload();
 				}
 			};
 			new Thread(r).start();

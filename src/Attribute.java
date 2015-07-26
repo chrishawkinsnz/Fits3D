@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 public abstract class Attribute {
 	public String displayName;
 	public boolean isAggregatable;
+	public boolean shouldUpdateRenderer;
 
 	private Object value;
 
@@ -17,11 +18,14 @@ public abstract class Attribute {
 	private Attribute(String displayName, boolean isAggregatable) {
 		this.displayName = displayName;
 		this.isAggregatable = isAggregatable;
+		this.shouldUpdateRenderer = true;
 	}
 	
 	public void notifyWithValue(Object obj) {
 		callback.accept(obj);
-		FrameMaster.setNeedsDisplay();
+		if (shouldUpdateRenderer) {
+			FrameMaster.setNeedsDisplay();
+		}
 	}
 	public Object getValue() {
 		return null;

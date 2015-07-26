@@ -386,6 +386,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 			}
 		}
     	if (needsFreshRenderer){
+
 			if (this.renderer == null) {
 				this.renderer = new Renderer(this.pointClouds, this.viewer, this.gl);
 				this.renderer.selection = this.selection;
@@ -396,6 +397,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 			}
     		this.renderer.informOfResolution(this.drawableWidth, this.drawableHeight);
 
+			FrameMaster.setNeedsAttributesReload();
 			this.needsFreshRenderer = false;
     	}
 		if (this.pleaseSelectThisNextChanceYouGet != null) {
@@ -450,5 +452,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		singleFrameMaster.needsFreshRenderer = true;
 	}
 
+	public static void setNeedsAttributesReload() {
+		singleFrameMaster.reloadAttributePanel();
+	}
 
 }
