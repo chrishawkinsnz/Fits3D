@@ -6,7 +6,7 @@ public class Selection {
     private Volume volume;
     public Selection() {
         volume = Volume.unitVolume();
-        volume = new Volume(0.25f, 0.25f, 0f, 0.25f, 0.25f, 0.25f);
+        volume = new Volume(-1f, -1f, -1f, 1f, 1f, 1f);
     }
 
     public Volume getVolume() {

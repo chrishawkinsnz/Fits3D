@@ -12,14 +12,15 @@ import nom.tam.fits.Fits;
  */
 public class Region implements  AttributeProvider{
 	public final static float startingFidelity = 0.15f;
+	private List<Region> minusRegions;
 
 	public RegionRepresentation regionRepresentation;
 
 	public float depth;
 	
-	public Volume volume;
+	public final Volume volume;
 	private Fits fits;
-
+	private static int regionCount = 0;
 	public Attribute.BinaryAttribute isVisible;
 	public Attribute.SteppedRangeAttribute quality;
 	public Attribute.TextAttribute nameAttribute;
@@ -27,7 +28,9 @@ public class Region implements  AttributeProvider{
 
 	public final static Color[] cols = {Color.blue, Color.green, Color.pink, Color.orange};
 
-	private Region() {
+
+	private Region(Volume volume) {
+
 		Attribute.BinaryAttribute visibleAttr = new Attribute.BinaryAttribute("Visble", true, false);
 		this.isVisible = visibleAttr;
 		attributes.add(visibleAttr);
@@ -39,7 +42,19 @@ public class Region implements  AttributeProvider{
 
 			Runnable r = new Runnable() {
 				public void run() {
+					float newQuality = ((Float)obj).floatValue();
+					System.out.println("quality is now :" + newQuality);
 
+					Runnable r = new Runnable() {
+						public void run() {
+							Region.this.regionRepresentation = null;
+							System.gc();
+							Region.this.getMeMyRepresentation(newQuality);
+							FrameMaster.setNeedsNewRenderer();
+							FrameMaster.setNeedsDisplay();
+						}
+					};
+					new Thread(r).start();
 
 				}
 			};
@@ -47,12 +62,10 @@ public class Region implements  AttributeProvider{
 		};
 
 
-		this.nameAttribute = new Attribute.TextAttribute("Name", "Region0", false);
+		this.nameAttribute = new Attribute.TextAttribute("Name", "Region "+regionCount++, false);
 		this.attributes.add(this.nameAttribute);
 		attributes.add(quality);
-	}
-	private Region(Volume volume) {
-		this();
+
 		this.volume = volume;
 		this.depth = this.volume.origin.z + 0.5f * this.volume.dp;
 	}
@@ -63,12 +76,11 @@ public class Region implements  AttributeProvider{
 
 		RegionRepresentation initialRepresentation = RegionRepresentation.justTheSlicesPlease(fits, initialFidelity, this.volume);
 		this.regionRepresentation = initialRepresentation;
-
-		this.regionRepresentation = initialRepresentation;
 	}
 
 	public Region(Fits fits, Volume volume, float initialFidelity, List<Region> minusRegions) {
 		this(fits, volume, initialFidelity);
+		this.minusRegions = minusRegions;
 		for (Region region : minusRegions) {
 			this.regionRepresentation.eraseRegion(region.volume);
 		}
@@ -79,7 +91,16 @@ public class Region implements  AttributeProvider{
 		return this.regionRepresentation.getSlices();
 	}
 
+	public void getMeMyRepresentation(float fidelity) {
+		RegionRepresentation initialRepresentation = RegionRepresentation.justTheSlicesPlease(fits, fidelity, this.volume);
+		this.regionRepresentation = initialRepresentation;
 
+		if (this.minusRegions != null) {
+			for (Region region : minusRegions) {
+				this.regionRepresentation.eraseRegion(region.volume);
+			}
+		}
+	}
 	/**
 	 *
 	 * @param subVolume volume is unit volume that is relative to the overall fits file (not the existing region)
@@ -102,6 +123,7 @@ public class Region implements  AttributeProvider{
 			}
 		}
 
+		cr.fits = this.fits;
 		return cr;
 	}
 	public void clear() {
