@@ -1,6 +1,7 @@
 #version 330 core
 
 in float val;
+in float shade;
 
 out vec4 color;
 uniform float filterMinX;
@@ -18,6 +19,7 @@ void main(){
 	} 
 	float alpha = val * filterGradient + filterConstant; 
 	alpha = alpha * alphaFudge;
+	alpha = alpha * shade;
     color = vec4(pointColor[0], pointColor[1], pointColor[2], alpha * min(pointArea, 1.0));
     //TODO replace min(pointArea, 1.0) with code in renderer, no point in doing this for each fragment you dope.
 }

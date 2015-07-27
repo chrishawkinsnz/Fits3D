@@ -50,6 +50,11 @@ public class Vector3 {
 		return result;
 	}
 
+	public Vector3 divideBy(Vector3 dividend) {
+		Vector3 result = new Vector3( x /dividend.x, y/dividend.y, z/dividend.z);
+		return result;
+	}
+
 	public float get(int idx) {
 		if (idx == 0) {return x;}
 		if (idx == 1) {return y;}
@@ -57,4 +62,8 @@ public class Vector3 {
 		return 0f;
 	}
 
+	@Override
+	public String toString(){
+		return "Vec{"+x+", "+y+", "+z+"}";
+	}
 }

@@ -128,13 +128,12 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
         this.mouseController = new MouseController(this.viewer);
 
-		this.selection = new Selection();
-		this.selectionController = new KeyboardSelectionController(this.selection);
+
 
 		canvas.addMouseMotionListener(this.mouseController);
 		canvas.addMouseListener(this.mouseController);
 		canvas.addMouseWheelListener(this.mouseController);
-		canvas.addKeyListener(this.selectionController);
+
     }
     
 	public AttributeDisplayManager  attributeDisplayManager = new AttributeDisplayManager();
@@ -302,16 +301,28 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		this.pointClouds.get(0).makeSomeStupidSubregion();
 		reloadAttributePanel();
 	}
-	private void test2() {
+	private void cutOut() {
 		this.pointClouds.get(0).makeSomeStupidOtherSubregion(this.selection.getVolume());
 		reloadAttributePanel();
 	}
 
-	private void test3() {
+	private void enhance() {
 		this.pointClouds.get(0).blastVolumeWithQuality(this.selection.getVolume());
 		reloadAttributePanel();
 	}
 
+	private void select() {
+		if (this.renderer.selection == null) {
+			this.selection = new Selection();
+			this.selectionController = new KeyboardSelectionController(this.selection);
+			canvas.addKeyListener(this.selectionController);
+			this.renderer.selection = this.selection;
+		}
+		else {
+			this.renderer.selection = null;
+		}
+		FrameMaster.setNeedsDisplay();
+	}
     private JMenuBar makeMenuBar() {
 
 
@@ -323,30 +334,42 @@ public class FrameMaster extends JFrame implements GLEventListener {
         loadItem.addActionListener(e -> this.showOpenDialog());
         fileMenu.add(loadItem);
 
-		JMenuItem test = new JMenuItem("test");
+
+
+		JMenuItem cutItem = new JMenuItem("cut out");
+		setKeyboardShortcutTo(KeyEvent.VK_X, cutItem);
+		cutItem.addActionListener(e -> this.cutOut());
+		fileMenu.add(cutItem);
+
+		JMenuItem enhanceItem = new JMenuItem("enhance");
+		setKeyboardShortcutTo(KeyEvent.VK_E, enhanceItem);
+		enhanceItem.addActionListener(e -> this.enhance());
+		fileMenu.add(enhanceItem);
+
+		JMenuItem selectItem = new JMenuItem("select");
+		setKeyboardShortcutTo(KeyEvent.VK_H, selectItem);
+		selectItem.addActionListener(e -> this.select());
+		fileMenu.add(selectItem);
+
+		JMenu debugMenu = new JMenu("Debug");
+
+		JMenuItem rainbow = new JMenuItem("rainbow");
+		debugMenu.add(rainbow);
+
+		JMenuItem test = new JMenuItem("foo");
 		test.addActionListener(e -> this.test());
-		fileMenu.add(test);
+		debugMenu.add(test);
 
-		JMenuItem test2 = new JMenuItem("cut it out");
-		test2.addActionListener(e -> this.test2());
-		fileMenu.add(test2);
-
-		JMenuItem test3 = new JMenuItem("enhance!");
-		test3.addActionListener(e -> this.test3());
-		fileMenu.add(test3);
-
-		JMenuItem gay = new JMenuItem("proud?");
-
-		gay.addActionListener(new ActionListener() {
+		rainbow.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				FrameMaster.this.renderer.gay = !FrameMaster.this.renderer.gay;
 				setNeedsDisplay();
 			}
 		});
-		fileMenu.add(gay);
 
         menuBar.add(fileMenu);
+		menuBar.add(debugMenu);
         return menuBar;
     }
 
@@ -355,9 +378,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
     private static void setKeyboardShortcutTo(int key, JMenuItem menuItem){
     	String os = System.getProperty("os.name").toLowerCase();	
         if (os.indexOf("mac") != -1) {
-        	menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, Event.META_MASK));
+        	menuItem.setAccelerator(KeyStroke.getKeyStroke(key, Event.META_MASK));
         } else {
-        	menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, Event.CTRL_MASK));
+        	menuItem.setAccelerator(KeyStroke.getKeyStroke(key, Event.CTRL_MASK));
         }
     }
     

@@ -33,6 +33,7 @@ public class Renderer {
 	
 	//--OPEN GL HANDLES
 	private int shaderProgram;
+	private int shaderProgramLegend;
 
 	private int uniformAlphaFudgeHandle;
 	private int uniformMvpHandle;
@@ -57,6 +58,18 @@ public class Renderer {
 	private int uniformFilterGradient;
 	private int uniformFilterConstant;
 
+	private int uniformSelectionMinX;
+	private int uniformSelectionMaxX;
+
+	private int uniformSelectionMinY;
+	private int uniformSelectionMaxY;
+
+	private int uniformSelectionMinZ;
+	private int uniformSelectionMaxZ;
+
+	//--highlighting shader uniforms
+
+	private int legendMvpUniformHandle;
 
 
 
@@ -78,6 +91,7 @@ public class Renderer {
 	//--DEBUG FLAGS
 	private boolean legendary = true;
 	public	boolean gay = false;
+	private int uniformIsSelecting;
 
 
 	public Renderer(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl){
@@ -120,15 +134,26 @@ public class Renderer {
 
 		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "shader2.vert", "shader2.frag");
 
-		this.uniformMvpHandle = gl.glGetUniformLocation(this.shaderProgram, "mvp");
-		this.uniformAlphaFudgeHandle = gl.glGetUniformLocation(this.shaderProgram, "alphaFudge");
-		this.uniformPointAreaHandle = gl.glGetUniformLocation(this.shaderProgram, "pointArea");
-		this.uniformColorHandle = gl.glGetUniformLocation(this.shaderProgram, "pointColor");
 
-		this.uniformFilterMinX = gl.glGetUniformLocation(this.shaderProgram, "filterMinX");
-		this.uniformFilterMaxX = gl.glGetUniformLocation(this.shaderProgram, "filterMaxX");
-		this.uniformFilterGradient = gl.glGetUniformLocation(this.shaderProgram, "filterGradient");
-		this.uniformFilterConstant = gl.glGetUniformLocation(this.shaderProgram, "filterConstant");
+		this.uniformMvpHandle 		= gl.glGetUniformLocation(this.shaderProgram, "mvp");
+		this.uniformAlphaFudgeHandle= gl.glGetUniformLocation(this.shaderProgram, "alphaFudge");
+		this.uniformPointAreaHandle = gl.glGetUniformLocation(this.shaderProgram, "pointArea");
+		this.uniformColorHandle 	= gl.glGetUniformLocation(this.shaderProgram, "pointColor");
+
+		this.uniformFilterMinX 		= gl.glGetUniformLocation(this.shaderProgram, "filterMinX");
+		this.uniformFilterMaxX 		= gl.glGetUniformLocation(this.shaderProgram, "filterMaxX");
+		this.uniformFilterGradient 	= gl.glGetUniformLocation(this.shaderProgram, "filterGradient");
+		this.uniformFilterConstant 	= gl.glGetUniformLocation(this.shaderProgram, "filterConstant");
+
+		this.uniformSelectionMinX 	= gl.glGetUniformLocation(this.shaderProgram, "selectionMinX");
+		this.uniformSelectionMaxX 	= gl.glGetUniformLocation(this.shaderProgram, "selectionMaxX");
+		this.uniformSelectionMinY 	= gl.glGetUniformLocation(this.shaderProgram, "selectionMinY");
+		this.uniformSelectionMaxY 	= gl.glGetUniformLocation(this.shaderProgram, "selectionMaxY");
+		this.uniformSelectionMinZ 	= gl.glGetUniformLocation(this.shaderProgram, "selectionMinZ");
+		this.uniformSelectionMaxZ 	= gl.glGetUniformLocation(this.shaderProgram, "selectionMaxZ");
+
+		this.uniformIsSelecting 	= gl.glGetUniformLocation(this.shaderProgram, "isSelecting");
+
 		gl.glEnable(GL_BLEND);
 gl.glDisable(GL_POINT_SMOOTH);
 		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -149,8 +174,7 @@ gl.glDisable(GL_POINT_SMOOTH);
 	boolean first = true;
 
 
-	private int legendMvpUniformHandle;
-	private int shaderProgramLegend;
+
 
 	private void setupLegend() {
 		float length = 10f;
@@ -292,11 +316,6 @@ gl.glDisable(GL_POINT_SMOOTH);
 
 		gl.glUseProgram(this.shaderProgramLegend);
 		gl.glUniformMatrix4fv(this.legendMvpUniformHandle, 1, false, mvp.getMatrix(), 0);
-//
-//		int[] previousDepthFunc = new int[1];
-//		gl.glGetIntegerv(GL_DEPTH_FUNC, previousDepthFunc, 0);
-//
-//		gl.glDepthFunc(gl.GL_LESS);
 
 		for (Line line : lines) {
 			//--select the lines vertex buffer
@@ -312,9 +331,7 @@ gl.glDisable(GL_POINT_SMOOTH);
 			gl.glDrawArrays(GL_LINES, 0, 2);
 		}
 
-		//--set the shader program back to the point clouds rendering one
-		gl.glUseProgram(this.shaderProgram);
-//		gl.glDepthFunc(previousDepthFunc[0]);
+			gl.glUseProgram(this.shaderProgram);
 	}
 
 	private boolean lastFlippity = true;
@@ -323,9 +340,30 @@ gl.glDisable(GL_POINT_SMOOTH);
 		printFps();
 
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		gl.glUseProgram(this.shaderProgram);
-		
-		
+		if (!FrameMaster.vain && this.selection != null) {
+
+
+			gl.glUniform1i(uniformIsSelecting, GL_TRUE);
+
+			PointCloud cloudOfInterest = this.pointClouds.get(0);
+			//--normalise the origin
+			Vector3 originRelativeToCloud = this.selection.getVolume().origin.minus(cloudOfInterest.getVolume().origin);
+			Vector3 normalisedPosition = originRelativeToCloud.divideBy(cloudOfInterest.getVolume().size);
+			Vector3 normalisedSize = this.selection.getVolume().size.divideBy(cloudOfInterest.getVolume().size);
+
+			int dimensions = 3;
+			int[] uniformsMin = {uniformSelectionMinX, uniformSelectionMinY, uniformSelectionMinZ};
+			int[] uniformsMax = {uniformSelectionMaxX, uniformSelectionMaxY, uniformSelectionMaxZ};
+			for (int i = 0; i < dimensions; i++) {
+				gl.glUniform1f(uniformsMin[i], normalisedPosition.get(i));
+				gl.glUniform1f(uniformsMax[i], normalisedPosition.get(i) + normalisedSize.get(i));
+			}
+		}
+		else {
+			gl.glUniform1i(uniformIsSelecting, GL_FALSE);
+		}
 		//--figure out if looking back to front
 		float pi = (float)Math.PI;
 
@@ -334,9 +372,7 @@ gl.glDisable(GL_POINT_SMOOTH);
 
 		boolean flippityFlop = spin > pi;
 
-//		if (lastFlippity != flippityFlop) {
-//			for (int i = 0; i < 100; i++) System.err.println("FLIPPITY FLOP!");
-//		}
+
 		lastFlippity = flippityFlop;
 		
 		List<VertexBufferSlice> allSlicesLikeEver = new ArrayList<VertexBufferSlice>();
@@ -470,7 +506,9 @@ gl.glDisable(GL_POINT_SMOOTH);
 			}
 		}
 		if (!FrameMaster.vain) {
-			renderOutline(baseMatrix, this.selection.getVolume(), Color.white);
+			if (this.selection != null) {
+				renderOutline(baseMatrix, this.selection.getVolume(), Color.white);
+			}
 		}
     	gl.glEnableVertexAttribArray(0);
     	gl.glDisableVertexAttribArray(1);
