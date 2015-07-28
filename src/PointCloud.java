@@ -4,26 +4,26 @@ import nom.tam.fits.ImageHDU;
 
 import java.awt.Color;
 import java.io.File;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PointCloud implements  AttributeProvider {
-	private final static String[] axesNames = {"X", "Y", "Z"};
-	private final static Color[] colors = {Color.GREEN, Color.RED, Color.BLUE, Color.ORANGE, Color.PINK};
-	public final static float startingFidelity = 0.075f;
+
+	private final static String[] 	AXES_NAMES 			= {"X", "Y", "Z"};
+	private final static Color[] 	DEFAULT_COLORS 		= {Color.GREEN, Color.RED, Color.BLUE, Color.ORANGE, Color.PINK};
+	private final static float 		STARTING_FIDELITY 	= 0.075f;
+
+	private final static float 		BOX_WIDTH			= 2.0f;
+	private final static float 		BOX_HEIGHT 			= BOX_WIDTH;
+	private final static float 		BOX_DEPTH 			= BOX_WIDTH;
+
+	private final static float		BOX_ORIGIN_X 		= -0.5f * BOX_WIDTH;
+	private final static float 		BOX_ORIGIN_Y 		= -0.5f * BOX_HEIGHT;
+	private final static float 		BOX_ORIGIN_Z 		= -0.5f * BOX_DEPTH;
+	private Fits fits;
 
 	private static int clouds = 0;
 
-	private Fits fits;
-
-	private final float boxWidth = 2.0f;
-	private final float boxHeight = boxWidth;
-	private final float boxDepth = boxWidth;
-
-	private final float boxOrigZ = -0.5f * boxDepth;
-	private final float boxOrigX = -0.5f * boxWidth;
-	private final float boxOrigY = -0.5f * boxHeight;
 
 	public Volume volume;
 	private Volume backupVolume;
@@ -31,7 +31,7 @@ public class PointCloud implements  AttributeProvider {
 	
 	public final Color color;
 	
-	List<Region>regions;
+	private List<Region>regions;
 	
 	private List<Attribute>attributes = new ArrayList<Attribute>();
 
@@ -39,7 +39,7 @@ public class PointCloud implements  AttributeProvider {
 	public Attribute.RangedAttribute intensity;
 	public Attribute.BinaryAttribute isVisible;
 	public Attribute.SteppedRangeAttribute quality;
-	private Attribute.FilterSelectionAttribute filterSelection;
+	public Attribute.FilterSelectionAttribute filterSelection;
 	public Attribute.BinaryAttribute isSelected;
 	public Attribute.MultiChoiceAttribute relativeTo;
 
@@ -49,24 +49,24 @@ public class PointCloud implements  AttributeProvider {
 
 	public PointCloud(String pathName) {
 		this.regions = new ArrayList<Region>();
-		this.volume = new Volume(boxOrigX, boxOrigY, boxOrigZ, boxWidth, boxHeight, boxDepth);
+		this.volume = new Volume(BOX_ORIGIN_X, BOX_ORIGIN_Y, BOX_ORIGIN_Z, BOX_WIDTH, BOX_HEIGHT, BOX_DEPTH);
 		this.backupVolume = this.volume;
 		fileName = new Attribute.PathName("Filename", pathName, false);
 		attributes.add(fileName);
-		
+
 		intensity = new Attribute.RangedAttribute("Visibility", 0.001f, 1f, 0.5f, false);
 		attributes.add(intensity);
-		
-		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, startingFidelity, 10, true);
+
+		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, STARTING_FIDELITY, 10, true);
 		quality.callback = (obj) -> {
-			float newQuality = ((Float)obj).floatValue();
+			float newQuality = ((Float) obj).floatValue();
 			System.out.println("quality is now :" + newQuality);
 
 			Runnable r = new Runnable() {
 				public void run() {
 					//--TODO don't hack this maybe
 					Region primaryRegion = PointCloud.this.regions.get(0);
-					List<Region>children = primaryRegion.getMinusRegions();
+					List<Region> children = primaryRegion.getMinusRegions();
 					primaryRegion.setMinusRegions(new ArrayList<>());
 					primaryRegion.getMeMyRepresentation(newQuality);
 					for (Region child : children) {
@@ -95,7 +95,7 @@ public class PointCloud implements  AttributeProvider {
 		isSelected = new Attribute.BinaryAttribute("Selected", false, true);
 		attributes.add(isSelected);
 
-		Christogram.Filter data = new Christogram.Filter(0f,1f,0f,1f,false);
+		Christogram.Filter data = new Christogram.Filter(0f, 1f, 0f, 1f, false);
 		filterSelection = new Attribute.FilterSelectionAttribute("Filter", false, data);
 		attributes.add(filterSelection);
 
@@ -103,20 +103,19 @@ public class PointCloud implements  AttributeProvider {
 		possiblePairings.add("-");
 		relativeTo = new Attribute.MultiChoiceAttribute("Relative to", possiblePairings, possiblePairings.get(0));
 		relativeTo.callback = (obj) -> {
-			if (obj instanceof  PointCloud) {
-				PointCloud parent = (PointCloud)obj;
+			if (obj instanceof PointCloud) {
+				PointCloud parent = (PointCloud) obj;
 				this.setVolume(this.volumeNormalisedToParent(parent));
-			}
-			else {
+			} else {
 				this.setVolume(this.backupVolume);
 			}
 		};
 
 		attributes.add(relativeTo);
 
-		this.color = colors[clouds++ % colors.length];
+		this.color = DEFAULT_COLORS[clouds++ % DEFAULT_COLORS.length];
 	}
-	
+
 	public void readFits() {
 		readFitsAtQualityLevel(this.quality.getValue());
 	}
@@ -125,18 +124,14 @@ public class PointCloud implements  AttributeProvider {
 		try{
 			this.fits = new Fits(this.fileName.getValue());
 
-
-
 			ImageHDU hdu = (ImageHDU)this.fits.getHDU(0);
 			attributes.add(0,new Attribute.TextAttribute("Data Type", BitPix.dataTypeForBitPix(hdu.getBitPix()).name(), false));
 			attributes.add(1,new Attribute.TextAttribute("Observer", hdu.getObserver(), false));
 			attributes.add(2, new Attribute.TextAttribute("Observed", "" + hdu.getObservationDate(), false));
 
-
-
 			this.unitTypes = new Attribute.TextAttribute[3];
 			for (int i = 0; i < 3; i++) {
-				Attribute.TextAttribute unitAttribute = new Attribute.TextAttribute("Unit "+axesNames[i], "" + hdu.getHeader().getStringValue("CTYPE"+(i+1)), false);
+				Attribute.TextAttribute unitAttribute = new Attribute.TextAttribute("Unit "+ AXES_NAMES[i], "" + hdu.getHeader().getStringValue("CTYPE"+(i+1)), false);
 				this.unitTypes[i] = unitAttribute;
 				attributes.add(attributes.size() - 1, unitAttribute);
 			}
@@ -144,7 +139,7 @@ public class PointCloud implements  AttributeProvider {
 			attributes.add(attributes.size() - 1, unitAttribute);
 
 			for (int i = hdu.getAxes().length-1; i >= 0 ; i--) {
-				attributes.add(attributes.size() - 1,new Attribute.TextAttribute(axesNames[i] + " Resolution", "" + hdu.getAxes()[i], false));
+				attributes.add(attributes.size() - 1,new Attribute.TextAttribute(AXES_NAMES[i] + " Resolution", "" + hdu.getAxes()[i], false));
 			}
 
 			attributes.add(attributes.size() - 1, new Attribute.TextAttribute("Instrument", hdu.getInstrument(), false));
@@ -178,56 +173,20 @@ public class PointCloud implements  AttributeProvider {
 
 			Volume v = new Volume(0f,0f,0f,1f,1f,1f);
 			Region region = new Region(fits, v, proportionOfPerfect);
-			this.addRegion(region, this.regions);
+			this.addRegion(region);
 
 			FrameMaster.setNeedsNewRenderer();
 			FrameMaster.setNeedsDisplay();
-//			loadRegionAtFidelity(proportionOfPerfect);
-			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	static int c = 0;
-//	public void loadRegionAtFidelity(float fidelity) {
-//		Region region;
-//		if (regions.size() == 0) {
-//			Volume v = new Volume(0f,0f,0f,1f,1f,1f);
-//			region = new Region(fits, v, fidelity);
-//
-//
-//			regions.add(region);
-//		}else {
-//			int rindex = 0;
-//			region = regions.get(rindex);
-//			Volume v = region.volume;
-//
-//			//--if you're the top dog then clear out the children as well
-//			List<Region>chrilden = new ArrayList<>();
-//			for (Region potentialChild : this.regions) {
-//				Vector3 origin    = potentialChild.volume.origin;
-//				Vector3 extremety = origin.add(potentialChild.volume.size);
-//				boolean containsOrigin = region.volume.containsPoint(origin);
-//				boolean containsExtremety = region.volume.containsPoint(extremety);
-//				boolean isNotParadox = region != potentialChild;
-//				if (containsOrigin && containsExtremety && isNotParadox) {
-//					chrilden.add(potentialChild);
-//				}
-//			}
-//			this.regions.set(rindex, new Region(fits, v, fidelity, chrilden));
-//
-//			//--change the name of the original region
-//		}
-//
-////		region.setName("Region"+regions.size());
-//		FrameMaster.setNeedsNewRenderer();
-//		FrameMaster.setNeedsDisplay();
-//	}
-	
-	public List<Region> getRegions() {
-		return regions;
-	}
-	
+
+
+	/**
+	 * All the slices that compose this point cloud.  This includes from all the contained regions.  There are no guarancees concerning order.
+	 * @return The list of all slices composing the point cloud
+	 */
 	public List<VertexBufferSlice>getSlices() {
 		List<VertexBufferSlice>slices = new ArrayList<VertexBufferSlice>();
 		for (Region region:this.regions) {
@@ -235,9 +194,10 @@ public class PointCloud implements  AttributeProvider {
 		}
 		return slices;
 	}
-	
-	public void addRegion (Region cr, List<Region>existingRegions) {
-		existingRegions.add(cr);
+
+
+	private void addRegion (Region cr) {
+		this.regions.add(cr);
 
 		for (Region region : this.regions) {
 			List<Region>chrilden = new ArrayList<>();
@@ -253,73 +213,45 @@ public class PointCloud implements  AttributeProvider {
 			}
 			region.setMinusRegions(chrilden);
 		}
-//		class RegionOrderer implements Comparator<Region> {
-//			public int compare(Region a, Region b) {
-//				return a.depth < b.depth ? -1 : 1;
-//			}
-//		}
-//		Collections.sort(existingRegions, new RegionOrderer());
-	}
-
-	public void clearRegions() {
-		for (Region region : regions) {
-			region.clear();
-		}
-		regions.clear();
 	}
 
 
-	public void makeSomeStupidOtherSubregion(Volume volume) {
+	/**
+	 * Cuts out a volume from the primary region.  The cut out region is kept in the point cloud as a new region.
+	 * @param volume The volume to cut out (in world space)
+	 */
+	public void cutOutSubvolume(Volume volume) {
 		Volume subRegion = this.volume.normalisedProportionVolume(volume);
 		Region newRegion = this.regions.get(0).subRegion(subRegion, this.regions.get(0).regionRepresentation.fidelity, true);
-		this.addRegion(newRegion, this.regions);
+		this.addRegion(newRegion);
 		FrameMaster.notifyFileBrowserOfNewRegion(this, newRegion);
 		FrameMaster.setNeedsNewRenderer();
 		FrameMaster.setNeedsDisplay();
 
 	}
 
-	public String toString() {
-		String[] components = this.fileName.getValue().split(File.separator);
-		return components[components.length - 1];
-	}
-	
-	public int[] getHistBuckets() {
-		return this.regions.get(0).regionRepresentation.buckets;
-	}
-
-	public float getHistMin() {
-		return this.regions.get(0).regionRepresentation.estMin;
-	}
-
-	public float getHistMax() {
-		return this.regions.get(0).regionRepresentation.estMax;
-	}
-
-	public Christogram.Filter getFilter() {
-		return this.filterSelection.getValue();
-	}
 
 
 
-	@Override
-	public List<Attribute> getAttributes() {
-		List<Attribute>visibleAttributes = new ArrayList<>();
-		visibleAttributes.addAll(this.attributes);
-
-		return visibleAttributes;
-	}
-
+	/**
+	 * Get all the children of this point cloud that could provide their own attribuets (eg. Regions)
+	 * @return The list of all children that provide attributes
+	 */
 	public List<AttributeProvider> getChildProviders() {
 		List<AttributeProvider>attributeProviders = new ArrayList<>(this.regions);
 		return attributeProviders;
 	}
 
+
+	/**
+	 * Returns a volume that represents this point cloud scaled down and position relative to the supplied parent.
+	 * @param parent The parent cloud to position and scale the volume relative to
+	 * @return The scaled and positioned volume that is relative to the parent
+	 */
 	public Volume volumeNormalisedToParent(PointCloud parent) {
 		Volume parGalVol = parent.galacticVolume;
 		Volume parVol = parent.volume;
 		Volume galVol = this.galacticVolume;
-		Volume vol = this.volume;
 
 		Vector3 realDist = galVol.origin.minus(parGalVol.origin);
 
@@ -335,14 +267,12 @@ public class PointCloud implements  AttributeProvider {
 		//--ok so heres what's going to happen if the units don't match that of the real cube then it will just match the parent cube in that dimension.  So if none of the dimensions match both cubes should perfectly sit on top of each other.
 		for (int i = 0; i < 3; i++) {
 			if (this.unitTypes[i].getValue().equals(parent.unitTypes[i].getValue()) == false) {
-				System.err.println("Cannot position clouds relative in "+axesNames[i]+" axis as there is a unit mismatch ("+this.unitTypes[i].getValue() +" != " + parent.unitTypes[i].getValue()+")");
+				System.err.println("Cannot position clouds relative in "+ AXES_NAMES[i]+" axis as there is a unit mismatch ("+this.unitTypes[i].getValue() +" != " + parent.unitTypes[i].getValue()+")");
 				float []newOriginValues = displayOrigin.toArray();
 				newOriginValues[i] = parVol.origin.get(i);
 				displayOrigin = new Vector3(newOriginValues);
 			}
 		}
-
-
 
 		Volume newDisplayVolume = new Volume(displayOrigin, displaySize);
 
@@ -350,11 +280,67 @@ public class PointCloud implements  AttributeProvider {
 	}
 
 
+	public String toString() {
+		String[] components = this.fileName.getValue().split(File.separator);
+		return components[components.length - 1];
+	}
+
+
+
+
+
+
+	//==================================================================================================================
+	//  HISTOGRAM
+	//==================================================================================================================
+
+	public int[] getHistBuckets() {
+		return this.regions.get(0).regionRepresentation.buckets;
+	}
+
+
+	public float getHistMin() {
+		return this.regions.get(0).regionRepresentation.estMin;
+	}
+
+
+	public float getHistMax() {
+		return this.regions.get(0).regionRepresentation.estMax;
+	}
+
+
+	public Christogram.Filter getFilter() {
+		return this.filterSelection.getValue();
+	}
+
+
+
+
+
+
+	//==================================================================================================================
+	//  GETTERS + SETTERS
+	//==================================================================================================================
+
 	public Volume getVolume() {
 		return volume;
 	}
 
+
 	public void setVolume(Volume volume) {
 		this.volume = volume;
+	}
+
+
+	@Override
+	public List<Attribute> getAttributes() {
+		List<Attribute>visibleAttributes = new ArrayList<>();
+		visibleAttributes.addAll(this.attributes);
+		return visibleAttributes;
+	}
+
+
+	public List<Region> getRegions() {
+		return regions;
 	}
 }

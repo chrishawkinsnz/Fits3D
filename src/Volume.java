@@ -66,6 +66,11 @@ public class Volume {
 		return d().add(Vector3.in.scale(dp));
 	}
 
+	/**
+	 * Returns a volume normalised to a {0,0,0,1,1,1} cube that represeents the proportional volume of the supplied volume compard with this
+	 * @param selection The volume to find the proportional size of
+	 * @return The proportional size of the supplied selection volume ({0,0,0,1,1,1} is a volume at the same position of the same size)
+	 */
 	public Volume normalisedProportionVolume(Volume selection) {
 		float[] newOrigin = new float[3];
 		for (int i = 0; i < 3; i++) {
@@ -83,6 +88,11 @@ public class Volume {
 		return newVolume;
 	}
 
+	/**
+	 * Checks to see if a point is contained within this volume
+	 * @param point The point to check
+	 * @return true if the point is contained within the volume false otherwise.
+	 */
 	public boolean containsPoint(Vector3 point) {
 		for (int axis = 0; axis < 3; axis++) {
 			if (point.get(axis) < this.origin.get(axis)) return false;

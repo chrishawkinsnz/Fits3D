@@ -55,7 +55,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	private KeyboardSelectionController selectionController;
 
 
-    public FrameMaster() {
+	public FrameMaster() {
     	super("Very Good Honours Project");
 		singleton = this;
 
@@ -372,7 +372,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	 * User chooses to cut out a subsection
 	 */
 	private void cutSelection() {
-		this.pointClouds.get(0).makeSomeStupidOtherSubregion(this.selection.getVolume());
+		this.pointClouds.get(0).cutOutSubvolume(this.selection.getVolume());
 		reloadAttributePanel();
 	}
 
@@ -448,12 +448,12 @@ public class FrameMaster extends JFrame implements GLEventListener {
 			DefaultMutableTreeNode node = e.nextElement();
 			if (node.getUserObject() == pc) {
 				//--if theres exactly two regions then also sneak in the first
-				if (pc.regions.size() == 2) {
-					DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(pc.regions.get(0));
+				if (pc.getRegions().size() == 2) {
+					DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(pc.getRegions().get(0));
 					singleton.treeModel.insertNodeInto(newNode, node, 0);
 				}
 				DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(region);
-				singleton.treeModel.insertNodeInto(newNode, node, pc.regions.indexOf(region));
+				singleton.treeModel.insertNodeInto(newNode, node, pc.getRegions().indexOf(region));
 			}
 		}
 	}
@@ -499,7 +499,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		canvas.addMouseMotionListener(mouseController);
 		canvas.addMouseListener(mouseController);
 		canvas.addMouseWheelListener(mouseController);
-	}
+	}/**/
 
 
 	/**
