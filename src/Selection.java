@@ -2,12 +2,23 @@
  * Created by chrishawkins on 20/07/15.
  */
 public class Selection {
-
+    private static Volume DEFAULT_VOLUME = new Volume(-0.5f, -0.5f, -0.5f, 1f, 1f, 1f);
+    private boolean active = false;
     private Volume volume;
-    public Selection() {
-        volume = new Volume(-0.5f, -0.5f, -0.5f, 1f, 1f, 1f);
+
+    private Selection() {
+
     }
 
+    public static Selection defaultSelection() {
+        Selection selection = new Selection();
+        selection.resetToDefault();
+        return  selection;
+    }
+
+    public void resetToDefault() {
+        this.volume = DEFAULT_VOLUME;
+    }
     public Volume getVolume() {
         return this.volume;
     }
@@ -55,5 +66,13 @@ public class Selection {
             }
         }
         this.volume = new Volume(volume.origin, volume.size.add(scaleDelta));
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

@@ -11,4 +11,5 @@ public class VertexBufferSlice {
 	public int numberOfPts;
 	public Region region;
 	public PointCloud cloud;
+	public boolean isLive = false;
 }

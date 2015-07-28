@@ -118,6 +118,7 @@ public class Renderer {
 					gl.glGenBuffers(2, ptr, 0);
 					this.vertexBufferHandles[index] = ptr[0];
 					vbs.index = index;
+					vbs.isLive = true;
 
 					ShortBuffer vertBuffer = vbs.vertexBuffer;
 					gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBufferHandles[index]);
@@ -132,7 +133,7 @@ public class Renderer {
 			}
 		}
 
-		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "shader2.vert", "shader2.frag");
+		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "shaderCloud.vert", "shaderCloud.frag");
 
 
 		this.uniformMvpHandle 		= gl.glGetUniformLocation(this.shaderProgram, "mvp");
@@ -155,7 +156,7 @@ public class Renderer {
 		this.uniformIsSelecting 	= gl.glGetUniformLocation(this.shaderProgram, "isSelecting");
 
 		gl.glEnable(GL_BLEND);
-gl.glDisable(GL_POINT_SMOOTH);
+		gl.glDisable(GL_POINT_SMOOTH);
 		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		gl.glBlendEquation(GL_FUNC_ADD);
 		gl.glDisable(GL_CULL_FACE);
@@ -342,8 +343,7 @@ gl.glDisable(GL_POINT_SMOOTH);
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		gl.glUseProgram(this.shaderProgram);
-		if (!FrameMaster.vain && this.selection != null) {
-
+		if (this.selection != null) {
 
 			gl.glUniform1i(uniformIsSelecting, GL_TRUE);
 
@@ -386,6 +386,8 @@ gl.glDisable(GL_POINT_SMOOTH);
 
 				for (VertexBufferSlice slice: cr.getSlices()) {
 
+					if (!slice.isLive) {continue;}
+
 					slice.scratchX = (cr.volume.x + cr.volume.wd * slice.x) * cloud.volume.wd + cloud.volume.x;
 					if (slice.scratchX > maxScractchX) {
 						maxScractchX = slice.scratchX;
@@ -395,8 +397,9 @@ gl.glDisable(GL_POINT_SMOOTH);
 					}
 					slice.region = cr;
 					slice.cloud = cloud;
+					allSlicesLikeEver.add(slice);
 				}
-				allSlicesLikeEver.addAll(cr.getSlices());
+
 			}
 		}
 
@@ -416,9 +419,8 @@ gl.glDisable(GL_POINT_SMOOTH);
 
 		baseMatrix.scale(baseScale, baseScale, baseScale);
 
-		if (FrameMaster.vain == false) {
 			renderPrimitives(baseMatrix, spin, true);
-		}
+
 
 
 		for (int i = 0; i < allSlicesLikeEver.size(); i++){
@@ -432,7 +434,9 @@ gl.glDisable(GL_POINT_SMOOTH);
 			VertexBufferSlice slice = allSlicesLikeEver.get(sliceIndex);
 			PointCloud cloud = slice.cloud;
 			Region cr = slice.region;
-			
+			if (cr == null || cloud == null) {
+				return;
+			}
 			gl.glUniform1f(this.uniformAlphaFudgeHandle, cr.intensity.getValue() * cloud.intensity.getValue());
 			//--filtery doodle TODO probably move this out one level of the loop
 			
@@ -495,9 +499,8 @@ gl.glDisable(GL_POINT_SMOOTH);
 
 
 
-		if (FrameMaster.vain == false) {
-			renderPrimitives(baseMatrix, spin, false);
-		}
+		renderPrimitives(baseMatrix, spin, false);
+
 
 		//--draw outlines
 		for (PointCloud pc : this.pointClouds) {
@@ -505,11 +508,10 @@ gl.glDisable(GL_POINT_SMOOTH);
 				renderOutline(baseMatrix, pc.volume, pc.color);
 			}
 		}
-		if (!FrameMaster.vain) {
-			if (this.selection != null) {
-				renderOutline(baseMatrix, this.selection.getVolume(), Color.white);
-			}
+		if (this.selection != null) {
+			renderOutline(baseMatrix, this.selection.getVolume(), Color.white);
 		}
+
     	gl.glEnableVertexAttribArray(0);
     	gl.glDisableVertexAttribArray(1);
     	

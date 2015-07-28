@@ -15,8 +15,6 @@ public class PointCloud implements  AttributeProvider {
 
 	private static int clouds = 0;
 
-	public Region pendingRegion;
-
 	private Fits fits;
 
 	private final float boxWidth = 2.0f;
@@ -270,25 +268,15 @@ public class PointCloud implements  AttributeProvider {
 		regions.clear();
 	}
 
-	public void makeSomeStupidSubregion() {
-		Volume corner = new Volume(0.25f, 0.25f, 0.25f, 0.5f, 0.5f, 0.5f);
-		Region newRegion = this.regions.get(0).subRegion(corner, this.regions.get(0).regionRepresentation.fidelity, true);
-		this.pendingRegion = newRegion;
-		FrameMaster.setNeedsDisplay();
-	}
 
 	public void makeSomeStupidOtherSubregion(Volume volume) {
 		Volume subRegion = this.volume.normalisedProportionVolume(volume);
 		Region newRegion = this.regions.get(0).subRegion(subRegion, this.regions.get(0).regionRepresentation.fidelity, true);
-		this.pendingRegion = newRegion;
+		this.addRegion(newRegion, this.regions);
+		FrameMaster.notifyFileBrowserOfNewRegion(this, newRegion);
+		FrameMaster.setNeedsNewRenderer();
 		FrameMaster.setNeedsDisplay();
-	}
 
-	public void blastVolumeWithQuality(Volume volume) {
-		Volume subRegion = this.volume.normalisedProportionVolume(volume);
-		Region newRegion = this.regions.get(0).subRegion(subRegion, 1.0f, true);
-		this.pendingRegion = newRegion;
-		FrameMaster.setNeedsDisplay();
 	}
 
 	public String toString() {

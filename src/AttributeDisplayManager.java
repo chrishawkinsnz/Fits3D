@@ -1,5 +1,11 @@
 
 public class AttributeDisplayManager {
+	public static AttributeDisplayManager defaultDisplayManager = new AttributeDisplayManager();
+
+	private AttributeDisplayManager() {
+
+	}
+
 	public  AttributeDisplayer tweakableForAttribute(Attribute attribute, AttributeProvider attributeDisplayer) {
     	//--listen okay we are just going to assume it is foo for the moment
     	AttributeDisplayer tweakable;

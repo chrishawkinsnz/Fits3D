@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
-import com.jogamp.opengl.GL3;
-import com.jogamp.opengl.DebugGL3;
 import com.jogamp.opengl.GLAutoDrawable;/**/
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLEventListener;
@@ -17,6 +15,8 @@ import com.jogamp.opengl.awt.GLCanvas;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.*;
@@ -26,239 +26,73 @@ import net.miginfocom.swing.MigLayout;
 
 public class FrameMaster extends JFrame implements GLEventListener {
 
-    private static final long serialVersionUID = 1L;
-    
-    private static FrameMaster singleFrameMaster;
-    
-	private List<PointCloud> pointClouds = new ArrayList<PointCloud>();
-	private List<PointCloud> currentPointClouds  = new ArrayList<PointCloud>();;
+	//CONSTANTS
+	private final static int WINDOW_WIDTH_MIN 			= 800;
+	private final static int WINDOW_HEIGHT_MIN 			= 600;
+	private final static int WINDOW_WIDTH_DEFAULT		= 1400;
+	private final static int WINDOW_HEIGHT_DEFAULT		= 1000;
 
+	//FLAGS
+	private static final boolean debug = true;
+	private static boolean vain = false;
+	static boolean rendererNeedsFreshPointClouds = false;
+
+	//ACCESSOR
+    private static FrameMaster singleton;
+
+	//MODEL
 	private AttributeProvider selectedAttributeProvider = null;
-
-	private Renderer renderer;
+	private List<PointCloud> pointClouds = new ArrayList<PointCloud>();
 	private WorldViewer viewer;
 	private Selection selection;
-	private GL3 gl;
-
-	private PointCloud pleaseSelectThisNextChanceYouGet;
-	private boolean debug = false;
-	
-	private MouseController mouseController;
-
-	private KeyboardSelectionController selectionController;
-	
-	private int drawableWidth = 0;
-	private int drawableHeight = 0;
-	
-//	private DefaultListModel<PointCloud> listModel;
-//	private JList<PointCloud> list;
-
-
-	private JTree tree;
-	private DefaultMutableTreeNode treeRoot;
 	private DefaultTreeModel treeModel;
-	private JPanel attributPanel;
+
+	//VIEW
+	private Renderer renderer;
 	private GLCanvas canvas;
 
+	//CONTROLLER
+	private KeyboardSelectionController selectionController;
 
-	public static boolean vain = false;
 
-	private FPSAnimator animator;
-	private static Color colorBackground = new Color(238, 238, 238, 255);
     public FrameMaster() {
     	super("Very Good Honours Project");
-    	singleFrameMaster = this;
+		singleton = this;
 
+        this.setName("FITS 3D");
 
-//		UIManager.put("Tree.rendererFillBackground", false);
-
-
-        this.setName("Very Good Honours Project");
-        
-        this.setMinimumSize(new Dimension(800, 600));
-        this.setPreferredSize(new Dimension(1600, 1000));
-    	this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    	this.setVisible(true);
+		this.setMinimumSize(new Dimension(WINDOW_WIDTH_MIN, WINDOW_HEIGHT_MIN));
+		this.setPreferredSize(new Dimension(WINDOW_WIDTH_DEFAULT, WINDOW_HEIGHT_DEFAULT));
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.setVisible(true);
     	this.setResizable(true);
 		BorderLayout bl = new BorderLayout();
     	this.getContentPane().setLayout(bl);
        
         this.setJMenuBar(makeMenuBar());
 
-        canvas = makeCanvas();
-        attachControlsToCanvas(canvas);
-        
-        this.getContentPane().add(canvas, BorderLayout.CENTER);
-        this.getContentPane().add(filePanel(), BorderLayout.WEST);
+        this.canvas = makeCanvas();
+		this.viewer = createViewer();
+        attachControlsToCanvas(canvas, viewer);
 
-		setDefaultLookAndFeelDecorated(true);
+		this.getContentPane().add(canvas, BorderLayout.CENTER);
+		this.getContentPane().add(makeFilePanel(), BorderLayout.WEST);
+		this.getContentPane().add(makeAttributePanel(), BorderLayout.EAST);
 
-		Component leftComponent = bl.getLayoutComponent(BorderLayout.WEST);
-		leftComponent.setBackground(Color.WHITE);
+		bl.getLayoutComponent(BorderLayout.WEST).setBackground(Color.WHITE);
 
-        reloadAttributePanel();
-        
-        this.pack();
+		this.pack();
     }
 
-    private GLCanvas makeCanvas() {
-    	GLProfile profile = GLProfile.get(GLProfile.GL3);
-        GLCapabilities capabilities = new GLCapabilities(profile);
-        this.canvas = new GLCanvas(capabilities);
-        canvas.addGLEventListener(this);
-        canvas.setMinimumSize(new Dimension());
-        canvas.requestFocusInWindow();
-		if (vain) {
-			this.animator = new FPSAnimator(canvas, 120);
-			this.animator.setUpdateFPSFrames(100, System.out);
-			this.animator.start();
-		}
-
-
-		return canvas;
-    }
-    
-    private void attachControlsToCanvas(Canvas canvas) {
-
-		if (vain) {
-			this.viewer = new VanitySpinnerViewer();
-		} else {
-			this.viewer = new WorldViewer();
-		}
-
-        this.mouseController = new MouseController(this.viewer);
 
 
 
-		canvas.addMouseMotionListener(this.mouseController);
-		canvas.addMouseListener(this.mouseController);
-		canvas.addMouseWheelListener(this.mouseController);
-
-    }
-    
-	public AttributeDisplayManager  attributeDisplayManager = new AttributeDisplayManager();
-    private void reloadAttributePanel() {
-    	if (this.attributPanel != null) {
-    		this.getContentPane().remove(this.attributPanel);
-    	}
-
-    	Dimension lilDimension = new Dimension(300, 700);
-
-    	MigLayout mlLayout = new MigLayout("wrap 2");
-    	this.attributPanel = new JPanel(mlLayout);
-    	attributPanel.setBorder(new EmptyBorder(0, 8, 8, 8));
-
-		JLabel title = new JLabel("Attributes");
-		title.setFont(new Font("Dialog", Font.BOLD, 24));
-		attributPanel.add(title, "span 2");
-		if (selectedAttributeProvider != null) {
-			for (Attribute attribute : selectedAttributeProvider.getAttributes()) {
-				AttributeDisplayer attributeDisplayer = this.attributeDisplayManager.tweakableForAttribute(attribute, selectedAttributeProvider);
-				addTweakableToAttributePanel(attributeDisplayer, attribute);
-			}
-
-			//--now look for child providers
-			List<AttributeProvider> childProviders = selectedAttributeProvider.getChildProviders();
-			int minimumChildrenToDisplay = 2;
-			if (childProviders.size() >= minimumChildrenToDisplay) {
-				JLabel subsectionsTitle = new JLabel("Subsections");
-				subsectionsTitle.setFont(new Font("Dialog", Font.BOLD, 24));
-				attributPanel.add(subsectionsTitle, "span 2");
-				for (AttributeProvider childProvider : childProviders) {
-
-					for (Attribute attribute : childProvider.getAttributes()) {
-						AttributeDisplayer attributeDisplayer = this.attributeDisplayManager.tweakableForAttribute(attribute, childProvider);
-						addTweakableToAttributePanel(attributeDisplayer, attribute);
-					}
-					JLabel ssssh = new JLabel(" ");
-					ssssh.setFont(new Font("Dialog", Font.BOLD, 24));
-					attributPanel.add(ssssh, "span 2");
-				}
-			}
-		}
 
 
-    	attributPanel.setMinimumSize(lilDimension);
-    	attributPanel.setMaximumSize(lilDimension);
-    	attributPanel.setPreferredSize(lilDimension);
-    	this.getContentPane().add(attributPanel, BorderLayout.EAST);
-    	SwingUtilities.updateComponentTreeUI(this);
-    	this.getContentPane().repaint();
-    }
+	//==================================================================================================================
+	//  FILE HANDLING
+	//==================================================================================================================
 
-	void addTweakableToAttributePanel(AttributeDisplayer attributeDisplayer, Attribute attribute) {
-		if (attributeDisplayer == null) {
-			return;
-		}
-		String formatString = attributeDisplayer.isDoubleLiner() ? "span 2" : "";
-
-		JLabel label = new JLabel(attribute.displayName);
-		label.setFont(new Font("Dialog", Font.BOLD, 12));
-		attributPanel.add(label, formatString);
-
-
-		formatString = attributeDisplayer.isDoubleLiner() ? "width ::250, span 2" : "gapleft 16, width ::150";
-		attributPanel.add(attributeDisplayer.getComponent(), formatString);
-	}
-
-
-
-	private JPanel filePanel() {
-		this.treeRoot = new DefaultMutableTreeNode("Point Clouds");
-		this.treeModel = new DefaultTreeModel(treeRoot);
-
-
-		tree = new JTree(treeModel);
-
-
-		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-
-		tree.setShowsRootHandles(true);
-		tree.addTreeSelectionListener(new TreeSelectionListener() {
-			@Override
-			public void valueChanged(TreeSelectionEvent e) {
-				TreePath path = e.getPath();
-				Object obj = e.getPath().getLastPathComponent();
-				FrameMaster.this.currentPointClouds.clear();
-				if (obj instanceof DefaultMutableTreeNode) {
-					DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) obj;
-					Object contents = treeNode.getUserObject();
-					if (contents instanceof AttributeProvider) {
-						FrameMaster.this.selectedAttributeProvider = (AttributeProvider) contents;
-					} else {
-						FrameMaster.this.selectedAttributeProvider = null;
-					}
-				}
-				FrameMaster.this.reloadAttributePanel();
-			}
-		});
-
-
-		tree.setMinimumSize(new Dimension(240, 200));
-		tree.setPreferredSize(new Dimension(240, 2000));
-		tree.setBorder(BorderFactory.createTitledBorder("Fits Files"));
-//		tree.setBackground(colorBackground);
-
-        JPanel filePanel = new JPanel(new MigLayout("flowy"));
-
-
-		Dimension lilDimension = new Dimension(240, 600);
-        filePanel.setMaximumSize(lilDimension);
-        filePanel.setPreferredSize(lilDimension);
-
-		filePanel.add(tree);
-
-		JButton buttonAddFitsFile = new JButton("Open New Fits File");
-		buttonAddFitsFile.addActionListener(e -> this.showOpenDialog());
-		filePanel.add(buttonAddFitsFile, "grow");
-
-//        filePanel.setBackground(colorBackground);
-        filePanel.setPreferredSize(new Dimension(260, 500));
-
-        return filePanel;        
-    }
-    
-    
     private void showOpenDialog() {
     	JFileChooser jfc = new JFileChooser();
     	jfc.setAcceptAllFileFilterUsed(false);
@@ -269,7 +103,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
     		loadFile(file.getAbsolutePath());
     	}
     }
-    
+
+
     private void loadFile(String fileName) {
     	PointCloud pc = new PointCloud(fileName);
     	this.pointClouds.add(pc);
@@ -288,76 +123,209 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
     	pc.readFits();
 		MutableTreeNode newNode = new DefaultMutableTreeNode(pc);
-		this.treeModel.insertNodeInto(newNode, this.treeRoot, 0);
-//		for (Region region : pc.regions) {
-//			addRegionToTree(pc, region);
-//		}
-//    	this.listModel.addElement(pc);
-		this.pleaseSelectThisNextChanceYouGet = pc;
+		MutableTreeNode root = (MutableTreeNode)this.treeModel.getRoot();
+		this.treeModel.insertNodeInto(newNode, root, 0);
+
 		setNeedsDisplay();
     }
 
-	private void test() {
-		this.pointClouds.get(0).makeSomeStupidSubregion();
-		reloadAttributePanel();
-	}
-	private void cutOut() {
-		this.pointClouds.get(0).makeSomeStupidOtherSubregion(this.selection.getVolume());
-		reloadAttributePanel();
-	}
 
-	private void enhance() {
-		this.pointClouds.get(0).blastVolumeWithQuality(this.selection.getVolume());
-		reloadAttributePanel();
-	}
 
-	private void select() {
-		if (this.renderer.selection == null) {
-			this.selection = new Selection();
-			this.selectionController = new KeyboardSelectionController(this.selection);
-			canvas.addKeyListener(this.selectionController);
-			this.renderer.selection = this.selection;
+
+
+
+	//==================================================================================================================
+	//  UI FACTORIES
+	//==================================================================================================================
+
+	/**
+	 * Make and return the attributes panel
+	 * @return The created attributes panel
+	 */
+	private JPanel makeAttributePanel() {
+
+		MigLayout mlLayout = new MigLayout("wrap 2");
+		JPanel attributPanel = new JPanel(mlLayout);
+		attributPanel.setBorder(new EmptyBorder(0, 8, 8, 8));
+
+		JLabel title = new JLabel("Attributes");
+		title.setFont(new Font("Dialog", Font.BOLD, 24));
+		attributPanel.add(title, "span 2");
+		if (selectedAttributeProvider != null) {
+			for (Attribute attribute : selectedAttributeProvider.getAttributes()) {
+				AttributeDisplayer attributeDisplayer = AttributeDisplayManager.defaultDisplayManager.tweakableForAttribute(attribute, selectedAttributeProvider);
+				addTweakableToAttributePanel(attributeDisplayer, attribute, attributPanel);
+			}
+
+			//--now look for child providers
+			List<AttributeProvider> childProviders = selectedAttributeProvider.getChildProviders();
+			int minimumChildrenToDisplay = 2;
+			if (childProviders.size() >= minimumChildrenToDisplay) {
+				JLabel subsectionsTitle = new JLabel("Subsections");
+				subsectionsTitle.setFont(new Font("Dialog", Font.BOLD, 24));
+				attributPanel.add(subsectionsTitle, "span 2");
+				for (AttributeProvider childProvider : childProviders) {
+
+					for (Attribute attribute : childProvider.getAttributes()) {
+						AttributeDisplayer attributeDisplayer = AttributeDisplayManager.defaultDisplayManager.tweakableForAttribute(attribute, childProvider);
+						addTweakableToAttributePanel(attributeDisplayer, attribute, attributPanel);
+					}
+					//-space them out
+					attributPanel.add(new JLabel(" "), "span 2");
+				}
+			}
 		}
-		else {
-			this.renderer.selection = null;
-		}
-		FrameMaster.setNeedsDisplay();
+
+		Dimension lilDimension = new Dimension(300, 700);
+		attributPanel.setMinimumSize(lilDimension);
+		attributPanel.setMaximumSize(lilDimension);
+		attributPanel.setPreferredSize(lilDimension);
+
+		return attributPanel;
 	}
-    private JMenuBar makeMenuBar() {
 
 
-        JMenuBar menuBar = new JMenuBar();
-        JMenu fileMenu = new JMenu("File");
-        
-        JMenuItem loadItem = new JMenuItem("Open");
-        setKeyboardShortcutTo(KeyEvent.VK_O, loadItem);
-        loadItem.addActionListener(e -> this.showOpenDialog());
-        fileMenu.add(loadItem);
+	void addTweakableToAttributePanel(AttributeDisplayer attributeDisplayer, Attribute attribute, JPanel attributPanel) {
+		if (attributeDisplayer == null) {
+			return;
+		}
+		String formatString = attributeDisplayer.isDoubleLiner() ? "span 2" : "";
+
+		JLabel label = new JLabel(attribute.displayName);
+		label.setFont(new Font("Dialog", Font.BOLD, 12));
+		attributPanel.add(label, formatString);
 
 
+		formatString = attributeDisplayer.isDoubleLiner() ? "width ::250, span 2" : "gapleft 16, width ::150";
+		attributPanel.add(attributeDisplayer.getComponent(), formatString);
+	}
 
-		JMenuItem cutItem = new JMenuItem("cut out");
+
+	/**
+	 * Makes and returns the file panel
+	 * @return The created file panel
+	 */
+	private JPanel makeFilePanel() {
+		JPanel filePanel = new JPanel(new MigLayout("flowy"));
+
+		TreeNode treeRoot = treeRoot = new DefaultMutableTreeNode("Point Clouds");
+		this.treeModel = new DefaultTreeModel(treeRoot);
+
+		JTree tree = new JTree(treeModel);
+		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+
+		tree.addTreeSelectionListener(new TreeSelectionListener() {
+			@Override
+			public void valueChanged(TreeSelectionEvent e) {
+				DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) e.getPath().getLastPathComponent();
+				Object contents = selectedNode.getUserObject();
+				FrameMaster.this.selectedAttributeProvider = contents instanceof AttributeProvider ? (AttributeProvider) contents : null;
+				FrameMaster.this.reloadAttributePanel();
+			}
+		});
+
+		//--If somethign new is added to the model then select it.
+		treeModel.addTreeModelListener(new TreeModelListener() {
+			public void treeNodesChanged(TreeModelEvent e) {}
+			public void treeNodesRemoved(TreeModelEvent e) {}
+			public void treeStructureChanged(TreeModelEvent e) {}
+
+			@Override
+			public void treeNodesInserted(TreeModelEvent e) {
+				System.out.println("tree node added");
+				TreePath parentPath = e.getTreePath();
+				TreePath childPath = parentPath.pathByAddingChild(e.getChildren()[e.getChildren().length - 1]);
+				tree.setSelectionPath(childPath);
+			}
+		});
+
+		tree.setMinimumSize(new Dimension(240, 200));
+		tree.setPreferredSize(new Dimension(240, 2000));
+		tree.setBorder(BorderFactory.createTitledBorder("Fits Files"));
+
+		filePanel.add(tree);
+
+		JButton buttonAddFitsFile = new JButton("Open New Fits File");
+		buttonAddFitsFile.addActionListener(e -> this.showOpenDialog());
+		filePanel.add(buttonAddFitsFile, "grow");
+
+		return filePanel;
+	}
+
+
+	/**
+	 * Create and return the OpenGL canvas
+	 * @return The created OpenGL canvas
+	 */
+	private GLCanvas makeCanvas() {
+		GLProfile profile = GLProfile.get(GLProfile.GL3);
+		GLCapabilities capabilities = new GLCapabilities(profile);
+		GLCanvas canvas = new GLCanvas(capabilities);
+		canvas.addGLEventListener(this);
+
+		if (vain) {
+			FPSAnimator animator = new FPSAnimator(canvas, 120);
+			animator.setUpdateFPSFrames(100, System.out);
+			animator.start();
+		}
+
+		return canvas;
+	}
+
+
+	/**
+	 * Create and return the menu bar
+	 * @return The created menu bar
+	 */
+	private JMenuBar makeMenuBar() {
+		JMenuBar menuBar = new JMenuBar();
+		menuBar.add(makFileMenu());
+		if (debug) {
+			menuBar.add(makeDebugMenu());
+		}
+
+		return menuBar;
+	}
+
+
+	/**
+	 * Creates and returns the file menu
+	 * @return The created file menu
+	 */
+	private JMenu makFileMenu() {
+		JMenu fileMenu = new JMenu("File");
+
+		JMenuItem loadItem = new JMenuItem("Open");
+		setKeyboardShortcutTo(KeyEvent.VK_O, loadItem);
+		loadItem.addActionListener(e -> this.showOpenDialog());
+		fileMenu.add(loadItem);
+
+		JMenuItem cutItem = new JMenuItem("Cut selection");
 		setKeyboardShortcutTo(KeyEvent.VK_X, cutItem);
-		cutItem.addActionListener(e -> this.cutOut());
+		cutItem.addActionListener(e -> this.cutSelection());
 		fileMenu.add(cutItem);
 
-		JMenuItem enhanceItem = new JMenuItem("enhance");
-		setKeyboardShortcutTo(KeyEvent.VK_E, enhanceItem);
-		enhanceItem.addActionListener(e -> this.enhance());
-		fileMenu.add(enhanceItem);
-
-		JMenuItem selectItem = new JMenuItem("select");
+		JMenuItem selectItem = new JMenuItem("Make selection");
 		setKeyboardShortcutTo(KeyEvent.VK_H, selectItem);
-		selectItem.addActionListener(e -> this.select());
+		selectItem.addActionListener(e -> this.beginSelect());
 		fileMenu.add(selectItem);
 
+		return fileMenu;
+	}
+
+
+	/**
+	 * Creates and returns the debug menu
+	 * @return The created debug menu
+	 */
+	private JMenu makeDebugMenu() {
 		JMenu debugMenu = new JMenu("Debug");
 
 		JMenuItem rainbow = new JMenuItem("rainbow");
 		debugMenu.add(rainbow);
 
 		JMenuItem test = new JMenuItem("foo");
-		test.addActionListener(e -> this.test());
+		test.addActionListener(e -> this.foo());
 		debugMenu.add(test);
 
 		rainbow.addActionListener(new ActionListener() {
@@ -367,123 +335,186 @@ public class FrameMaster extends JFrame implements GLEventListener {
 				setNeedsDisplay();
 			}
 		});
-
-        menuBar.add(fileMenu);
-		menuBar.add(debugMenu);
-        return menuBar;
-    }
+		return debugMenu;
+	}
 
 
-    
-    private static void setKeyboardShortcutTo(int key, JMenuItem menuItem){
-    	String os = System.getProperty("os.name").toLowerCase();	
-        if (os.indexOf("mac") != -1) {
-        	menuItem.setAccelerator(KeyStroke.getKeyStroke(key, Event.META_MASK));
-        } else {
-        	menuItem.setAccelerator(KeyStroke.getKeyStroke(key, Event.CTRL_MASK));
-        }
-    }
-    
+
+
+
+
+	//==================================================================================================================
+	//  USER ACTIONS
+	//==================================================================================================================
+
+	/**
+	 * User chooses to begin making a selection of a volume
+	 */
+	private void beginSelect() {
+		if (this.selection == null || this.selectionController == null) {
+			this.selection = Selection.defaultSelection();
+			this.selectionController = new KeyboardSelectionController(this.selection);
+		}
+
+		if (this.renderer.selection == null) {
+			this.renderer.selection = this.selection;
+			canvas.addKeyListener(this.selectionController);
+		}
+		else {
+			this.renderer.selection = null;
+			canvas.removeKeyListener(this.selectionController);
+		}
+		FrameMaster.setNeedsDisplay();
+	}
+
+
+	/**
+	 * User chooses to cut out a subsection
+	 */
+	private void cutSelection() {
+		this.pointClouds.get(0).makeSomeStupidOtherSubregion(this.selection.getVolume());
+		reloadAttributePanel();
+	}
+
+
+	/**
+	 * All purpose hook for testing features
+	 */
+	private void foo() {
+
+	}
+
+
+
+
+
+
+
+
+	//==================================================================================================================
+	//  GL LISTENER METHODS
+	//==================================================================================================================
+
     @Override
     public void dispose(GLAutoDrawable drawable) {
     }
-    
+
+
     @Override
     public void init(GLAutoDrawable drawable) {
-    	if (debug)
-    		this.gl = new DebugGL3(drawable.getGL().getGL3());
-    	else 
-    		this.gl = drawable.getGL().getGL3();	
+		this.renderer = new Renderer(this.pointClouds, this.viewer, drawable.getGL().getGL3());
     }
 
-	static boolean needsFreshRenderer = false;
+
     @Override
     public void display(GLAutoDrawable drawable) {
-		//--check all the point clouds and if they have a pending region create a new renderer.
-		for (PointCloud pc : this.pointClouds) {
-			if (pc.pendingRegion != null) {
-//				pc.clearRegions();
-				//TODO
-				pc.addRegion(pc.pendingRegion, pc.regions);
-				if (pc.regions.size() == 2) {
-					addRegionToTree(pc, pc.regions.get(0));
-					//--TODO how do you sleep at night?
-				}
-				addRegionToTree(pc, pc.pendingRegion);
-				pc.pendingRegion = null;
-
-				needsFreshRenderer = true;
-			}
-		}
-    	if (needsFreshRenderer){
-
-			if (this.renderer == null) {
-				this.renderer = new Renderer(this.pointClouds, this.viewer, this.gl);
-				this.renderer.selection = this.selection;
-			}
-			else {
-				this.renderer.setupWith(this.pointClouds, this.viewer, this.gl);
-				System.gc();
-			}
-    		this.renderer.informOfResolution(this.drawableWidth, this.drawableHeight);
-
-			FrameMaster.setNeedsAttributesReload();
-			this.needsFreshRenderer = false;
+    	if (rendererNeedsFreshPointClouds){
+			this.renderer.setupWith(this.pointClouds, this.viewer, drawable.getGL().getGL3());
+			this.rendererNeedsFreshPointClouds = false;
     	}
-		if (this.pleaseSelectThisNextChanceYouGet != null) {
 
-
-			TreePath selectionPath = new TreePath(this.pleaseSelectThisNextChanceYouGet);
-			this.tree.setSelectionPath(selectionPath);
-			pleaseSelectThisNextChanceYouGet = null;
-		}
-
-    	if (this.renderer != null) {
-    			this.renderer.display();  
-    	}    	
+		this.renderer.display();
     }
+
 
     @Override
-    public void reshape(GLAutoDrawable drawable, int x, int y, int width,
-            int height) {
-    	this.drawableHeight = height;
-    	this.drawableWidth = width;
-
-    	if (renderer!= null) {
-    		renderer.informOfResolution(width, height);
-    	}
+    public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
+		renderer.informOfResolution(width, height);
     }
 
 
-    public static void setNeedsDisplay() {
-    	singleFrameMaster.canvas.display();
-    }
 
-	public static void addRegionToTree(PointCloud pointCloud, Region cr) {
-		DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(cr);
-		TreePath pathToParent = find(singleFrameMaster.treeRoot, pointCloud);
-		MutableTreeNode parentNode = (MutableTreeNode) pathToParent.getLastPathComponent();
-		singleFrameMaster.treeModel.insertNodeInto(newNode, parentNode, pointCloud.regions.indexOf(cr));
+
+
+
+
+	//==================================================================================================================
+	//  NOTIFICATIONS
+	//==================================================================================================================
+	public static void setNeedsNewRenderer() {
+		singleton.rendererNeedsFreshPointClouds = true;
 	}
 
-	private static TreePath find(DefaultMutableTreeNode root, Object obj) {
-		@SuppressWarnings("unchecked")
-		Enumeration<DefaultMutableTreeNode> e = root.depthFirstEnumeration();
+
+	public static void setNeedsDisplay() {
+		singleton.canvas.display();
+	}
+
+
+	public static void notifyFileBrowserOfNewRegion(PointCloud pc, Region region) {
+		DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) singleton.treeModel.getRoot();
+		Enumeration<DefaultMutableTreeNode> e = rootNode.depthFirstEnumeration();
 		while (e.hasMoreElements()) {
 			DefaultMutableTreeNode node = e.nextElement();
-			if (node.getUserObject() == obj) {
-				return new TreePath(node.getPath());
+			if (node.getUserObject() == pc) {
+				//--if theres exactly two regions then also sneak in the first
+				if (pc.regions.size() == 2) {
+					DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(pc.regions.get(0));
+					singleton.treeModel.insertNodeInto(newNode, node, 0);
+				}
+				DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(region);
+				singleton.treeModel.insertNodeInto(newNode, node, pc.regions.indexOf(region));
 			}
 		}
-		return null;
 	}
 
-	public static void setNeedsNewRenderer() {
-		singleFrameMaster.needsFreshRenderer = true;
+
+
+
+
+
+	//==================================================================================================================
+	//  HELPERS
+	//==================================================================================================================
+
+	private static void setKeyboardShortcutTo(int key, JMenuItem menuItem){
+		String os = System.getProperty("os.name").toLowerCase();
+		if (os.indexOf("mac") != -1) {
+			menuItem.setAccelerator(KeyStroke.getKeyStroke(key, Event.META_MASK));
+		} else {
+			menuItem.setAccelerator(KeyStroke.getKeyStroke(key, Event.CTRL_MASK));
+		}
 	}
 
-	public static void setNeedsAttributesReload() {
-		singleFrameMaster.reloadAttributePanel();
+
+	/**
+	 * Creates and returns a new WorldViewer which holds the state of the view in the world
+	 * @return The created WorldViewer object
+	 */
+	private WorldViewer createViewer() {
+		if (vain)
+			return new VanitySpinnerViewer();
+		else
+			return new WorldViewer();
 	}
 
+
+	/**
+	 * Glues together the canvas to the worldViewer
+	 * @param canvas The canvas on which the events will occur
+	 * @param worldViewer The world viewer model that controls view state
+	 */
+	private void attachControlsToCanvas(Canvas canvas, WorldViewer worldViewer) {
+		MouseController mouseController = new MouseController(this.viewer);
+		canvas.addMouseMotionListener(mouseController);
+		canvas.addMouseListener(mouseController);
+		canvas.addMouseWheelListener(mouseController);
+	}
+
+
+	/**
+	 * Creates an all new attributes panel and replaces the one (if there) in the frame.
+	 */
+	private void reloadAttributePanel() {
+		BorderLayout bl = (BorderLayout)this.getContentPane().getLayout();
+
+		if (bl.getLayoutComponent(BorderLayout.EAST)!= null) {
+			this.getContentPane().remove(bl.getLayoutComponent(BorderLayout.EAST));
+		}
+
+		JPanel attributPanel = makeAttributePanel();
+		this.getContentPane().add(attributPanel, BorderLayout.EAST);
+		SwingUtilities.updateComponentTreeUI(this);
+		this.getContentPane().repaint();
+	}
 }
