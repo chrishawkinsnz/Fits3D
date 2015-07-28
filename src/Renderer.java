@@ -388,7 +388,7 @@ public class Renderer {
 
 					if (!slice.isLive) {continue;}
 
-					slice.scratchX = (cr.volume.x + cr.volume.wd * slice.x) * cloud.volume.wd + cloud.volume.x;
+					slice.scratchX = (cr.getVolume().x + cr.getVolume().wd * slice.x) * cloud.volume.wd + cloud.volume.x;
 					if (slice.scratchX > maxScractchX) {
 						maxScractchX = slice.scratchX;
 					}
@@ -528,8 +528,8 @@ public class Renderer {
 	private float calculatePointRadiusInPixelsForSlice(VertexBufferSlice slice) {
 		Region cr = slice.region;
 		//TODO actually consider the z pixel size yo
-		float pointWidth = (float)this.width* this.orthoWidth*cr.volume.wd/ (float)cr.ptWidth(); 
-		float pointHeight = (float)this.height* this.orthoHeight*cr.volume.ht / (float)cr.ptHeight();
+		float pointWidth = (float)this.width* this.orthoWidth* cr.getVolume().wd/ (float)cr.getWidthInPoints();
+		float pointHeight = (float)this.height* this.orthoHeight* cr.getVolume().ht / (float)cr.getHeightInPoints();
 		float sz =  pointWidth < pointHeight ? pointWidth : pointHeight;
 		return sz;
 	}

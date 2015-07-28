@@ -19,28 +19,34 @@ import nom.tam.util.ArrayDataInput;
  *
  */
 public class RegionRepresentation {
-	public int[]buckets;
-	public float estMin;
-	public float estMax;
+	private int[]buckets;
+	private float estMin;
+	private float estMax;
 
-	public int numPtsX;
-	public int numPtsY;
-	public int numPtsZ;
-	public int validPts;
-	public boolean isMaximumFidelity;
-	public float fidelity;
+	private int numPtsX;
+	private int numPtsY;
+	private int numPtsZ;
+	private int validPts;
+	private float fidelity;
 
 	private List<VertexBufferSlice>slices;
+
+
 
 	public enum DataType {
 		FLOAT, DOUBLE, SHORT, INT, LONG,
 	}
+
 	private RegionRepresentation() {
 
 	}
 
 	static int count = 0;
 
+	/**
+	 * Removes all values found within the supplied volume
+	 * @param volume  The volume to erase normalised to the size of the overall point cloud
+	 */
 	public void eraseRegion(Volume volume) {
 		//--shortify the volume limits
 		short minX = (short) (volume.origin.x * Short.MAX_VALUE);
@@ -103,6 +109,13 @@ public class RegionRepresentation {
 		this.slices = newSlices;
 	}
 
+	/**
+	 * Goes through a region representation finding values that could be in subvolume.  Those that are are either moved
+	 * or copied from this region representation.
+	 * @param volume The volume of the subvolume normalised to the size of the overall poitn cloud
+	 * @param replaceValues Whether or not to replace those values eligible for the subregion (true = cut, false = copy)
+	 * @return The newly created region representation for the subregion
+	 */
 	public RegionRepresentation generateSubrepresentation(Volume volume, boolean replaceValues) {
 		RegionRepresentation rr = new RegionRepresentation();
 		List<VertexBufferSlice>newSlices = new ArrayList<>();
@@ -178,32 +191,32 @@ public class RegionRepresentation {
 			}
 			newSlices.add(newSlice);
 		}
-		rr.fidelity = fidelity;
-		rr.isMaximumFidelity = isMaximumFidelity;
+		rr.setFidelity(getFidelity());
 		rr.slices = newSlices;
-		rr.numPtsX = (((int)(volume.wd * this.numPtsX)));
-		rr.numPtsY = (((int)(volume.ht * this.numPtsY)));
-		rr.numPtsZ = (((int)(volume.dp * this.numPtsZ)));
+		rr.setNumPtsX((((int)(volume.wd * this.getNumPtsX()))));
+		rr.setNumPtsY((((int)(volume.ht * this.getNumPtsY()))));
+		rr.setNumPtsZ((((int)(volume.dp * this.getNumPtsZ()))));
 		return rr;
 	}
 
 
 	/**
 	 *
+	 *
 	 * @param fits	The fits file to read.
 	 * @param fidelity The level of fidelity to read the cube at (note fidelity is interpreted cubically so 1 is 8 times larger than 0.5)
 	 * @param volume The unit volume of the fits file to read.
 	 * @return A representation of the asked for region.
 	 */
-	public static RegionRepresentation justTheSlicesPlease(Fits fits, float fidelity, Volume volume) {
+	public static RegionRepresentation loadFromDisk(Fits fits, float fidelity, Volume volume) {
 		RegionRepresentation rr = new RegionRepresentation();
-		rr.fidelity = fidelity;
+		rr.setFidelity(fidelity);
 		long t0 = System.currentTimeMillis();
 		try {
 			ImageHDU hdu = (ImageHDU) fits.getHDU(0);
 			MinAndMax minAndMax = minAndMaxBasedOnRoughOnePercentRushThrough(hdu, volume, fits);
-			rr.estMax = minAndMax.max;
-			rr.estMin = minAndMax.min;
+			rr.setEstMax(minAndMax.max);
+			rr.setEstMin(minAndMax.min);
 
 			int sourceWidth = hdu.getAxes()[0];											//the length of the cube in points
 			int sourceHeight = hdu.getAxes()[1];											//the height of the cube in points
@@ -223,9 +236,9 @@ public class RegionRepresentation {
 			int repHeight = (sourceEndY - sourceStartY)/stride;
 			int repDepth = (sourceEndZ - sourceStartZ)/stride;
 
-			rr.numPtsX = repWidth;
-			rr.numPtsY = repHeight;
-			rr.numPtsZ = repDepth;
+			rr.setNumPtsX(repWidth);
+			rr.setNumPtsY(repHeight);
+			rr.setNumPtsZ(repDepth);
 
 			int yRemainder = sourceHeight - stride*(sourceHeight/stride);
 
@@ -247,16 +260,11 @@ public class RegionRepresentation {
 					throw new IOException("Whoops, no support forthat file format (BitPix = "+bitPix+") at the moment.  Floats and Doubles only sorry.");
 			}
 
-			int numNeg = 0;
-			int numTot = 0;
 			int nBuckets = 100;
-			rr.buckets = new int[nBuckets];
+			rr.setBuckets(new int[nBuckets]);
 			float min = minAndMax.min;
 			float max = minAndMax.max;
 			float stepSize = (max - min) / (float)nBuckets;
-
-			float minn = 999f;
-			float maxx = -999f;
 
 			rr.slices = new ArrayList<>();
 
@@ -301,9 +309,9 @@ public class RegionRepresentation {
 							} else {
 								val = storagef[sourceStartZ + z * stride];
 							}
-							int bucketIndex = (int)(val - rr.estMin/stepSize);
+							int bucketIndex = (int)(val - rr.getEstMin() /stepSize);
 							if (bucketIndex >= 0 && bucketIndex < nBuckets && !Double.isNaN(val)){	//--TODO should the buckets really be stopping points from being added ???
-								rr.buckets[bucketIndex]++;
+								rr.getBuckets()[bucketIndex]++;
 
 								float fudge = r.nextFloat();
 								fudge = fudge - 0.5f;
@@ -354,27 +362,19 @@ public class RegionRepresentation {
 	}
 
 
-	private static class MinAndMax{
-		float min,max;
-	}
 
-	public void clear() {
-		slices = null;
-	}
 
-	private MinAndMax minAndMaxBasedOnHeader(ImageHDU hdu) {
-		double max = hdu.getMaximumValue();
-		double min = hdu.getMinimumValue();
-		MinAndMax mam = new MinAndMax();
-		mam.min = (float)min;
-		mam.max = (float)max;
-		return mam;
-	}
 
-	public List<VertexBufferSlice> getSlices() {
-		return this.slices;
-	}
 
+	/**
+	 * Makes a rough estimate of the point cloud's minimum and maximum values present.  It does this by taking a 1:1000
+	 * sampling of points
+	 *
+	 * @param hdu  The HDU to read the data from
+	 * @param volume The volume of the data to read normalised to the volume of the overall point cloud
+	 * @param fits The fits file to read the data from
+	 * @return The minimum and maximum values found within the point cloud
+	 */
 	private static MinAndMax minAndMaxBasedOnRoughOnePercentRushThrough(ImageHDU hdu, Volume volume, Fits fits) {
 		MinAndMax mam = new MinAndMax();
 
@@ -498,6 +498,86 @@ public class RegionRepresentation {
 	}
 
 
+	private static class MinAndMax{
+		float min,max;
+	}
 
+
+
+
+
+
+
+	//==================================================================================================================
+	//  GETTERS + SETTERS
+	//==================================================================================================================
+
+	public List<VertexBufferSlice> getSlices() {
+		return this.slices;
+	}
+
+	public int[] getBuckets() {
+		return buckets;
+	}
+
+	public void setBuckets(int[] buckets) {
+		this.buckets = buckets;
+	}
+
+	public float getEstMin() {
+		return estMin;
+	}
+
+	public void setEstMin(float estMin) {
+		this.estMin = estMin;
+	}
+
+	public float getEstMax() {
+		return estMax;
+	}
+
+	public void setEstMax(float estMax) {
+		this.estMax = estMax;
+	}
+
+	public int getNumPtsX() {
+		return numPtsX;
+	}
+
+	public void setNumPtsX(int numPtsX) {
+		this.numPtsX = numPtsX;
+	}
+
+	public int getNumPtsY() {
+		return numPtsY;
+	}
+
+	public void setNumPtsY(int numPtsY) {
+		this.numPtsY = numPtsY;
+	}
+
+	public int getNumPtsZ() {
+		return numPtsZ;
+	}
+
+	public void setNumPtsZ(int numPtsZ) {
+		this.numPtsZ = numPtsZ;
+	}
+
+	public int getValidPts() {
+		return validPts;
+	}
+
+	public void setValidPts(int validPts) {
+		this.validPts = validPts;
+	}
+
+	public float getFidelity() {
+		return fidelity;
+	}
+
+	public void setFidelity(float fidelity) {
+		this.fidelity = fidelity;
+	}
 
 }

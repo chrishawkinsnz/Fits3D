@@ -11,26 +11,34 @@ import nom.tam.fits.Fits;
  *
  */
 public class Region implements  AttributeProvider{
-	public final static float startingFidelity = 0.15f;
-	private List<Region> minusRegions;
+	public final static float 			STARTING_FIDELITY 	= 0.15f;
 
-	public RegionRepresentation regionRepresentation;
-
-	public float depth;
-	
-	public final Volume volume;
-	private Fits fits;
 	private static int regionCount = 0;
+	private List<Region> minusRegions;
+	private RegionRepresentation regionRepresentation;
+
+	private float depth;
+
+	/**
+	 * Volume is a region of space within the overall point cloud.  that is the largest possible volume for a region is
+	 * {0, 0, 0, 1, 1, 1}
+	 */
+	private final Volume volume;
+	private Fits fits;
+
+
 	public Attribute.BinaryAttribute isVisible;
 	public Attribute.SteppedRangeAttribute quality;
 	public Attribute.RangedAttribute intensity;
 	public Attribute.TextAttribute nameAttribute;
-	public List<Attribute>attributes = new ArrayList<Attribute>();
+	private List<Attribute>attributes = new ArrayList<Attribute>();
 
 	public final static Color[] cols = {Color.blue, Color.green, Color.pink, Color.orange};
 
 
 	private Region(Volume volume) {
+		this.volume = volume;
+		this.setDepth(this.getVolume().origin.z + 0.5f * this.getVolume().dp);
 
 		this.nameAttribute = new Attribute.TextAttribute("Name", "Region "+regionCount++, false);
 		this.attributes.add(this.nameAttribute);
@@ -42,147 +50,188 @@ public class Region implements  AttributeProvider{
 		intensity = new Attribute.RangedAttribute("Visibility", 0.001f, 1f, 1f, false);
 		attributes.add(intensity);
 
-		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, startingFidelity, 10, true);
+		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, STARTING_FIDELITY, 10, true);
 		quality.callback = (obj) -> {
 			float newQuality = ((Float)obj).floatValue();
-			System.out.println("quality is now :" + newQuality);
 
 			Runnable r = new Runnable() {
 				public void run() {
-					float newQuality = ((Float)obj).floatValue();
-					if (newQuality == Region.this.regionRepresentation.fidelity) {
+					if (newQuality == Region.this.getRegionRepresentation().getFidelity()) {
 						return;
 					}
-					System.out.println("quality is now :" + newQuality);
 
-					Runnable r = new Runnable() {
-						public void run() {
-							Region.this.getMeMyRepresentation(newQuality);
-							FrameMaster.setNeedsNewRenderer();
-							FrameMaster.setNeedsDisplay();
-							System.gc();
-						}
-					};
-					new Thread(r).start();
-
+					Region.this.loadRepresentationAtFidelity(newQuality);
+					FrameMaster.setNeedsNewRenderer();
+					FrameMaster.setNeedsDisplay();
+					System.gc();
 				}
 			};
 			new Thread(r).start();
 		};
-
-
-
-
 		attributes.add(quality);
 
-		this.volume = volume;
-		this.depth = this.volume.origin.z + 0.5f * this.volume.dp;
+
 	}
 
 	public Region(Fits fits, Volume volume, float initialFidelity) {
 		this(volume);
 		this.fits = fits;
 
-		RegionRepresentation initialRepresentation = RegionRepresentation.justTheSlicesPlease(fits, initialFidelity, this.volume);
-		this.regionRepresentation = initialRepresentation;
+		RegionRepresentation initialRepresentation = RegionRepresentation.loadFromDisk(fits, initialFidelity, this.getVolume());
+		this.setRegionRepresentation(initialRepresentation);
 	}
 
-	public Region(Fits fits, Volume volume, float initialFidelity, List<Region> minusRegions) {
-		this(fits, volume, initialFidelity);
-		this.minusRegions = minusRegions;
-		for (Region region : minusRegions) {
-			this.regionRepresentation.eraseRegion(region.volume);
-		}
 
-
-	}
-	public List<VertexBufferSlice>getSlices() {
-		return this.regionRepresentation.getSlices();
-	}
-
-	public void getMeMyRepresentation(float fidelity) {
-		RegionRepresentation initialRepresentation = RegionRepresentation.justTheSlicesPlease(fits, fidelity, this.volume);
-		this.regionRepresentation = initialRepresentation;
+	public void loadRepresentationAtFidelity(float fidelity) {
+		RegionRepresentation initialRepresentation = RegionRepresentation.loadFromDisk(fits, fidelity, this.getVolume());
+		this.setRegionRepresentation(initialRepresentation);
 
 		if (this.minusRegions != null) {
 			for (Region region : minusRegions) {
-				this.regionRepresentation.eraseRegion(region.volume);
+				this.getRegionRepresentation().eraseRegion(region.getVolume());
 			}
 		}
 	}
+
+
+	public String toString() {
+		return this.nameAttribute.getValue();
+	}
+
+
+
+
+
+
+	//==================================================================================================================
+	//  SUBREGIONS
+	//==================================================================================================================
+
 	/**
+	 *	Creates a new Region that is a subregion of this one.
 	 *
+	 * 	Note: To be a subregion it must be able to be fully contained within the parent region.
 	 * @param subVolume volume is unit volume that is relative to the overall fits file (not the existing region)
-	 * @return
+	 * @return The subregion generated
 	 */
 	public Region subRegion(Volume subVolume, float fidelity, boolean replaceValues) {
+		assert (subVolume.origin.x >= this.getVolume().origin.x);
+		assert (subVolume.origin.y >= this.getVolume().origin.y);
+		assert (subVolume.origin.z >= this.getVolume().origin.z);
+
 		Region cr = new Region(subVolume);
 		cr.fits = this.fits;
-
-		assert (subVolume.origin.x >= this.volume.origin.x);
-		assert (subVolume.origin.y >= this.volume.origin.y);
-		assert (subVolume.origin.z >= this.volume.origin.z);
-
 		cr.populateAsSubregion(this, fidelity, replaceValues);
 
 		return cr;
 	}
 
+
+	/**
+	 * Populates a region with values that represent a subregion of some parent.
+	 * @param parentRegion The region which wraps around this region
+	 * @param fidelity The desired fidelity of the region to load
+	 * @param replaceValues Whether or not the new region should replace the values in the parent (true means this subregion will 'cut' values while false means it will 'copy')
+	 */
 	public void populateAsSubregion(Region parentRegion, float fidelity, boolean replaceValues) {
-		if (fidelity == parentRegion.regionRepresentation.fidelity) {
-			RegionRepresentation subRepresentation = parentRegion.regionRepresentation.generateSubrepresentation(this.volume, replaceValues);
-			this.regionRepresentation = subRepresentation;
+
+		//-- If the parent is already of the correct fidelity then just generate a subsection from that
+		if (fidelity == parentRegion.getRegionRepresentation().getFidelity()) {
+			RegionRepresentation subRepresentation = parentRegion.getRegionRepresentation().generateSubrepresentation(this.getVolume(), replaceValues);
+			this.setRegionRepresentation(subRepresentation);
 		}
+
+		//--Otherwise load in a fresh version of the point cloud
 		else {
-			this.regionRepresentation = RegionRepresentation.justTheSlicesPlease(this.fits, fidelity, this.volume);
+			this.setRegionRepresentation(RegionRepresentation.loadFromDisk(this.fits, fidelity, this.getVolume()));
+
+			//--make sure to cut out values that belong in the parent
 			if (replaceValues) {
-				parentRegion.regionRepresentation.eraseRegion(this.volume);
+				parentRegion.getRegionRepresentation().eraseRegion(this.getVolume());
 			}
 		}
 	}
 
-	public void clear() {
-		this.regionRepresentation.clear();
-	}
-	public int numberOfPoints() {
-		return this.regionRepresentation.validPts;
-	}
-	
-	public int ptWidth() {
-		return this.regionRepresentation.numPtsX;
-	}
-	
-	public int ptHeight() {
-		return this.regionRepresentation.numPtsY;
-	}
-	
-	public int ptDepth() {
-		return this.regionRepresentation.numPtsZ;
-	}
 
-	public void setName(String name) {
-		this.nameAttribute.notifyWithValue(name);
-	}
 
-	public String toString() {
-		return this.nameAttribute.getValue();
-	}
+
+
+
+	//==================================================================================================================
+	//  ATTRIBUTE PROVIDER
+	//==================================================================================================================
 
 	@Override
 	public List<Attribute> getAttributes() {
 		return this.attributes;
 	}
 
+
 	@Override
-	public List<AttributeProvider> getChildProviders() { return new ArrayList<>();}
+	public List<AttributeProvider> getChildProviders() {
+		return new ArrayList<>();
+	}
+
+
+
+
+
+
+	//==================================================================================================================
+	//  GETTERS + SETTERS
+	//==================================================================================================================
+
+	public int getWidthInPoints() {
+		return this.getRegionRepresentation().getNumPtsX();
+	}
+
+
+	public int getHeightInPoints() {
+		return this.getRegionRepresentation().getNumPtsY();
+	}
+
+
+	public int getDepthInPoints() {
+		return this.getRegionRepresentation().getNumPtsZ();
+	}
+
 
 	public void setMinusRegions(List<Region> minusRegions) {
 		this.minusRegions = minusRegions;
 	}
+
 
 	public List<Region> getMinusRegions() {
 		return this.minusRegions;
 	}
 
 
+	public RegionRepresentation getRegionRepresentation() {
+		return regionRepresentation;
+	}
+
+
+	public void setRegionRepresentation(RegionRepresentation regionRepresentation) {
+		this.regionRepresentation = regionRepresentation;
+	}
+
+
+	public float getDepth() {
+		return depth;
+	}
+
+
+	public void setDepth(float depth) {
+		this.depth = depth;
+	}
+
+
+	public Volume getVolume() {
+		return volume;
+	}
+
+
+	public List<VertexBufferSlice>getSlices() {
+		return this.getRegionRepresentation().getSlices();
+	}
 }

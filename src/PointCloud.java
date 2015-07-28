@@ -68,7 +68,7 @@ public class PointCloud implements  AttributeProvider {
 					Region primaryRegion = PointCloud.this.regions.get(0);
 					List<Region> children = primaryRegion.getMinusRegions();
 					primaryRegion.setMinusRegions(new ArrayList<>());
-					primaryRegion.getMeMyRepresentation(newQuality);
+					primaryRegion.loadRepresentationAtFidelity(newQuality);
 					for (Region child : children) {
 						child.populateAsSubregion(primaryRegion, newQuality, true);
 					}
@@ -202,10 +202,10 @@ public class PointCloud implements  AttributeProvider {
 		for (Region region : this.regions) {
 			List<Region>chrilden = new ArrayList<>();
 			for (Region potentialChild : this.regions) {
-				Vector3 origin = potentialChild.volume.origin;
-				Vector3 extremety = origin.add(potentialChild.volume.size);
-				boolean containsOrigin = region.volume.containsPoint(origin);
-				boolean containsExtremety = region.volume.containsPoint(extremety);
+				Vector3 origin = potentialChild.getVolume().origin;
+				Vector3 extremety = origin.add(potentialChild.getVolume().size);
+				boolean containsOrigin = region.getVolume().containsPoint(origin);
+				boolean containsExtremety = region.getVolume().containsPoint(extremety);
 				boolean isNotParadox = region != potentialChild;
 				if (containsOrigin && containsExtremety && isNotParadox) {
 					chrilden.add(potentialChild);
@@ -222,7 +222,7 @@ public class PointCloud implements  AttributeProvider {
 	 */
 	public void cutOutSubvolume(Volume volume) {
 		Volume subRegion = this.volume.normalisedProportionVolume(volume);
-		Region newRegion = this.regions.get(0).subRegion(subRegion, this.regions.get(0).regionRepresentation.fidelity, true);
+		Region newRegion = this.regions.get(0).subRegion(subRegion, this.regions.get(0).getRegionRepresentation().getFidelity(), true);
 		this.addRegion(newRegion);
 		FrameMaster.notifyFileBrowserOfNewRegion(this, newRegion);
 		FrameMaster.setNeedsNewRenderer();
@@ -295,17 +295,17 @@ public class PointCloud implements  AttributeProvider {
 	//==================================================================================================================
 
 	public int[] getHistBuckets() {
-		return this.regions.get(0).regionRepresentation.buckets;
+		return this.regions.get(0).getRegionRepresentation().getBuckets();
 	}
 
 
 	public float getHistMin() {
-		return this.regions.get(0).regionRepresentation.estMin;
+		return this.regions.get(0).getRegionRepresentation().getEstMin();
 	}
 
 
 	public float getHistMax() {
-		return this.regions.get(0).regionRepresentation.estMax;
+		return this.regions.get(0).getRegionRepresentation().getEstMax();
 	}
 
 
