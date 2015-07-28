@@ -12,6 +12,7 @@ public class PointCloud implements  AttributeProvider {
 	private final static String[] 	AXES_NAMES 			= {"X", "Y", "Z"};
 	private final static Color[] 	DEFAULT_COLORS 		= {Color.GREEN, Color.RED, Color.BLUE, Color.ORANGE, Color.PINK};
 	private final static float 		STARTING_FIDELITY 	= 0.075f;
+	private final static int 		STARTING_TARGET_PIX	= 1_000_000;
 
 	private final static float 		BOX_WIDTH			= 2.0f;
 	private final static float 		BOX_HEIGHT 			= BOX_WIDTH;
@@ -57,7 +58,14 @@ public class PointCloud implements  AttributeProvider {
 		intensity = new Attribute.RangedAttribute("Visibility", 0.001f, 1f, 0.5f, false);
 		attributes.add(intensity);
 
-		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, STARTING_FIDELITY, 10, true);
+		float fidelity = STARTING_FIDELITY;
+		try {
+			this.fits = new Fits(this.fileName.getValue());
+			fidelity = fidelityToGetTargetPixels(fits, STARTING_TARGET_PIX);
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, fidelity, 10, true);
 		quality.callback = (obj) -> {
 			float newQuality = ((Float) obj).floatValue();
 			System.out.println("quality is now :" + newQuality);
@@ -117,10 +125,12 @@ public class PointCloud implements  AttributeProvider {
 	}
 
 	public void readFits() {
-		readFitsAtQualityLevel(this.quality.getValue());
+		readFitsAtQualityLevel();
 	}
 
-	private void readFitsAtQualityLevel(float proportionOfPerfect) {
+	private void readFitsAtQualityLevel() {
+
+
 		try{
 			this.fits = new Fits(this.fileName.getValue());
 
@@ -172,7 +182,10 @@ public class PointCloud implements  AttributeProvider {
 			this.galacticVolume = new Volume(realOrigin, size);
 
 			Volume v = new Volume(0f,0f,0f,1f,1f,1f);
-			Region region = new Region(fits, v, proportionOfPerfect);
+
+//			this.quality.notifyWithValue(fidelityToGetTargetPixels(fits, STARTING_TARGET_PIX));
+
+			Region region = new Region(fits, v, this.quality.getValue());
 			this.addRegion(region);
 
 			FrameMaster.setNeedsNewRenderer();
@@ -286,6 +299,23 @@ public class PointCloud implements  AttributeProvider {
 	}
 
 
+	public float fidelityToGetTargetPixels(Fits fits, int targetPixels) {
+		try {
+			ImageHDU hdu = (ImageHDU) fits.getHDU(0);
+			int totalPixels = hdu.getAxes()[0] * hdu.getAxes()[1] * hdu.getAxes()[2];
+			float proportionShouldLoad = (float) targetPixels / (float) totalPixels;
+			float proportionShouldLoadPerAxis = (float) Math.pow((double) proportionShouldLoad, 1.0 / 3.0);
+
+			float proportionOfPerfect = proportionShouldLoadPerAxis;
+			if (proportionOfPerfect > 1.0f) {
+				proportionOfPerfect = 1.0f;
+			}
+			return proportionOfPerfect;
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 1.0f;
+	}
 
 
 

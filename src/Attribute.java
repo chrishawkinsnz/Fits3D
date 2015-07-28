@@ -28,9 +28,9 @@ public abstract class Attribute {
 		}
 	}
 
-	public void notifyWithValue(Object obj, boolean tempValue) {
+	public void notifyWithValue(Object obj, boolean doNotUpdateRenderer) {
 		boolean defaultValue = this.shouldUpdateRenderer;
-		shouldUpdateRenderer = tempValue;
+		shouldUpdateRenderer = doNotUpdateRenderer;
 		notifyWithValue(obj);
 		shouldUpdateRenderer = defaultValue;
 	}

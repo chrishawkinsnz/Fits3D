@@ -307,7 +307,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 		JMenuItem selectItem = new JMenuItem("Make selection");
 		setKeyboardShortcutTo(KeyEvent.VK_H, selectItem);
-		selectItem.addActionListener(e -> this.beginSelect());
+		selectItem.addActionListener(e -> this.toggleSelectMode());
 		fileMenu.add(selectItem);
 
 		return fileMenu;
@@ -350,7 +350,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	/**
 	 * User chooses to begin making a selection of a volume
 	 */
-	private void beginSelect() {
+	private void toggleSelectMode() {
 		if (this.selection == null || this.selectionController == null) {
 			this.selection = Selection.defaultSelection();
 			this.selectionController = new KeyboardSelectionController(this.selection);
@@ -373,6 +373,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	 */
 	private void cutSelection() {
 		this.pointClouds.get(0).cutOutSubvolume(this.selection.getVolume());
+		this.toggleSelectMode();
 		reloadAttributePanel();
 	}
 

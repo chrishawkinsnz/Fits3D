@@ -11,7 +11,7 @@ import nom.tam.fits.Fits;
  *
  */
 public class Region implements  AttributeProvider{
-	public final static float 			STARTING_FIDELITY 	= 0.15f;
+//	public final static float 			STARTING_FIDELITY 	= 0.15f;
 
 	private static int regionCount = 0;
 	private List<Region> minusRegions;
@@ -36,7 +36,7 @@ public class Region implements  AttributeProvider{
 	public final static Color[] cols = {Color.blue, Color.green, Color.pink, Color.orange};
 
 
-	private Region(Volume volume) {
+	private Region(Volume volume, float initialFidelity) {
 		this.volume = volume;
 		this.setDepth(this.getVolume().origin.z + 0.5f * this.getVolume().dp);
 
@@ -50,7 +50,7 @@ public class Region implements  AttributeProvider{
 		intensity = new Attribute.RangedAttribute("Visibility", 0.001f, 1f, 1f, false);
 		attributes.add(intensity);
 
-		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, STARTING_FIDELITY, 10, true);
+		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, initialFidelity, 10, true);
 		quality.callback = (obj) -> {
 			float newQuality = ((Float)obj).floatValue();
 
@@ -74,7 +74,7 @@ public class Region implements  AttributeProvider{
 	}
 
 	public Region(Fits fits, Volume volume, float initialFidelity) {
-		this(volume);
+		this(volume, initialFidelity);
 		this.fits = fits;
 
 		RegionRepresentation initialRepresentation = RegionRepresentation.loadFromDisk(fits, initialFidelity, this.getVolume());
@@ -119,7 +119,7 @@ public class Region implements  AttributeProvider{
 		assert (subVolume.origin.y >= this.getVolume().origin.y);
 		assert (subVolume.origin.z >= this.getVolume().origin.z);
 
-		Region cr = new Region(subVolume);
+		Region cr = new Region(subVolume, fidelity);
 		cr.fits = this.fits;
 		cr.populateAsSubregion(this, fidelity, replaceValues);
 
