@@ -528,9 +528,16 @@ public class Renderer {
 	private float calculatePointRadiusInPixelsForSlice(VertexBufferSlice slice) {
 		Region cr = slice.region;
 		//TODO actually consider the z pixel size yo
+		int nPointsX = cr.getWidthInPoints();
+		int nPointsY = cr.getHeightInPoints();
+		int nPointsZ = cr.getDepthInPoints();
 		float pointWidth = (float)this.width* this.orthoWidth* cr.getVolume().wd/ (float)cr.getWidthInPoints();
 		float pointHeight = (float)this.height* this.orthoHeight* cr.getVolume().ht / (float)cr.getHeightInPoints();
+		float pointsDepth = (float)this.width* this.orthoWidth* cr.getVolume().dp / (float)cr.getDepthInPoints();
+
 		float sz =  pointWidth < pointHeight ? pointWidth : pointHeight;
+		sz = sz < pointsDepth ? sz : pointsDepth;
+
 		return sz;
 	}
 }

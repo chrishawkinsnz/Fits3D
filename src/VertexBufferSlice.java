@@ -9,6 +9,7 @@ public class VertexBufferSlice {
 	public float scratchX;
 	public int index;
 	public int numberOfPts;
+	public int frame;
 	public Region region;
 	public PointCloud cloud;
 	public boolean isLive = false;

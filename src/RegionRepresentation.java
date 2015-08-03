@@ -23,13 +23,16 @@ public class RegionRepresentation {
 	private float estMin;
 	private float estMax;
 
+	private int numPtsW;
 	private int numPtsX;
 	private int numPtsY;
 	private int numPtsZ;
+
 	private int validPts;
 	private float fidelity;
 
 	private List<VertexBufferSlice>slices;
+
 
 
 
@@ -221,19 +224,37 @@ public class RegionRepresentation {
 			int naxis = hdu.getAxes().length;
 			int stride = (int)(1.0f/fidelity);												//how many to step in each direction
 
-			int[]sourceLengths	 = new int[naxis];
-			int[]sourceStarts	 = new int[naxis];
-			int[]sourceEnds		 = new int[naxis];
-			int[]repLengths		 = new int[naxis];
-			float[]strides		 = new float[naxis];
-			for (int i = 0; i < naxis; i++) {
-				sourceLengths[i] = hdu.getAxes()[i];											//the length of the cube in points
-				sourceStarts[i]  = (int)(volume.origin.get(i) * sourceLengths[i]);
-				sourceEnds[i] 	 = (int)((volume.origin.get(i) + volume.size.get(i)) * sourceLengths[i]);
+			int[]sourceLengths	 = new int[4];
+			int[]sourceStarts	 = new int[4];
+			int[]sourceEnds		 = new int[4];
+			int[]repLengths		 = new int[4];
+			float[]strides		 = new float[4];
+			int shortOnAxes = 4 - hdu.getAxes().length;
+			int actualDimension = 0;
+			//--first load uninitialised dimensions with defaults
+			for (int i = 0; i < shortOnAxes; i++) {
+				sourceLengths[i] = 1;
+				sourceStarts[i]  = 0;
+				sourceEnds[i] 	 = 1;
+				repLengths[i] 	 = 1;
+				strides[i] 		 = 1;
+				rr.setNumPts(i, repLengths[i]);
+			}
+			//--then load the remaining genuine values
+			for (int i = shortOnAxes; i < 4; i++) {
+
+				sourceLengths[i] = hdu.getAxes()[i - shortOnAxes];
+				float proportionalStart = i == 0 ? 0f : volume.origin.get(i - 1);
+				float proportionalEnd   = i == 0 ? 1f : volume.origin.get(i - 1) + volume.size.get(i - 1);
+
+				sourceStarts[i]  = (int)(proportionalStart * sourceLengths[i]);
+				sourceEnds[i] 	 = (int)(proportionalEnd * sourceLengths[i]);
 				repLengths[i]	 = (sourceEnds[i] - sourceStarts[i])/stride;
 				strides[i]		 = 1.0f/(float)repLengths[i];
 
 				rr.setNumPts(i, repLengths[i]);
+
+				actualDimension++;
 			}
 
 
@@ -245,8 +266,8 @@ public class RegionRepresentation {
 			else throw new IOException("Whoops, no support forthat file format (BitPix = "+hdu.getBitPix()+") at the moment.  Floats and Doubles only sorry.");
 
 			int typeSize = Math.abs(hdu.getBitPix())/8;
-			float[] storagef = new float[sourceLengths[2]];
-			double[] storaged = new double[sourceLengths[2]];
+			float[] storagef = new float[sourceLengths[3]];
+			double[] storaged = new double[sourceLengths[3]];
 
 			int nBuckets = 100;
 			rr.setBuckets(new int[nBuckets]);
@@ -262,82 +283,95 @@ public class RegionRepresentation {
 				ArrayDataInput adi = fits.getStream();
 
 				//--skip whole planes at the start if the volume doesn't start at zero x
-				adi.skipBytes(sourceLengths[2] * sourceLengths[1]* sourceStarts[0] * typeSize);
+				adi.skipBytes(sourceLengths[3] * sourceLengths[2] * sourceStarts[1] * typeSize);
+				int[] indices = new int[4];
+				float[] position = new float[4];
 
-				int[] indices = new int[naxis];
-				float[]position = new float[naxis];
-				for (indices[0] = 0; indices[0] < repLengths[0]; indices[0] ++) {
-					float proportion = (float)indices[0]/(float)repLengths[0];
-					position[0] = volume.x + volume.wd * proportion;
-					int pts = 0;
-					int maxPts = repLengths[1] * repLengths[2];
+				for (indices[0] = 0; indices[0] < repLengths[0]; indices[0]++) {
+					float proportion = (float) indices[0] / (float) repLengths[0];
 
-					//--skip whole lines at the start if the volume doesn't start at zero ys
-					adi.skipBytes(sourceLengths[2] * sourceStarts[1] * typeSize);
+					for (indices[1] = 0; indices[1] < repLengths[1]; indices[1]++) {
+						proportion = (float) indices[1] / (float) repLengths[1];
+						position[1] = volume.x + volume.wd * proportion;
+						int pts = 0;
+						int maxPts = repLengths[2] * repLengths[3];
 
-					ShortBuffer vertexBuffer = ShortBuffer.allocate(maxPts * 3);
-					FloatBuffer valueBuffer = FloatBuffer.allocate(maxPts);
+						//--skip whole lines at the start if the volume doesn't start at zero ys
+						adi.skipBytes(sourceLengths[3] * sourceStarts[2] * typeSize);
 
-					for (indices[1] = 0; indices[1] < repLengths[1]; indices[1] ++) {
-						proportion = (float)indices[1]/(float)repLengths[1];
-						position[1] = volume.y + volume.ht * proportion;
+						ShortBuffer vertexBuffer = ShortBuffer.allocate(maxPts * 3);
+						FloatBuffer valueBuffer = FloatBuffer.allocate(maxPts);
 
-						if (dataType == DataType.DOUBLE)
-							adi.read(storaged, 0, storaged.length);
-						else if (dataType == DataType.FLOAT)
-							adi.read(storagef, 0, storagef.length);
+						for (indices[2] = 0; indices[2] < repLengths[2]; indices[2]++) {
+							proportion = (float) indices[2] / (float) repLengths[2];
+							position[2] = volume.y + volume.ht * proportion;
 
-						for (indices[2] = 0; indices[2] < repLengths[2]; indices[2] ++) {
-							proportion = (float)indices[2]/(float)repLengths[2];
-							position[2] = volume.z + volume.dp * proportion;
+							if (dataType == DataType.DOUBLE)
+								adi.read(storaged, 0, storaged.length);
+							else if (dataType == DataType.FLOAT)
+								adi.read(storagef, 0, storagef.length);
 
-							float val;
-							if (dataType == DataType.DOUBLE) {
-								val = (float)storaged[sourceStarts[2] + indices[2] * stride];
-							} else {
-								val = storagef[sourceStarts[2] + indices[2] * stride];
+							for (indices[3] = 0; indices[3] < repLengths[3]; indices[3]++) {
+								proportion = (float) indices[3] / (float) repLengths[3];
+								position[3] = volume.z + volume.dp * proportion;
+
+								float val;
+								if (dataType == DataType.DOUBLE) {
+									val = (float) storaged[sourceStarts[3] + indices[3] * stride];
+								} else {
+									val = storagef[sourceStarts[3] + indices[3] * stride];
+								}
+								int bucketIndex = (int) (val - rr.getEstMin() / stepSize);
+								if (bucketIndex >= 0 && bucketIndex < nBuckets && !Double.isNaN(val)) {    //--TODO should the buckets really be stopping points from being added ???
+									rr.getBuckets()[bucketIndex]++;
+
+									float fudge = r.nextFloat();
+									fudge = fudge - 0.5f;
+
+
+
+
+									fudge = 0.0f;
+
+
+
+									for (int i = 1; i < 4; i++)
+										vertexBuffer.put((short) ((position[i] + fudge * strides[i]) * Short.MAX_VALUE));
+
+									valueBuffer.put(val);
+									pts++;
+								}
 							}
-							int bucketIndex = (int)(val - rr.getEstMin() /stepSize);
-							if (bucketIndex >= 0 && bucketIndex < nBuckets && !Double.isNaN(val)){	//--TODO should the buckets really be stopping points from being added ???
-								rr.getBuckets()[bucketIndex]++;
 
-								float fudge = r.nextFloat();
-								fudge = fudge - 0.5f;
-
-								for (int i = 0; i < 3; i++)
-									vertexBuffer.put((short) ((position[i] + fudge * strides[i]) * Short.MAX_VALUE));
-
-								valueBuffer.put(val);
-								pts++;
-							}
+							//--stride over to the next line
+							int linesToSkip = stride - 1;
+							adi.skipBytes(sourceLengths[3] * linesToSkip * typeSize);
 						}
+						//--skip to end of slice
+						int currentLine = stride * repLengths[2] + sourceStarts[1];
+						int linesToSkip = sourceLengths[2] - currentLine;
+						adi.skip(sourceLengths[3] * linesToSkip * typeSize);
 
-						//--stride over to the next line
-						int linesToSkip = stride - 1;
-						adi.skipBytes(sourceLengths[2] * linesToSkip * typeSize);
+						//--make a vbo slice
+						vertexBuffer.flip();
+						valueBuffer.flip();
+
+						VertexBufferSlice vbs = new VertexBufferSlice();
+						vbs.vertexBuffer = vertexBuffer;
+						vbs.valueBuffer = valueBuffer;
+						vbs.numberOfPts = pts;
+						vbs.frame = indices[0];
+						vbs.x = (float) indices[1] / (float) repLengths[1];
+
+						rr.slices.add(vbs);
+
+						//--skip to the next slice
+						adi.skipBytes(sourceLengths[3] * sourceLengths[2] * (stride - 1) * typeSize);
 					}
-					//--skip to end of slice
-					int currentLine = stride * repLengths[1] + sourceStarts[1];
-					int linesToSkip = sourceLengths[1] - currentLine;
-					adi.skip(sourceLengths[2] * linesToSkip * typeSize);
 
-					//--make a vbo slice
-					vertexBuffer.flip();
-					valueBuffer.flip();
-
-					VertexBufferSlice vbs = new VertexBufferSlice();
-					vbs.vertexBuffer = vertexBuffer;
-					vbs.valueBuffer = valueBuffer;
-					vbs.numberOfPts = pts;
-					vbs.x = (float)indices[0]/(float)repLengths[0];;
-					rr.slices.add(vbs);
-
-					//--skip to the next slice
-					adi.skipBytes(sourceLengths[2] * sourceLengths[1] * (stride - 1) * typeSize);
 				}
 			}
-
-			System.out.println("fits file loaded " + repLengths[0] + " x " + repLengths[1] + " x " + repLengths[2]);
+			System.out.println("fits file loaded " + repLengths[0] + " x " + repLengths[1] + " x " + repLengths[2] + " x " + repLengths[3]);
 
 		}catch (Exception e) {
 			JOptionPane.showMessageDialog(null, e.getClass().getName()+": " + e.getMessage(), "Error!", JOptionPane.ERROR_MESSAGE);
@@ -367,8 +401,8 @@ public class RegionRepresentation {
 		MinAndMax mam = new MinAndMax();
 
 		long t0 = System.currentTimeMillis();
-		float minn = 999f;
-		float maxx = -999f;
+		float minn = 3f;
+		float maxx = -3f;
 
 		List<Float>allOfThemFloats =new ArrayList<Float>();
 		try{
@@ -540,6 +574,10 @@ public class RegionRepresentation {
 		return numPtsY;
 	}
 
+	public void setNumPtsW(int number) {
+		this.numPtsW = number;
+	}
+
 	public void setNumPtsY(int numPtsY) {
 		this.numPtsY = numPtsY;
 	}
@@ -570,13 +608,16 @@ public class RegionRepresentation {
 
 	public void setNumPts(int axis, int number) {
 		if (axis == 0) {
-			this.setNumPtsX(number);
+			this.setNumPtsW(number);
 		}else if (axis == 1) {
-			this.setNumPtsY(number);
+			this.setNumPtsX(number);
 		}else if (axis == 2) {
+			this.setNumPtsY(number);
+		}else if (axis == 3) {
 			this.setNumPtsZ(number);
 		}
-
-		System.out.println("hey hey hey whoops we don't really support this many axis eh");
+		else {
+			System.out.println("hey hey hey whoops we don't really support this many axis eh");
+		}
 	}
 }

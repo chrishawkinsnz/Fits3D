@@ -6,7 +6,7 @@ import java.awt.event.KeyListener;
  */
 public class KeyboardSelectionController implements KeyListener{
 
-    public static float speedMove = 0.25f;
+    public static float speedMove = 0.05f;
     public static float speedScale = 0.25f;
 
     private static final char MOVE_LEFT_KEY = 'a';
