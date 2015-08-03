@@ -9,7 +9,7 @@ import java.util.List;
 
 public class PointCloud implements  AttributeProvider {
 
-	private final static String[] 	AXES_NAMES 			= {"X", "Y", "Z"};
+	private final static String[]     AXES_NAMES             = {"X", "Y", "Z", "W", "Q", "YOU", "DO", "NOT", "NEED", "THIS", "MANY", "AXES"};
 	private final static Color[] 	DEFAULT_COLORS 		= {Color.GREEN, Color.RED, Color.BLUE, Color.ORANGE, Color.PINK};
 	private final static float 		STARTING_FIDELITY 	= 0.075f;
 	private final static int 		STARTING_TARGET_PIX	= 1_000_000;
@@ -24,7 +24,6 @@ public class PointCloud implements  AttributeProvider {
 	private Fits fits;
 
 	private static int clouds = 0;
-
 
 	public Volume volume;
 	private Volume backupVolume;
@@ -164,13 +163,14 @@ public class PointCloud implements  AttributeProvider {
 			//--figure out the reference position
 
 			Header header = hdu.getHeader();
-			float[] pixels = new float[3];
-			float[] values = new float[3];
-			float[] sizes = new float[3];
-			for (int naxis = 1; naxis <= hdu.getAxes().length; naxis++) {
-				pixels[naxis - 1] = header.getFloatValue("CRPIX"+naxis)/ (float) hdu.getAxes()[naxis - 1];
-				sizes[naxis - 1] = header.getFloatValue("CDELT"+naxis) * (float) hdu.getAxes()[naxis - 1];
-				values[naxis - 1] = header.getFloatValue("CRVAL"+naxis);
+			int naxis = hdu.getAxes().length;
+			float[] pixels = new float[naxis];
+			float[] values = new float[naxis];
+			float[] sizes = new float[naxis];
+			for (int i = 1; naxis <= hdu.getAxes().length; naxis++) {
+				pixels[i - 1] = header.getFloatValue("CRPIX"+i)/ (float) hdu.getAxes()[i - 1];
+				sizes[i - 1] = header.getFloatValue("CDELT"+i) * (float) hdu.getAxes()[i - 1];
+				values[i - 1] = header.getFloatValue("CRVAL"+i);
 			}
 
 			Vector3 refPixel = new Vector3(pixels);

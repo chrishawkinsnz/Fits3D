@@ -218,47 +218,39 @@ public class RegionRepresentation {
 			rr.setEstMax(minAndMax.max);
 			rr.setEstMin(minAndMax.min);
 
-			int sourceWidth = hdu.getAxes()[0];											//the length of the cube in points
-			int sourceHeight = hdu.getAxes()[1];											//the height of the cube in points
-			int sourceDepth = hdu.getAxes().length > 2? hdu.getAxes()[2] : 1;			//the depth of the cube in points
-
+			int naxis = hdu.getAxes().length;
 			int stride = (int)(1.0f/fidelity);												//how many to step in each direction
 
-			int sourceStartX = (int)(volume.x * sourceWidth);							//the first point number x to read
-			int sourceStartY = (int)(volume.y * sourceHeight);							//the first point number y to read
-			int sourceStartZ = (int)(volume.z * sourceDepth);							//the first point number z to read
+			int[]sourceLengths	 = new int[naxis];
+			int[]sourceStarts	 = new int[naxis];
+			int[]sourceEnds		 = new int[naxis];
+			int[]repLengths		 = new int[naxis];
+			float[]strides		 = new float[naxis];
+			for (int i = 0; i < naxis; i++) {
+				sourceLengths[i] = hdu.getAxes()[i];											//the length of the cube in points
+				sourceStarts[i]  = (int)(volume.origin.get(i) * sourceLengths[i]);
+				sourceEnds[i] 	 = (int)((volume.origin.get(i) + volume.size.get(i)) * sourceLengths[i]);
+				repLengths[i]	 = (sourceEnds[i] - sourceStarts[i])/stride;
+				strides[i]		 = 1.0f/(float)repLengths[i];
 
-			int sourceEndX = (int)((volume.x + volume.wd) * sourceWidth);				//the last point number x to read
-			int sourceEndY = (int)((volume.y + volume.ht) * sourceHeight);				//the last point number y to read
-			int sourceEndZ = (int)((volume.z + volume.dp) * sourceDepth);				//the last point number z to read
-
-			int repWidth = (sourceEndX - sourceStartX)/stride;
-			int repHeight = (sourceEndY - sourceStartY)/stride;
-			int repDepth = (sourceEndZ - sourceStartZ)/stride;
-
-			rr.setNumPtsX(repWidth);
-			rr.setNumPtsY(repHeight);
-			rr.setNumPtsZ(repDepth);
-
-			int yRemainder = sourceHeight - stride*(sourceHeight/stride);
-
-			DataType dataType;
-			int bitPix = hdu.getBitPix();
-			int typeSize = Math.abs(bitPix)/8;
-			float[] storagef = null;
-			double[] storaged = null;
-			switch (bitPix) {
-				case -64:
-					dataType = DataType.DOUBLE;
-					storaged = new double[sourceDepth];
-					break;
-				case -32:
-					dataType = DataType.FLOAT;
-					storagef = new float[sourceDepth];
-					break;
-				default:
-					throw new IOException("Whoops, no support forthat file format (BitPix = "+bitPix+") at the moment.  Floats and Doubles only sorry.");
+				rr.setNumPts(i, repLengths[i]);
 			}
+
+			float[][][][] data = (float[][][][])hdu.getData().getKernel();
+			int l0 = data.length;
+			int l1 = data[0].length;
+			int l2 = data[0][0].length;
+			int l3 = data[0][0][0].length;
+			int yRemainder = sourceLengths[1] - stride*(sourceLengths[1]/stride);
+
+			DataType dataType = null;
+			if 		(hdu.getBitPix() == -64) dataType = DataType.DOUBLE;
+			else if (hdu.getBitPix() == -32) dataType = DataType.FLOAT;
+			else throw new IOException("Whoops, no support forthat file format (BitPix = "+hdu.getBitPix()+") at the moment.  Floats and Doubles only sorry.");
+
+			int typeSize = Math.abs(hdu.getBitPix())/8;
+			float[] storagef = new float[sourceLengths[2]];
+			double[] storaged = new double[sourceLengths[2]];
 
 			int nBuckets = 100;
 			rr.setBuckets(new int[nBuckets]);
@@ -269,29 +261,27 @@ public class RegionRepresentation {
 			rr.slices = new ArrayList<>();
 
 			Random r = new Random(1);
-			float xStride = 1.0f/(float)repWidth;
-			float yStride = 1.0f/(float)repHeight;
-			float zStride = 1.0f/(float)repDepth;
+
 			if (hdu.getData().reset()) {
 				ArrayDataInput adi = fits.getStream();
 
 				//--skip whole planes at the start if the volume doesn't start at zero x
-				adi.skipBytes(sourceDepth * sourceHeight * sourceStartX * typeSize);
+				adi.skipBytes(sourceLengths[2] * sourceLengths[1]* sourceStarts[0] * typeSize);
 
-				for (int x = 0; x < repWidth; x ++) {
-					float xProportion = (float)x/(float)repWidth;
+				for (int x = 0; x < repLengths[0]; x ++) {
+					float xProportion = (float)x/(float)repLengths[0];
 					float xPosition = volume.x + volume.wd * xProportion;
 					int pts = 0;
-					int maxPts = repHeight * repDepth;
+					int maxPts = repLengths[1] * repLengths[2];
 
 					//--skip whole lines at the start if the volume doesn't start at zero ys
-					adi.skipBytes(sourceDepth * sourceStartY * typeSize);
+					adi.skipBytes(sourceLengths[2] * sourceStarts[1] * typeSize);
 
 					ShortBuffer vertexBuffer = ShortBuffer.allocate(maxPts * 3);
 					FloatBuffer valueBuffer = FloatBuffer.allocate(maxPts);
 
-					for (int y = 0; y < repHeight; y ++) {
-						float yProportion = (float)y/(float)repHeight;
+					for (int y = 0; y < repLengths[1]; y ++) {
+						float yProportion = (float)y/(float)repLengths[1];
 						float yPosition = volume.y + volume.ht * yProportion;
 
 						if (dataType == DataType.DOUBLE)
@@ -299,15 +289,15 @@ public class RegionRepresentation {
 						else if (dataType == DataType.FLOAT)
 							adi.read(storagef, 0, storagef.length);
 
-						for (int z = 0; z < repDepth; z++) {
-							float zProportion = (float)z/(float)repDepth;
+						for (int z = 0; z < repLengths[2]; z++) {
+							float zProportion = (float)z/(float)repLengths[2];
 							float zPosition = volume.z + volume.dp * zProportion;
 
 							float val;
 							if (dataType == DataType.DOUBLE) {
-								val = (float)storaged[sourceStartZ + z * stride];
+								val = (float)storaged[sourceStarts[2] + z * stride];
 							} else {
-								val = storagef[sourceStartZ + z * stride];
+								val = storagef[sourceStarts[2] + z * stride];
 							}
 							int bucketIndex = (int)(val - rr.getEstMin() /stepSize);
 							if (bucketIndex >= 0 && bucketIndex < nBuckets && !Double.isNaN(val)){	//--TODO should the buckets really be stopping points from being added ???
@@ -316,9 +306,9 @@ public class RegionRepresentation {
 								float fudge = r.nextFloat();
 								fudge = fudge - 0.5f;
 
-								vertexBuffer.put((short) ((xPosition + fudge * xStride) * Short.MAX_VALUE));
-								vertexBuffer.put((short) ((yPosition + fudge * yStride) * Short.MAX_VALUE));
-								vertexBuffer.put((short) ((zPosition + fudge * zStride) * Short.MAX_VALUE));
+								vertexBuffer.put((short) ((xPosition + fudge * strides[0]) * Short.MAX_VALUE));
+								vertexBuffer.put((short) ((yPosition + fudge * strides[1]) * Short.MAX_VALUE));
+								vertexBuffer.put((short) ((zPosition + fudge * strides[2]) * Short.MAX_VALUE));
 								valueBuffer.put(val);
 								pts++;
 							}
@@ -326,12 +316,12 @@ public class RegionRepresentation {
 
 						//--stride over to the next line
 						int linesToSkip = stride - 1;
-						adi.skipBytes(sourceDepth * linesToSkip * typeSize);
+						adi.skipBytes(sourceLengths[2] * linesToSkip * typeSize);
 					}
 					//--skip to end of slice
-					int currentLine = stride * repHeight + sourceStartY;
-					int linesToSkip = sourceHeight - currentLine;
-					adi.skip(sourceDepth * linesToSkip * typeSize);
+					int currentLine = stride * repLengths[1] + sourceStarts[1];
+					int linesToSkip = sourceLengths[1] - currentLine;
+					adi.skip(sourceLengths[2] * linesToSkip * typeSize);
 
 					//--make a vbo slice
 					vertexBuffer.flip();
@@ -345,11 +335,11 @@ public class RegionRepresentation {
 					rr.slices.add(vbs);
 
 					//--skip to the next slice
-					adi.skipBytes(sourceDepth * sourceHeight * (stride - 1) * typeSize);
+					adi.skipBytes(sourceLengths[2] * sourceLengths[1] * (stride - 1) * typeSize);
 				}
 			}
 
-			System.out.println("fits file loaded " + repWidth + " x " + repHeight + " x " + repDepth);
+			System.out.println("fits file loaded " + repLengths[0] + " x " + repLengths[1] + " x " + repLengths[2]);
 
 		}catch (Exception e) {
 			JOptionPane.showMessageDialog(null, e.getClass().getName()+": " + e.getMessage(), "Error!", JOptionPane.ERROR_MESSAGE);
@@ -580,4 +570,15 @@ public class RegionRepresentation {
 		this.fidelity = fidelity;
 	}
 
+	public void setNumPts(int axis, int number) {
+		if (axis == 0) {
+			this.setNumPtsX(number);
+		}else if (axis == 1) {
+			this.setNumPtsY(number);
+		}else if (axis == 2) {
+			this.setNumPtsZ(number);
+		}
+
+		System.out.println("hey hey hey whoops we don't really support this many axis eh");
+	}
 }
