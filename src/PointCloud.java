@@ -2,6 +2,7 @@ import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
 import nom.tam.fits.ImageHDU;
 
+import javax.smartcardio.ATR;
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
@@ -42,6 +43,7 @@ public class PointCloud implements  AttributeProvider {
 	public Attribute.FilterSelectionAttribute filterSelection;
 	public Attribute.BinaryAttribute isSelected;
 	public Attribute.MultiChoiceAttribute relativeTo;
+	public Attribute.RangedAttribute frame;
 
 	public Attribute.TextAttribute[] unitTypes;
 	//--static attributes
@@ -105,6 +107,9 @@ public class PointCloud implements  AttributeProvider {
 		Christogram.Filter data = new Christogram.Filter(0f, 1f, 0f, 1f, false);
 		filterSelection = new Attribute.FilterSelectionAttribute("Filter", false, data);
 		attributes.add(filterSelection);
+
+		this.frame = new Attribute.RangedAttribute("Waxis", 0f, 1f, 0f, false);
+		attributes.add(this.frame);
 
 		List<Object> possiblePairings = new ArrayList<>();
 		possiblePairings.add("-");
@@ -240,7 +245,6 @@ public class PointCloud implements  AttributeProvider {
 		FrameMaster.notifyFileBrowserOfNewRegion(this, newRegion);
 		FrameMaster.setNeedsNewRenderer();
 		FrameMaster.setNeedsDisplay();
-
 	}
 
 
@@ -372,5 +376,21 @@ public class PointCloud implements  AttributeProvider {
 
 	public List<Region> getRegions() {
 		return regions;
+	}
+
+	public int getNumberOfFrames() {
+		return this.getRegions().get(0).getFramesInPoints();
+	}
+
+	public boolean shouldDisplayFrameWithW(float w) {
+		float step = 1.0f/(float)this.getNumberOfFrames();
+
+		int stepsCurrent = (int)(this.frame.getValue() / step);
+		int stepsNext = stepsCurrent + 1;
+
+		float min = stepsCurrent * step;
+		float max = stepsNext * step;
+
+		return w >= min && w <= max;
 	}
 }

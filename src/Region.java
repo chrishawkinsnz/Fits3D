@@ -191,6 +191,8 @@ public class Region implements  AttributeProvider{
 	}
 
 
+	public int getFramesInPoints(){return this.getRegionRepresentation().getNumPtsW();}
+
 	public int getDepthInPoints() {
 		return this.getRegionRepresentation().getNumPtsZ();
 	}

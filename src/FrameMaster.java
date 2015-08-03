@@ -335,6 +335,12 @@ public class FrameMaster extends JFrame implements GLEventListener {
 				setNeedsDisplay();
 			}
 		});
+
+		JMenuItem fudge = new JMenuItem("fudge");
+		fudge.addActionListener(e -> this.fudge());
+		debugMenu.add(fudge);
+
+
 		return debugMenu;
 	}
 
@@ -385,6 +391,20 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 	}
 
+
+	/**
+	 * User choses to toggle the fudge factor in the point cloud loading
+	 */
+
+	private void fudge() {
+		RegionRepresentation.shouldFudge = !RegionRepresentation.shouldFudge;
+		if (RegionRepresentation.shouldFudge) {
+			System.out.println("fudging enabled");
+		}
+		else {
+			System.out.println("fudging disabled");
+		}
+	}
 
 
 

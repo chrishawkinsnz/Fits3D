@@ -374,7 +374,8 @@ public class Renderer {
 
 
 		lastFlippity = flippityFlop;
-		
+
+
 		List<VertexBufferSlice> allSlicesLikeEver = new ArrayList<VertexBufferSlice>();
 
 		float minScratchX =  Float.MAX_VALUE;
@@ -387,6 +388,7 @@ public class Renderer {
 				for (VertexBufferSlice slice: cr.getSlices()) {
 
 					if (!slice.isLive) {continue;}
+					if (!cloud.shouldDisplayFrameWithW(slice.w)) {continue;}
 
 					slice.scratchX = (cr.getVolume().x + cr.getVolume().wd * slice.x) * cloud.volume.wd + cloud.volume.x;
 					if (slice.scratchX > maxScractchX) {
@@ -410,6 +412,8 @@ public class Renderer {
 			}
 		}
 		Collections.sort(allSlicesLikeEver, new RegionOrderer());
+
+
 
 		Matrix4 baseMatrix = new Matrix4();
 		baseMatrix.makeOrtho(orthoOrigX - orthoWidth, orthoOrigX + orthoWidth, orthoOrigY - orthoHeight, orthoOrigY + orthoHeight, -6f, 6f);

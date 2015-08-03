@@ -19,6 +19,8 @@ import nom.tam.util.ArrayDataInput;
  *
  */
 public class RegionRepresentation {
+	public static boolean shouldFudge = false;
+
 	private int[]buckets;
 	private float estMin;
 	private float estMax;
@@ -325,15 +327,15 @@ public class RegionRepresentation {
 								if (bucketIndex >= 0 && bucketIndex < nBuckets && !Double.isNaN(val)) {    //--TODO should the buckets really be stopping points from being added ???
 									rr.getBuckets()[bucketIndex]++;
 
-									float fudge = r.nextFloat();
-									fudge = fudge - 0.5f;
 
-
-
-
-									fudge = 0.0f;
-
-
+									float fudge;
+									if (shouldFudge) {
+										fudge = r.nextFloat();
+										fudge = fudge - 0.5f;
+									}
+									else {
+										fudge = 0.0f;
+									}
 
 									for (int i = 1; i < 4; i++)
 										vertexBuffer.put((short) ((position[i] + fudge * strides[i]) * Short.MAX_VALUE));
@@ -360,7 +362,9 @@ public class RegionRepresentation {
 						vbs.vertexBuffer = vertexBuffer;
 						vbs.valueBuffer = valueBuffer;
 						vbs.numberOfPts = pts;
-						vbs.frame = indices[0];
+
+
+						vbs.w = (float) indices[0] / (float) repLengths[0];
 						vbs.x = (float) indices[1] / (float) repLengths[1];
 
 						rr.slices.add(vbs);
@@ -573,6 +577,8 @@ public class RegionRepresentation {
 	public int getNumPtsY() {
 		return numPtsY;
 	}
+
+	public int getNumPtsW() {return this.numPtsW;}
 
 	public void setNumPtsW(int number) {
 		this.numPtsW = number;
