@@ -236,11 +236,7 @@ public class RegionRepresentation {
 				rr.setNumPts(i, repLengths[i]);
 			}
 
-			float[][][][] data = (float[][][][])hdu.getData().getKernel();
-			int l0 = data.length;
-			int l1 = data[0].length;
-			int l2 = data[0][0].length;
-			int l3 = data[0][0][0].length;
+
 			int yRemainder = sourceLengths[1] - stride*(sourceLengths[1]/stride);
 
 			DataType dataType = null;
@@ -268,9 +264,11 @@ public class RegionRepresentation {
 				//--skip whole planes at the start if the volume doesn't start at zero x
 				adi.skipBytes(sourceLengths[2] * sourceLengths[1]* sourceStarts[0] * typeSize);
 
-				for (int x = 0; x < repLengths[0]; x ++) {
-					float xProportion = (float)x/(float)repLengths[0];
-					float xPosition = volume.x + volume.wd * xProportion;
+				int[] indices = new int[naxis];
+				float[]position = new float[naxis];
+				for (indices[0] = 0; indices[0] < repLengths[0]; indices[0] ++) {
+					float proportion = (float)indices[0]/(float)repLengths[0];
+					position[0] = volume.x + volume.wd * proportion;
 					int pts = 0;
 					int maxPts = repLengths[1] * repLengths[2];
 
@@ -280,24 +278,24 @@ public class RegionRepresentation {
 					ShortBuffer vertexBuffer = ShortBuffer.allocate(maxPts * 3);
 					FloatBuffer valueBuffer = FloatBuffer.allocate(maxPts);
 
-					for (int y = 0; y < repLengths[1]; y ++) {
-						float yProportion = (float)y/(float)repLengths[1];
-						float yPosition = volume.y + volume.ht * yProportion;
+					for (indices[1] = 0; indices[1] < repLengths[1]; indices[1] ++) {
+						proportion = (float)indices[1]/(float)repLengths[1];
+						position[1] = volume.y + volume.ht * proportion;
 
 						if (dataType == DataType.DOUBLE)
 							adi.read(storaged, 0, storaged.length);
 						else if (dataType == DataType.FLOAT)
 							adi.read(storagef, 0, storagef.length);
 
-						for (int z = 0; z < repLengths[2]; z++) {
-							float zProportion = (float)z/(float)repLengths[2];
-							float zPosition = volume.z + volume.dp * zProportion;
+						for (indices[2] = 0; indices[2] < repLengths[2]; indices[2] ++) {
+							proportion = (float)indices[2]/(float)repLengths[2];
+							position[2] = volume.z + volume.dp * proportion;
 
 							float val;
 							if (dataType == DataType.DOUBLE) {
-								val = (float)storaged[sourceStarts[2] + z * stride];
+								val = (float)storaged[sourceStarts[2] + indices[2] * stride];
 							} else {
-								val = storagef[sourceStarts[2] + z * stride];
+								val = storagef[sourceStarts[2] + indices[2] * stride];
 							}
 							int bucketIndex = (int)(val - rr.getEstMin() /stepSize);
 							if (bucketIndex >= 0 && bucketIndex < nBuckets && !Double.isNaN(val)){	//--TODO should the buckets really be stopping points from being added ???
@@ -306,9 +304,9 @@ public class RegionRepresentation {
 								float fudge = r.nextFloat();
 								fudge = fudge - 0.5f;
 
-								vertexBuffer.put((short) ((xPosition + fudge * strides[0]) * Short.MAX_VALUE));
-								vertexBuffer.put((short) ((yPosition + fudge * strides[1]) * Short.MAX_VALUE));
-								vertexBuffer.put((short) ((zPosition + fudge * strides[2]) * Short.MAX_VALUE));
+								for (int i = 0; i < 3; i++)
+									vertexBuffer.put((short) ((position[i] + fudge * strides[i]) * Short.MAX_VALUE));
+
 								valueBuffer.put(val);
 								pts++;
 							}
@@ -331,7 +329,7 @@ public class RegionRepresentation {
 					vbs.vertexBuffer = vertexBuffer;
 					vbs.valueBuffer = valueBuffer;
 					vbs.numberOfPts = pts;
-					vbs.x = xProportion;
+					vbs.x = (float)indices[0]/(float)repLengths[0];;
 					rr.slices.add(vbs);
 
 					//--skip to the next slice
