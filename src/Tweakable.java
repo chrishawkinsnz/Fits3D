@@ -21,9 +21,11 @@ import sun.security.x509.DeltaCRLIndicatorExtension;
  */
 public abstract class Tweakable implements  AttributeDisplayer{
 	public List<Attribute>attributes = new ArrayList<Attribute>();
-	
-	
-	
+
+	public Tweakable(Attribute attribute) {
+		this.attributes.add(attribute);
+	}
+
 	
 	public void notifyAttributes() { 
 		for (Attribute attribute : attributes) {
@@ -43,7 +45,7 @@ public abstract class Tweakable implements  AttributeDisplayer{
 		public JCheckBox checkBox;
 		
 		public Toggleable(Attribute attribute, boolean isOn) {
-			this.attributes.add(attribute);
+			super(attribute);
 			this.checkBox = new JCheckBox();
 			this.checkBox.setSelected(isOn);
 			this.checkBox.addChangeListener(this);
@@ -96,8 +98,8 @@ public abstract class Tweakable implements  AttributeDisplayer{
 		}
 		
 		public Slidable(Attribute attrbute, float min, float max, float initialValue, int steps) {
+			super (attrbute);
 			this.steps = steps;
-			this.attributes.add(attrbute);
 			this.min = min;
 			this.max = max;
 			this.slider = new JSlider(0, steps);
@@ -175,7 +177,7 @@ public abstract class Tweakable implements  AttributeDisplayer{
 		private JComboBox<Object>comboBox;
 
 		public DropDown(Attribute attribute, List<Object>choices, Object currentChoice) {
-			this.attributes.add(attribute);
+			super(attribute);
 			comboBox = new JComboBox<Object>(choices.toArray());
 			comboBox.setSelectedItem(currentChoice);
 			comboBox.addActionListener(this);
@@ -254,7 +256,7 @@ public abstract class Tweakable implements  AttributeDisplayer{
 		private Christogram christogram;
 		
 		public ChristogramTweakable(int[]buckets, Attribute attribute, float min, float max){
-			super();
+			super(attribute);
 	        christogram = new Christogram(buckets, min, max);
 	        christogram.setXAxisTitle("Intensity");
 	        christogram.setMinimumSize(new Dimension(800,200));

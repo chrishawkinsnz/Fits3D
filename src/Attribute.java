@@ -1,6 +1,7 @@
 import com.sun.tools.doclint.HtmlTag;
 
 import javax.smartcardio.ATR;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -11,6 +12,8 @@ public abstract class Attribute {
 	public boolean shouldUpdateRenderer;
 
 	private Object value;
+
+	public AttributeDisplayer listeningAttributeDisplayer;
 
 	public Consumer<Object>callback = (obj)->{};
 
@@ -34,6 +37,7 @@ public abstract class Attribute {
 		notifyWithValue(obj);
 		shouldUpdateRenderer = defaultValue;
 	}
+
 	public Object getValue() {
 		return null;
 	}
@@ -48,7 +52,15 @@ public abstract class Attribute {
 			this.savedState = null;
 		}
 	}
-	
+
+	public void setListener(AttributeDisplayer listener) {
+		this.listeningAttributeDisplayer = listener;
+	}
+
+	public void updateAttributeDisplayer() {
+		this.listeningAttributeDisplayer.beNotifiedWithValue(this.getValue());
+	}
+
 	public static class RangedAttribute extends Attribute {
 		private float value;
 		private float min;

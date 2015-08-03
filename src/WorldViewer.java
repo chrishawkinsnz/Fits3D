@@ -3,7 +3,7 @@ public class WorldViewer {
 	private float ySpin = 0f;		//spin around the central column
 	private float xSpin = 0f;		//spin around the rod through the middle of the screeen
 	private float radius = 3f;
-		
+
 	private float yMax = 3.141459f/4f;
 	
 	public final float minRadius = 0.5f;

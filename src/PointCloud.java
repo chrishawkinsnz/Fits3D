@@ -2,11 +2,14 @@ import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
 import nom.tam.fits.ImageHDU;
 
-import javax.smartcardio.ATR;
+import javax.swing.*;
 import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
 
 public class PointCloud implements  AttributeProvider {
 
@@ -22,6 +25,8 @@ public class PointCloud implements  AttributeProvider {
 	private final static float		BOX_ORIGIN_X 		= -0.5f * BOX_WIDTH;
 	private final static float 		BOX_ORIGIN_Y 		= -0.5f * BOX_HEIGHT;
 	private final static float 		BOX_ORIGIN_Z 		= -0.5f * BOX_DEPTH;
+	private final Timer timerCycle;
+
 	private Fits fits;
 
 	private static int clouds = 0;
@@ -44,6 +49,7 @@ public class PointCloud implements  AttributeProvider {
 	public Attribute.BinaryAttribute isSelected;
 	public Attribute.MultiChoiceAttribute relativeTo;
 	public Attribute.RangedAttribute frame;
+	private final Attribute.BinaryAttribute cycling;
 
 	public Attribute.TextAttribute[] unitTypes;
 	//--static attributes
@@ -110,6 +116,41 @@ public class PointCloud implements  AttributeProvider {
 
 		this.frame = new Attribute.RangedAttribute("Waxis", 0f, 1f, 0f, false);
 		attributes.add(this.frame);
+
+
+		this.timerCycle = new Timer(16, new ActionListener() {
+			private boolean forward = true;
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				float delta = forward ? 0.01f : -0.01f;
+				float newValue = PointCloud.this.frame.getValue() + delta;
+				if (newValue >= PointCloud.this.frame.getMax()) {
+					forward = false;
+					PointCloud.this.frame.notifyWithValue(PointCloud.this.frame.getMax());
+				} else if (newValue <= PointCloud.this.frame.getMin()){
+					forward = true;
+					PointCloud.this.frame.notifyWithValue(PointCloud.this.frame.getMin());
+				} else {
+					PointCloud.this.frame.notifyWithValue(newValue);
+				}
+				PointCloud.this.frame.updateAttributeDisplayer();
+
+
+			}
+		});
+
+		this.cycling = new Attribute.BinaryAttribute("Cyle", false, false);
+		this.cycling.callback = (obj) -> {
+			boolean on = ((Boolean)obj).booleanValue();
+			if (on) {
+				PointCloud.this.timerCycle.start();
+			}
+			else {
+				PointCloud.this.timerCycle.stop();
+			}
+		};
+		attributes.add(this.cycling);
+
 
 		List<Object> possiblePairings = new ArrayList<>();
 		possiblePairings.add("-");

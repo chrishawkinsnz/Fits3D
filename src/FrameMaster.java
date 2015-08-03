@@ -6,6 +6,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.TimerTask;
 
 import com.jogamp.opengl.GLAutoDrawable;/**/
 import com.jogamp.opengl.GLCapabilities;
@@ -305,10 +306,13 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		cutItem.addActionListener(e -> this.cutSelection());
 		fileMenu.add(cutItem);
 
-		JMenuItem selectItem = new JMenuItem("Make selection");
+		JCheckBoxMenuItem selectItem = new JCheckBoxMenuItem("Selection Mode");
 		setKeyboardShortcutTo(KeyEvent.VK_H, selectItem);
 		selectItem.addActionListener(e -> this.toggleSelectMode());
 		fileMenu.add(selectItem);
+
+
+
 
 		return fileMenu;
 	}
@@ -321,7 +325,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	private JMenu makeDebugMenu() {
 		JMenu debugMenu = new JMenu("Debug");
 
-		JMenuItem rainbow = new JMenuItem("rainbow");
+		JCheckBoxMenuItem rainbow = new JCheckBoxMenuItem("rainbow");
 		debugMenu.add(rainbow);
 
 		JMenuItem test = new JMenuItem("foo");
@@ -336,10 +340,13 @@ public class FrameMaster extends JFrame implements GLEventListener {
 			}
 		});
 
-		JMenuItem fudge = new JMenuItem("fudge");
+		JCheckBoxMenuItem fudge = new JCheckBoxMenuItem("fudge");
 		fudge.addActionListener(e -> this.fudge());
 		debugMenu.add(fudge);
 
+		JCheckBoxMenuItem fakeFourthDimensionItem = new JCheckBoxMenuItem("fake fourth dimension");
+		fakeFourthDimensionItem.addActionListener(e -> this.fakeFourthDimension());
+		debugMenu.add(fakeFourthDimensionItem);
 
 		return debugMenu;
 	}
@@ -407,6 +414,11 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	}
 
 
+	private void fakeFourthDimension() {
+		RegionRepresentation.fakeFourthDimension = !RegionRepresentation.fakeFourthDimension;
+	}
+
+
 
 
 
@@ -459,6 +471,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 	public static void setNeedsDisplay() {
 		singleton.canvas.display();
+	}
+
+	public static void setNeedsAttribtueDisplay() {
+		singleton.reloadAttributePanel();
 	}
 
 

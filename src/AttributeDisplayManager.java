@@ -44,6 +44,10 @@ public class AttributeDisplayManager {
     	else {
     		tweakable = null;
     	}
+
+		if (tweakable != null) {
+			attribute.setListener(tweakable);
+		}
     	return tweakable;
     }
 

@@ -20,6 +20,7 @@ import nom.tam.util.ArrayDataInput;
  */
 public class RegionRepresentation {
 	public static boolean shouldFudge = false;
+	public static boolean fakeFourthDimension = false;
 
 	private int[]buckets;
 	private float estMin;
@@ -260,6 +261,15 @@ public class RegionRepresentation {
 			}
 
 
+
+			if (fakeFourthDimension) {
+				rr.setNumPts(0, repLengths[1]);
+			}
+
+
+
+
+
 			int yRemainder = sourceLengths[1] - stride*(sourceLengths[1]/stride);
 
 			DataType dataType = null;
@@ -364,8 +374,13 @@ public class RegionRepresentation {
 						vbs.numberOfPts = pts;
 
 
+
 						vbs.w = (float) indices[0] / (float) repLengths[0];
 						vbs.x = (float) indices[1] / (float) repLengths[1];
+
+						if (fakeFourthDimension) {
+							vbs.w = (float) indices[1] / (float) repLengths[1];
+						}
 
 						rr.slices.add(vbs);
 
