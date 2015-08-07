@@ -13,6 +13,7 @@ import static com.jogamp.opengl.GL2.*;
 
 import com.jogamp.opengl.GL3;
 import com.jogamp.opengl.math.Matrix4;
+import com.jogamp.opengl.math.VectorUtil;
 
 public class Renderer {
 	private static long lastTime = 0;
@@ -94,6 +95,8 @@ public class Renderer {
 	private boolean legendary = true;
 	public	boolean gay = false;
 	private int uniformIsSelecting;
+	private Vector3 dummyPoint;
+	private Vector3 mousePoint;
 
 
 	public Renderer(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl){
@@ -265,6 +268,11 @@ public class Renderer {
 		int colHandle;
 	}
 
+	private Line makeLine(Vector3 posa, Vector3 posb) {
+		float[]white = {1f,1f,1f,1f};
+
+		return makeLine(posa, posb, white, white);
+	}
 	private Line makeLine(Vector3 posa, Vector3 posb, float[] cola, float[] colb) {
 		return makeLine(posa.toArray(), posb.toArray(), cola, colb);
 	}
@@ -341,7 +349,7 @@ public class Renderer {
 	private boolean lastFlippity = true;
 	public void display() {
 
-		printFps();
+//		printFps();
 
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -542,8 +550,86 @@ public class Renderer {
 				Volume vol = new Volume(worldOrigin, worldSize);
 
 				renderOutline(baseMatrix, vol, pc.color);
+
+				if (this.dummyPoint != null) {
+					//find far left of slice
+
+					Vector3 origin = new Vector3(0f, 0f, 0f);
+					Line line = makeLine(this.dummyPoint, origin);
+
+					float[] mat = baseMatrix.getMatrix();
+
+					float[]result = new float[3];
+					float[]bl = {worldOrigin.x				, worldOrigin.y				 , worldOrigin.z			  };
+					float[]br = {worldOrigin.x + worldSize.x, worldOrigin.y				 , worldOrigin.z + worldSize.z};
+					float[]tl = {worldOrigin.x				, worldOrigin.y + worldSize.y, worldOrigin.z			  };
+					float[]tr = {worldOrigin.x + worldSize.x, worldOrigin.y + worldSize.y, worldOrigin.z + worldSize.z};
+
+					float[]bls = new float[3];
+					float[]brs = new float[3];
+					float[]tls = new float[3];
+					float[]trs = new float[3];
+					VectorUtil.mulColMat4Vec3(bls, mat, bl);
+					VectorUtil.mulColMat4Vec3(brs, mat, br);
+					VectorUtil.mulColMat4Vec3(tls, mat, tl);
+					VectorUtil.mulColMat4Vec3(trs, mat, tr);
+
+					Matrix4 identity = new Matrix4();
+					identity.loadIdentity();;
+
+					//--factor in the z position of the slice to work out the
+					float orthoMouseX = this.orthoOrigX -(this.orthoWidth)+ 4f * this.orthoWidth * (this.dummyPoint.x/(float)this.width);
+					float orthoMouseY = this.orthoOrigY +(this.orthoHeight)- 4f * this.orthoHeight * (this.dummyPoint.y/(float)this.height);
+					Vector3 pos = new Vector3(result[0], origin.y, origin.z);
+
+					float proportionX = (orthoMouseX - bls[0]) /(brs[0] - bls[0]);
+					this.mousePoint = null;
+					if (proportionX < 1f && proportionX > 0f ) {
+
+
+						float[] bm = {bl[0], bl[1], bl[2]};
+						bm[2] += proportionX * worldSize.z;
+
+						float[] tm = {tl[0], tl[1], tl[2]};
+						tm[2] += proportionX * worldSize.z;
+
+						float[] mm = {bm[0], bm[1], bm[2]};
+
+						//--figure out the proportion between these two middle  points
+						float[] bms = {bls[0], bls[1], bls[2]};
+						bms[1] += proportionX * (brs[1] - bls[1]);
+
+						float[] tms = {tls[0], tls[1], tls[2]};
+						tms[1] += proportionX * (trs[1] - tls[1]);
+
+						float proportionY = (orthoMouseY - bms[1]) / (tms[1] - bms[1]);
+
+						if (proportionY > 0f && proportionY < 1f) {
+							//--mm is the world position of the mous cursor on the selection plane
+							mm[1] += proportionY * worldSize.y;
+
+							this.mousePoint = new Vector3(mm);
+							this.dummyPoint = null;
+						}
+					}
+
+				}
+				if (this.mousePoint != null) {
+					//--ensure on correct plane
+					this.mousePoint = new Vector3(worldOrigin.x, this.mousePoint.y, this.mousePoint.z);
+					Vector3 lm = new Vector3(this.mousePoint.x, this.mousePoint.y, worldOrigin.z);
+					Vector3 rm = new Vector3(this.mousePoint.x, this.mousePoint.y, worldOrigin.z + worldSize.z);
+					Vector3 bm = new Vector3(this.mousePoint.x, worldOrigin.y, this.mousePoint.z);
+					Vector3 tm = new Vector3(this.mousePoint.x, worldOrigin.y + worldSize.y, this.mousePoint.z);
+					Line l2r = makeLine(lm, rm);
+					Line t2b = makeLine(bm, tm);
+					renderLine(l2r, baseMatrix);
+					renderLine(t2b, baseMatrix);
+				}
 			}
 		}
+
+
 		if (this.selection != null) {
 			renderOutline(baseMatrix, this.selection.getVolume(), Color.white);
 		}
@@ -575,5 +661,11 @@ public class Renderer {
 		sz = sz < pointsDepth ? sz : pointsDepth;
 
 		return sz;
+	}
+
+
+	public void drawLineToPoint(int x, int y) {
+		this.dummyPoint = new Vector3(x, y, 3f);
+
 	}
 }

@@ -436,6 +436,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
     @Override
     public void init(GLAutoDrawable drawable) {
 		this.renderer = new Renderer(this.pointClouds, this.viewer, drawable.getGL().getGL3());
+		MouseSelectionController mouseSelectionController = new MouseSelectionController(this.renderer);
+		canvas.addMouseMotionListener(mouseSelectionController);
+		canvas.addMouseListener(mouseSelectionController);
     }
 
 
@@ -536,6 +539,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		canvas.addMouseMotionListener(mouseController);
 		canvas.addMouseListener(mouseController);
 		canvas.addMouseWheelListener(mouseController);
+
+
 	}/**/
 
 
