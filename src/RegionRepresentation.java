@@ -420,8 +420,8 @@ public class RegionRepresentation {
 		MinAndMax mam = new MinAndMax();
 
 		long t0 = System.currentTimeMillis();
-		float minn = 3f;
-		float maxx = -3f;
+		float minn = 0.1f;
+		float maxx = -0.1f;
 
 		List<Float>allOfThemFloats =new ArrayList<Float>();
 		try{
