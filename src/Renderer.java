@@ -17,6 +17,7 @@ import com.jogamp.opengl.math.Matrix4;
 public class Renderer {
 	private static long lastTime = 0;
 
+
 	//--CONSTANTS
 	public final float orthoHeight = 1.0f;
 	public final float orthoWidth = 1.0f;
@@ -67,6 +68,7 @@ public class Renderer {
 	private int uniformSelectionMinZ;
 	private int uniformSelectionMaxZ;
 
+	private int uniformLowLight;
 	//--highlighting shader uniforms
 
 	private int legendMvpUniformHandle;
@@ -155,6 +157,7 @@ public class Renderer {
 
 		this.uniformIsSelecting 	= gl.glGetUniformLocation(this.shaderProgram, "isSelecting");
 
+		this.uniformLowLight 		= gl.glGetUniformLocation(this.shaderProgram, "lowLight");
 		gl.glEnable(GL_BLEND);
 		gl.glDisable(GL_POINT_SMOOTH);
 		gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -361,6 +364,7 @@ public class Renderer {
 				gl.glUniform1f(uniformsMax[i], normalisedPosition.get(i) + normalisedSize.get(i));
 			}
 		}
+
 		else {
 			gl.glUniform1i(uniformIsSelecting, GL_FALSE);
 		}
@@ -442,6 +446,26 @@ public class Renderer {
 				return;
 			}
 			gl.glUniform1f(this.uniformAlphaFudgeHandle, cr.intensity.getValue() * cloud.intensity.getValue());
+
+			if (cloud.shouldDisplaySlitherenated()) {
+				gl.glUniform1i(uniformIsSelecting, GL_TRUE);
+
+				int axis = cloud.getSlitherAxis().ordinal();
+				//--figure out a good alpha for the rest of the stuff
+				float base = 10f;
+				float adjusted = cr.getVolume().size.get(axis) * base /(float) cr.getDimensionInPts(axis);
+
+				gl.glUniform1f(uniformLowLight, adjusted);
+				Volume slither = cloud.getSlither();
+				int[] uniformsMin = {uniformSelectionMinX, uniformSelectionMinY, uniformSelectionMinZ};
+				int[] uniformsMax = {uniformSelectionMaxX, uniformSelectionMaxY, uniformSelectionMaxZ};
+				for (int j = 0; j < 3; j++) {
+					gl.glUniform1f(uniformsMin[j], slither.origin.get(j));
+					gl.glUniform1f(uniformsMax[j], slither.origin.get(j) + slither.size.get(j));
+				}
+
+			}
+
 			//--filtery doodle TODO probably move this out one level of the loop
 			
 			Christogram.Filter filter = cloud.getFilter();
@@ -485,8 +509,6 @@ public class Renderer {
 	    	m.translate(cloud.volume.x, cloud.volume.y, cloud.volume.z);
 	    	m.scale(cloud.volume.wd, cloud.volume.ht, cloud.volume.dp);
 
-			//m.translate(cr.volume.x, cr.volume.y, cr.volume.z);
-
 	    	//--pass that matrix to the shader
 	    	gl.glUniformMatrix4fv(this.uniformMvpHandle, 1, false, m.getMatrix(), 0);
 
@@ -501,15 +523,25 @@ public class Renderer {
 	    	gl.glDrawArrays(GL_POINTS, 0, slice.numberOfPts);
 		}
 
-
-
 		renderPrimitives(baseMatrix, spin, false);
-
 
 		//--draw outlines
 		for (PointCloud pc : this.pointClouds) {
-			if (pc.isSelected.getValue()) {
-				renderOutline(baseMatrix, pc.volume, pc.color);
+			if (pc.shouldDisplaySlitherenated()) {
+				int axis = pc.getSlitherAxis().ordinal();
+				float[] adjustedOriginArray = pc.getSlither().origin.toArray();
+				adjustedOriginArray[axis] = adjustedOriginArray[axis] + pc.getSlither().size.get(axis)/2f;
+				Vector3 normalisedOrigin = new Vector3(adjustedOriginArray);
+				Vector3 worldOrigin = normalisedOrigin.scale(pc.getVolume().size).add(pc.getVolume().origin);
+
+				float[] adjustedSizeArray = pc.getSlither().size.toArray();
+				adjustedSizeArray[axis] = 0f;
+				Vector3 normalisedSize = new Vector3(adjustedSizeArray);
+				Vector3 worldSize = normalisedSize.scale(pc.getVolume().size);
+
+				Volume vol = new Volume(worldOrigin, worldSize);
+
+				renderOutline(baseMatrix, vol, pc.color);
 			}
 		}
 		if (this.selection != null) {

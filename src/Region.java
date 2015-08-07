@@ -198,6 +198,9 @@ public class Region implements  AttributeProvider{
 	}
 
 
+	public int getDimensionInPts(int dimension) {
+		return this.getRegionRepresentation().getDimensionInPts(dimension);
+	}
 	public void setMinusRegions(List<Region> minusRegions) {
 		this.minusRegions = minusRegions;
 	}

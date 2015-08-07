@@ -13,6 +13,14 @@ import java.util.List;
 
 public class PointCloud implements  AttributeProvider {
 
+	private final Attribute.BinaryAttribute displaySlitherenated;
+	private Attribute.BinaryAttribute cyclingSlitherAttribute;
+	private Attribute.RangedAttribute slitherPositionAttribute;
+
+	public enum Axis {
+		x,y,z
+	}
+
 	private final static String[]     AXES_NAMES             = {"X", "Y", "Z", "W", "Q", "YOU", "DO", "NOT", "NEED", "THIS", "MANY", "AXES"};
 	private final static Color[] 	DEFAULT_COLORS 		= {Color.GREEN, Color.RED, Color.BLUE, Color.ORANGE, Color.PINK};
 	private final static float 		STARTING_FIDELITY 	= 0.075f;
@@ -27,6 +35,10 @@ public class PointCloud implements  AttributeProvider {
 	private final static float 		BOX_ORIGIN_Z 		= -0.5f * BOX_DEPTH;
 	private final Timer timerCycle;
 
+
+	private Timer slitherCycleTimer;
+
+
 	private Fits fits;
 
 	private static int clouds = 0;
@@ -34,7 +46,9 @@ public class PointCloud implements  AttributeProvider {
 	public Volume volume;
 	private Volume backupVolume;
 	private Volume galacticVolume;
-	
+
+	private Axis slitherAxis = Axis.x;
+
 	public final Color color;
 	
 	private List<Region>regions;
@@ -96,7 +110,6 @@ public class PointCloud implements  AttributeProvider {
 					primaryRegion.setMinusRegions(children);
 					FrameMaster.setNeedsNewRenderer();
 					FrameMaster.setNeedsDisplay();
-//					FrameMaster.setNeedsAttributesReload();
 				}
 			};
 			new Thread(r).start();
@@ -150,6 +163,47 @@ public class PointCloud implements  AttributeProvider {
 			}
 		};
 		attributes.add(this.cycling);
+
+
+
+
+		this.slitherPositionAttribute = new Attribute.RangedAttribute("Slither Pos", 0f, 1f, 0f, false);
+		this.attributes.add(this.slitherPositionAttribute);
+
+		this.displaySlitherenated = new Attribute.BinaryAttribute("Slitherise", false, false);
+		this.attributes.add(displaySlitherenated);
+
+		this.slitherCycleTimer = new Timer(16, new ActionListener() {
+			private boolean forward = true;
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				float delta = forward ? 0.01f : -0.01f;
+				float newValue = PointCloud.this.slitherPositionAttribute.getValue() + delta;
+				if (newValue >= PointCloud.this.slitherPositionAttribute.getMax()) {
+					forward = false;
+					PointCloud.this.slitherPositionAttribute.notifyWithValue(PointCloud.this.slitherPositionAttribute.getMax());
+				} else if (newValue <= PointCloud.this.frame.getMin()){
+					forward = true;
+					PointCloud.this.slitherPositionAttribute.notifyWithValue(PointCloud.this.slitherPositionAttribute.getMin());
+				} else {
+					PointCloud.this.slitherPositionAttribute.notifyWithValue(newValue);
+				}
+				PointCloud.this.slitherPositionAttribute.updateAttributeDisplayer();
+			}
+		});
+
+		this.cyclingSlitherAttribute = new Attribute.BinaryAttribute("Cycle", false, false);
+		this.attributes.add(this.cyclingSlitherAttribute);
+
+		this.cyclingSlitherAttribute.callback = (obj) -> {
+			boolean on = ((Boolean)obj).booleanValue();
+			if (on) {
+				PointCloud.this.slitherCycleTimer.start();
+			}
+			else {
+				PointCloud.this.slitherCycleTimer.stop();
+			}
+		};
 
 
 		List<Object> possiblePairings = new ArrayList<>();
@@ -433,5 +487,35 @@ public class PointCloud implements  AttributeProvider {
 		float max = stepsNext * step;
 
 		return w >= min && w <= max;
+	}
+
+	/**
+	 * Gets the slither volume to display to the user.
+	 * @return
+	 */
+	public Volume getSlither() {
+		float []originArray = new float[3];
+		originArray[this.slitherAxis.ordinal()] = this.slitherPositionAttribute.getValue();
+		Vector3 origin = new Vector3(originArray);
+
+		float sliceWidth = 1.0f/(float)this.regions.get(0).getDepthInPoints();
+		float []sizeArray = {1.0f, 1.0f, 1.0f};
+		sizeArray[this.slitherAxis.ordinal()] = sliceWidth;
+		Vector3 size = new Vector3(sizeArray);
+
+		Volume vol = new Volume(origin, size);
+		return vol;
+	}
+
+	/**
+	 * Gets whether the point cloud should be displayed slitherenated
+	 */
+
+	public boolean shouldDisplaySlitherenated() {
+		return this.displaySlitherenated.getValue();
+	}
+
+	public Axis getSlitherAxis() {
+		return this.slitherAxis;
 	}
 }

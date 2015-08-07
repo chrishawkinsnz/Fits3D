@@ -641,4 +641,17 @@ public class RegionRepresentation {
 			System.out.println("hey hey hey whoops we don't really support this many axis eh");
 		}
 	}
+
+	public int getDimensionInPts(int dimension) {
+		if (dimension == 0) {
+			return this.getNumPtsX();
+		}
+		if (dimension == 1) {
+			return this.getNumPtsY();
+		}
+		if (dimension == 2) {
+			return this.getNumPtsZ();
+		}
+		return 0;
+	}
 }

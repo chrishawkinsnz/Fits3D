@@ -16,6 +16,8 @@ uniform float selectionMaxY;
 uniform float selectionMinZ;
 uniform float selectionMaxZ;
 
+uniform float lowLight;
+
 uniform int isSelecting;
 
 void main() {
@@ -23,7 +25,6 @@ void main() {
     gl_Position = mvp * v;
     val =  value;
 
-    float lowLight = 0.25f;
     shade = 1.0f;
     if (isSelecting == 1) {
         if (v.x < selectionMinX) {
