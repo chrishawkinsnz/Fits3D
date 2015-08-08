@@ -12,7 +12,7 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 	private int lastX = 0;
 	private int lastY = 0;
-	public int camButton = 1;
+	public int camButton = 3;
 	public MouseController(WorldViewer viewer) {
 		this.viewer = viewer;
 	}

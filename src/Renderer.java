@@ -5,6 +5,7 @@ import static com.jogamp.opengl.GL.GL_FLOAT;
 import static com.jogamp.opengl.GL.GL_STATIC_DRAW;
 
 import java.awt.Color;
+import java.awt.event.MouseListener;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.*;
@@ -53,8 +54,6 @@ public class Renderer {
 	private List<PointCloud> pointClouds;
 	public boolean isTrippy;
 
-
-
 	private int uniformFilterMinX;
 	private int uniformFilterMaxX;
 	private int uniformFilterGradient;
@@ -74,8 +73,10 @@ public class Renderer {
 
 	private int legendMvpUniformHandle;
 
+	private Matrix4 lastBaseMatrix;
 
-
+	private Vector3 startBoxPos;
+	private Vector3 endBoxPos;
 
 	//--Primitives
 	private List<Line>backLines = new ArrayList<Line>();
@@ -95,8 +96,12 @@ public class Renderer {
 	private boolean legendary = true;
 	public	boolean gay = false;
 	private int uniformIsSelecting;
-	private Vector3 dummyPoint;
-	private Vector3 mousePoint;
+
+
+	private int mouseButtonDown = 0;
+	private Vector3 mouseScreenPosition;
+	
+	private Vector3 mouseWorldPosition;
 
 
 	public Renderer(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl){
@@ -551,81 +556,45 @@ public class Renderer {
 
 				renderOutline(baseMatrix, vol, pc.color);
 
-				if (this.dummyPoint != null) {
+				if (this.mouseScreenPosition != null) {
 					//find far left of slice
-
-					Vector3 origin = new Vector3(0f, 0f, 0f);
-					Line line = makeLine(this.dummyPoint, origin);
-
-					float[] mat = baseMatrix.getMatrix();
-
-					float[]result = new float[3];
-					float[]bl = {worldOrigin.x				, worldOrigin.y				 , worldOrigin.z			  };
-					float[]br = {worldOrigin.x + worldSize.x, worldOrigin.y				 , worldOrigin.z + worldSize.z};
-					float[]tl = {worldOrigin.x				, worldOrigin.y + worldSize.y, worldOrigin.z			  };
-					float[]tr = {worldOrigin.x + worldSize.x, worldOrigin.y + worldSize.y, worldOrigin.z + worldSize.z};
-
-					float[]bls = new float[3];
-					float[]brs = new float[3];
-					float[]tls = new float[3];
-					float[]trs = new float[3];
-					VectorUtil.mulColMat4Vec3(bls, mat, bl);
-					VectorUtil.mulColMat4Vec3(brs, mat, br);
-					VectorUtil.mulColMat4Vec3(tls, mat, tl);
-					VectorUtil.mulColMat4Vec3(trs, mat, tr);
-
-					Matrix4 identity = new Matrix4();
-					identity.loadIdentity();;
-
-					//--factor in the z position of the slice to work out the
-					float orthoMouseX = this.orthoOrigX -(this.orthoWidth)+ 4f * this.orthoWidth * (this.dummyPoint.x/(float)this.width);
-					float orthoMouseY = this.orthoOrigY +(this.orthoHeight)- 4f * this.orthoHeight * (this.dummyPoint.y/(float)this.height);
-					Vector3 pos = new Vector3(result[0], origin.y, origin.z);
-
-					float proportionX = (orthoMouseX - bls[0]) /(brs[0] - bls[0]);
-					this.mousePoint = null;
-					if (proportionX < 1f && proportionX > 0f ) {
-
-
-						float[] bm = {bl[0], bl[1], bl[2]};
-						bm[2] += proportionX * worldSize.z;
-
-						float[] tm = {tl[0], tl[1], tl[2]};
-						tm[2] += proportionX * worldSize.z;
-
-						float[] mm = {bm[0], bm[1], bm[2]};
-
-						//--figure out the proportion between these two middle  points
-						float[] bms = {bls[0], bls[1], bls[2]};
-						bms[1] += proportionX * (brs[1] - bls[1]);
-
-						float[] tms = {tls[0], tls[1], tls[2]};
-						tms[1] += proportionX * (trs[1] - tls[1]);
-
-						float proportionY = (orthoMouseY - bms[1]) / (tms[1] - bms[1]);
-
-						if (proportionY > 0f && proportionY < 1f) {
-							//--mm is the world position of the mous cursor on the selection plane
-							mm[1] += proportionY * worldSize.y;
-
-							this.mousePoint = new Vector3(mm);
-							this.dummyPoint = null;
-						}
-					}
+					this.mouseWorldPosition = worldPositionOfPixelOnPlane(this.mouseScreenPosition, vol, baseMatrix);
+					this.mouseScreenPosition = null;
 
 				}
-				if (this.mousePoint != null) {
+				//--draw axes for mouse highlighting
+				if (this.mouseWorldPosition != null) {
 					//--ensure on correct plane
-					this.mousePoint = new Vector3(worldOrigin.x, this.mousePoint.y, this.mousePoint.z);
-					Vector3 lm = new Vector3(this.mousePoint.x, this.mousePoint.y, worldOrigin.z);
-					Vector3 rm = new Vector3(this.mousePoint.x, this.mousePoint.y, worldOrigin.z + worldSize.z);
-					Vector3 bm = new Vector3(this.mousePoint.x, worldOrigin.y, this.mousePoint.z);
-					Vector3 tm = new Vector3(this.mousePoint.x, worldOrigin.y + worldSize.y, this.mousePoint.z);
+					this.mouseWorldPosition = new Vector3(worldOrigin.x, this.mouseWorldPosition.y, this.mouseWorldPosition.z);
+					Vector3 lm = new Vector3(this.mouseWorldPosition.x, this.mouseWorldPosition.y, worldOrigin.z);
+					Vector3 rm = new Vector3(this.mouseWorldPosition.x, this.mouseWorldPosition.y, worldOrigin.z + worldSize.z);
+					Vector3 bm = new Vector3(this.mouseWorldPosition.x, worldOrigin.y, this.mouseWorldPosition.z);
+					Vector3 tm = new Vector3(this.mouseWorldPosition.x, worldOrigin.y + worldSize.y, this.mouseWorldPosition.z);
 					Line l2r = makeLine(lm, rm);
 					Line t2b = makeLine(bm, tm);
 					renderLine(l2r, baseMatrix);
 					renderLine(t2b, baseMatrix);
 				}
+
+
+				if (this.mouseButtonDown == 1) {
+					if (this.startBoxPos == null) {
+						this.startBoxPos = this.mouseWorldPosition;
+						this.endBoxPos = this.mouseWorldPosition;
+					}
+					else {
+						this.endBoxPos = this.mouseWorldPosition;
+					}
+				}
+
+				System.out.println(this.mouseButtonDown);
+
+				if (this.startBoxPos != null && this.endBoxPos != null) {
+					Vector3 size = this.endBoxPos.minus(this.startBoxPos);
+					Volume selectSquare = new Volume(this.startBoxPos, size);
+					renderOutline(baseMatrix,selectSquare, Color.white);
+				}
+				this.mouseButtonDown = -1;
 			}
 		}
 
@@ -640,7 +609,74 @@ public class Renderer {
 		gl.glFlush();
 	}
 
-	
+
+	private Vector3 worldPositionOfPixelOnPlane(Vector3 pixelPosition, Volume plane, Matrix4 baseMatrix) {
+		//find far left of slice
+
+		Vector3 origin = new Vector3(0f, 0f, 0f);
+		Line line = makeLine(this.mouseScreenPosition, origin);
+
+		float[] mat = baseMatrix.getMatrix();
+
+		float[]result = new float[3];
+		float[]bl = {plane.origin.x					, plane.origin.y				 , plane.origin.z			  	};
+		float[]br = {plane.origin.x + plane.size.x	, plane.origin.y				 , plane.origin.z + plane.size.z};
+		float[]tl = {plane.origin.x					, plane.origin.y + plane.size.y	 , plane.origin.z			  	};
+		float[]tr = {plane.origin.x + plane.size.x	, plane.origin.y + plane.size.y	 , plane.origin.z + plane.size.z};
+
+		float[]bls = new float[3];
+		float[]brs = new float[3];
+		float[]tls = new float[3];
+		float[]trs = new float[3];
+		VectorUtil.mulColMat4Vec3(bls, mat, bl);
+		VectorUtil.mulColMat4Vec3(brs, mat, br);
+		VectorUtil.mulColMat4Vec3(tls, mat, tl);
+		VectorUtil.mulColMat4Vec3(trs, mat, tr);
+
+		Matrix4 identity = new Matrix4();
+		identity.loadIdentity();;
+
+		//--factor in the z position of the slice to work out the
+		float orthoMouseX = this.orthoOrigX -(this.orthoWidth)+ 4f * this.orthoWidth * (this.mouseScreenPosition.x/(float)this.width);
+		float orthoMouseY = this.orthoOrigY +(this.orthoHeight)- 4f * this.orthoHeight * (this.mouseScreenPosition.y/(float)this.height);
+		Vector3 pos = new Vector3(result[0], origin.y, origin.z);
+
+		float proportionX = (orthoMouseX - bls[0]) /(brs[0] - bls[0]);
+
+		if (proportionX < 1f && proportionX > 0f ) {
+
+
+			float[] bm = {bl[0], bl[1], bl[2]};
+			bm[2] += proportionX * plane.size.z;
+
+			float[] tm = {tl[0], tl[1], tl[2]};
+			tm[2] += proportionX * plane.size.z;
+
+			float[] mm = {bm[0], bm[1], bm[2]};
+
+			//--figure out the proportion between these two middle  points
+			float[] bms = {bls[0], bls[1], bls[2]};
+			bms[1] += proportionX * (brs[1] - bls[1]);
+
+			float[] tms = {tls[0], tls[1], tls[2]};
+			tms[1] += proportionX * (trs[1] - tls[1]);
+
+			float proportionY = (orthoMouseY - bms[1]) / (tms[1] - bms[1]);
+
+			if (proportionY > 0f && proportionY < 1f) {
+				//--mm is the world position of the mous cursor on the selection plane
+				mm[1] += proportionY * plane.size.y;
+
+				return new Vector3(mm);
+
+//				this.mouseWorldPosition = new Vector3(mm);
+//				this.mouseScreenPosition = null;
+			}
+		}
+
+		return null;
+
+	}
 	public void informOfResolution(int width, int height) {
 		this.width = width;
 		this.height = height;
@@ -664,8 +700,14 @@ public class Renderer {
 	}
 
 
-	public void drawLineToPoint(int x, int y) {
-		this.dummyPoint = new Vector3(x, y, 3f);
+	public void registerMousePosition(int x, int y, int button) {
+		this.mouseScreenPosition = new Vector3(x, y, 3f);
+		this.mouseButtonDown = button;
+	}
 
+	public void registerStartDrag(int x, int y, int button) {
+		this.mouseScreenPosition = new Vector3(x, y, 3f);
+		this.mouseButtonDown = button;
+		this.startBoxPos = null;
 	}
 }

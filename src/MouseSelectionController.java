@@ -16,19 +16,19 @@ public class MouseSelectionController implements MouseMotionListener, MouseListe
         this.renderer = renderer;
     }
 
-    public static int selectButton = 3;
+    public static int selectButton = 1;
 
     @Override
     public void mouseDragged(MouseEvent e) {
         if (e.getButton() == selectButton) {
-
-
+            this.renderer.registerMousePosition(e.getX(), e.getY(), e.getButton());
+            FrameMaster.setNeedsDisplay();
         }
     }
 
     @Override
     public void mouseMoved(MouseEvent e) {
-        this.renderer.drawLineToPoint(e.getX(), e.getY());
+        this.renderer.registerMousePosition(e.getX(), e.getY(), 0);
         FrameMaster.setNeedsDisplay();
     }
 
@@ -39,7 +39,10 @@ public class MouseSelectionController implements MouseMotionListener, MouseListe
 
     @Override
     public void mousePressed(MouseEvent e) {
-
+        if (e.getButton() == selectButton) {
+            this.renderer.registerStartDrag(e.getX(), e.getY(), e.getButton());
+            FrameMaster.setNeedsDisplay();
+        }
     }
 
     @Override

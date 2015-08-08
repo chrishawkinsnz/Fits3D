@@ -21,7 +21,7 @@ public class PointCloud implements  AttributeProvider {
 		x,y,z
 	}
 
-	private final static String[]     AXES_NAMES             = {"X", "Y", "Z", "W", "Q", "YOU", "DO", "NOT", "NEED", "THIS", "MANY", "AXES"};
+	private final static String[]   AXES_NAMES          = {"X", "Y", "Z", "W", "Q", "YOU", "DO", "NOT", "NEED", "THIS", "MANY", "AXES"};
 	private final static Color[] 	DEFAULT_COLORS 		= {Color.GREEN, Color.RED, Color.BLUE, Color.ORANGE, Color.PINK};
 	private final static float 		STARTING_FIDELITY 	= 0.075f;
 	private final static int 		STARTING_TARGET_PIX	= 1_000_000;
