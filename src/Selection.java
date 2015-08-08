@@ -23,6 +23,10 @@ public class Selection {
         return this.volume;
     }
 
+    public void setVolume(Volume volume) {
+        this.volume = volume;
+    }
+
     public void moveX(float xDelta) {
         Vector3 vecDelta = new Vector3(xDelta, 0f, 0f);
         move(vecDelta);

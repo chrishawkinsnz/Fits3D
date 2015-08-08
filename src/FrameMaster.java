@@ -15,11 +15,9 @@ import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLCanvas;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.TreeModelEvent;
-import javax.swing.event.TreeModelListener;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
+import javax.swing.event.*;
 import javax.swing.tree.*;
 
 import com.jogamp.opengl.util.FPSAnimator;
@@ -79,6 +77,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		this.getContentPane().add(canvas, BorderLayout.CENTER);
 		this.getContentPane().add(makeFilePanel(), BorderLayout.WEST);
 		this.getContentPane().add(makeAttributePanel(), BorderLayout.EAST);
+		this.getContentPane().add(makeSelectionPanel(), BorderLayout.SOUTH);
 
 		bl.getLayoutComponent(BorderLayout.WEST).setBackground(Color.WHITE);
 
@@ -147,6 +146,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 		MigLayout mlLayout = new MigLayout("wrap 2");
 		JPanel attributPanel = new JPanel(mlLayout);
+		attributPanel.setBackground(Color.white);
 		attributPanel.setBorder(new EmptyBorder(0, 8, 8, 8));
 
 		JLabel title = new JLabel("Attributes");
@@ -183,6 +183,41 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		attributPanel.setPreferredSize(lilDimension);
 
 		return attributPanel;
+	}
+
+
+	private JPanel  makeSelectionPanel() {
+		MigLayout migLayout = new MigLayout("wrap 2");
+		JPanel selectionPanel = new JPanel(migLayout);
+
+		JLabel title = new JLabel("Selection");
+		title.setFont(new Font("Dialog", Font.BOLD, 24));
+		selectionPanel.add(title, "span 2");
+
+		JLabel labelDepth = new JLabel("Depth");
+		selectionPanel.add(labelDepth);
+
+		JSlider sliderDepth = new JSlider(-100,100);
+		sliderDepth.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				float valuef = (float)sliderDepth.getValue()/(float)sliderDepth.getMaximum();
+
+
+				valuef *= 2f;
+
+
+				System.out.println(valuef);
+				FrameMaster.this.renderer.setSelectionDepth(valuef);
+				setNeedsDisplay();
+			}
+		});
+		selectionPanel.add(sliderDepth);
+
+
+
+		return selectionPanel;
+
 	}
 
 

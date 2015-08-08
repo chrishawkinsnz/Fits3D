@@ -69,6 +69,7 @@ public class PointCloud implements  AttributeProvider {
 	//--static attributes
 	public Attribute.TextAttribute fileName;
 
+
 	public PointCloud(String pathName) {
 		this.regions = new ArrayList<Region>();
 		this.volume = new Volume(BOX_ORIGIN_X, BOX_ORIGIN_Y, BOX_ORIGIN_Z, BOX_WIDTH, BOX_HEIGHT, BOX_DEPTH);

@@ -103,6 +103,7 @@ public class Renderer {
 	
 	private Vector3 mouseWorldPosition;
 
+	private float selectionDepth = 0f;
 
 	public Renderer(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl){
 		setupWith(pointClouds, viewer, gl);
@@ -369,12 +370,20 @@ public class Renderer {
 			Vector3 normalisedPosition = originRelativeToCloud.divideBy(cloudOfInterest.getVolume().size);
 			Vector3 normalisedSize = this.selection.getVolume().size.divideBy(cloudOfInterest.getVolume().size);
 
+			float base = 10f;
+			int axis = cloudOfInterest.getSlitherAxis().ordinal();
+			float adjusted = cloudOfInterest.getVolume().size.get(axis) * base /(float) cloudOfInterest.getRegions().get(0).getDimensionInPts(axis);
+
+			System.out.println(this.selection.getVolume());
+			gl.glUniform1f(uniformLowLight, adjusted);
 			int dimensions = 3;
 			int[] uniformsMin = {uniformSelectionMinX, uniformSelectionMinY, uniformSelectionMinZ};
 			int[] uniformsMax = {uniformSelectionMaxX, uniformSelectionMaxY, uniformSelectionMaxZ};
 			for (int i = 0; i < dimensions; i++) {
-				gl.glUniform1f(uniformsMin[i], normalisedPosition.get(i));
-				gl.glUniform1f(uniformsMax[i], normalisedPosition.get(i) + normalisedSize.get(i));
+				float a = normalisedPosition.get(i);
+				float b = normalisedPosition.get(i) + normalisedSize.get(i);
+				gl.glUniform1f(uniformsMin[i], Math.min(a,b));
+				gl.glUniform1f(uniformsMax[i], Math.max(a,b));
 			}
 		}
 
@@ -460,7 +469,7 @@ public class Renderer {
 			}
 			gl.glUniform1f(this.uniformAlphaFudgeHandle, cr.intensity.getValue() * cloud.intensity.getValue());
 
-			if (cloud.shouldDisplaySlitherenated()) {
+			if (cloud.shouldDisplaySlitherenated() && selection == null) {
 				gl.glUniform1i(uniformIsSelecting, GL_TRUE);
 
 				int axis = cloud.getSlitherAxis().ordinal();
@@ -590,18 +599,29 @@ public class Renderer {
 				System.out.println(this.mouseButtonDown);
 
 				if (this.startBoxPos != null && this.endBoxPos != null) {
-					Vector3 size = this.endBoxPos.minus(this.startBoxPos);
-					Volume selectSquare = new Volume(this.startBoxPos, size);
+//					Vector3 size = this.endBoxPos.minus(this.startBoxPos);
+					Vector3 origin = new Vector3(worldOrigin.x, this.startBoxPos.y, this.startBoxPos.z);
+					Vector3 size = new Vector3(this.selectionDepth, this.endBoxPos.y - this.startBoxPos.y, this.endBoxPos.z - this.startBoxPos.z);
+					Volume selectSquare = new Volume(origin, size);
+
 					renderOutline(baseMatrix,selectSquare, Color.white);
+
+					if (this.selectionDepth != 0f) {
+						if (this.selection == null) {
+							this.selection = Selection.defaultSelection();
+						}
+						this.selection.setVolume(selectSquare);
+						this.selection.setActive(true);
+					}
 				}
 				this.mouseButtonDown = -1;
 			}
 		}
 
 
-		if (this.selection != null) {
-			renderOutline(baseMatrix, this.selection.getVolume(), Color.white);
-		}
+//		if (this.selection != null) {
+//			renderOutline(baseMatrix, this.selection.getVolume(), Color.white);
+//		}
 
     	gl.glEnableVertexAttribArray(0);
     	gl.glDisableVertexAttribArray(1);
@@ -709,5 +729,13 @@ public class Renderer {
 		this.mouseScreenPosition = new Vector3(x, y, 3f);
 		this.mouseButtonDown = button;
 		this.startBoxPos = null;
+	}
+
+	public float getSelectionDepth() {
+		return selectionDepth;
+	}
+
+	public void setSelectionDepth(float selectionDepth) {
+		this.selectionDepth = selectionDepth;
 	}
 }

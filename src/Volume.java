@@ -100,4 +100,8 @@ public class Volume {
 		}
 		return true;
 	}
+
+	public String toString() {
+		return "Volume {"+this.origin.x + "," +this.origin.y + "," +this.origin.z + "," +this.size.x + "," +this.size.y + "," +this.size.z + "," +"}";
+	}
 }
