@@ -179,7 +179,7 @@ public class Renderer {
 	private void printFps() {
 		long delta = System.nanoTime() - lastTime;
 		double fps = 1000_000_000 / (double)delta;
-		System.out.println("FPS: " + (int)fps);
+		System.out.println("FPS: " + (int) fps);
 		lastTime = System.nanoTime();
 	}
 
@@ -449,7 +449,9 @@ public class Renderer {
 
 		baseMatrix.scale(baseScale, baseScale, baseScale);
 
-			renderPrimitives(baseMatrix, spin, true);
+		this.lastBaseMatrix = baseMatrix;
+		renderPrimitives(baseMatrix, spin, true);
+
 
 
 
@@ -550,24 +552,15 @@ public class Renderer {
 		//--draw outlines
 		for (PointCloud pc : this.pointClouds) {
 			if (pc.shouldDisplaySlitherenated()) {
-				int axis = pc.getSlitherAxis().ordinal();
-				float[] adjustedOriginArray = pc.getSlither().origin.toArray();
-				adjustedOriginArray[axis] = adjustedOriginArray[axis] + pc.getSlither().size.get(axis)/2f;
-				Vector3 normalisedOrigin = new Vector3(adjustedOriginArray);
-				Vector3 worldOrigin = normalisedOrigin.scale(pc.getVolume().size).add(pc.getVolume().origin);
-
-				float[] adjustedSizeArray = pc.getSlither().size.toArray();
-				adjustedSizeArray[axis] = 0f;
-				Vector3 normalisedSize = new Vector3(adjustedSizeArray);
-				Vector3 worldSize = normalisedSize.scale(pc.getVolume().size);
-
-				Volume vol = new Volume(worldOrigin, worldSize);
+				Volume vol = getWorldRelativeSlitherForPointCloud(pc);
+				Vector3 worldOrigin = vol.origin;
+				Vector3 worldSize = vol.size;
 
 				renderOutline(baseMatrix, vol, pc.color);
 
 				if (this.mouseScreenPosition != null) {
 					//find far left of slice
-					this.mouseWorldPosition = worldPositionOfPixelOnPlane(this.mouseScreenPosition, vol, baseMatrix);
+					this.mouseWorldPosition = worldPositionOfPixelOnPlane(this.mouseScreenPosition, vol, baseMatrix, true);
 					this.mouseScreenPosition = null;
 
 				}
@@ -630,11 +623,10 @@ public class Renderer {
 	}
 
 
-	private Vector3 worldPositionOfPixelOnPlane(Vector3 pixelPosition, Volume plane, Matrix4 baseMatrix) {
+	private Vector3 worldPositionOfPixelOnPlane(Vector3 pixelPosition, Volume plane, Matrix4 baseMatrix, boolean clamp) {
 		//find far left of slice
 
 		Vector3 origin = new Vector3(0f, 0f, 0f);
-		Line line = makeLine(this.mouseScreenPosition, origin);
 
 		float[] mat = baseMatrix.getMatrix();
 
@@ -657,13 +649,16 @@ public class Renderer {
 		identity.loadIdentity();;
 
 		//--factor in the z position of the slice to work out the
-		float orthoMouseX = this.orthoOrigX -(this.orthoWidth)+ 4f * this.orthoWidth * (this.mouseScreenPosition.x/(float)this.width);
-		float orthoMouseY = this.orthoOrigY +(this.orthoHeight)- 4f * this.orthoHeight * (this.mouseScreenPosition.y/(float)this.height);
+		float orthoMouseX = this.orthoOrigX -(this.orthoWidth)+ 4f * this.orthoWidth * (pixelPosition.x/(float)this.width);
+		float orthoMouseY = this.orthoOrigY +(this.orthoHeight)- 4f * this.orthoHeight * (pixelPosition.y/(float)this.height);
 		Vector3 pos = new Vector3(result[0], origin.y, origin.z);
 
 		float proportionX = (orthoMouseX - bls[0]) /(brs[0] - bls[0]);
 
-		if (proportionX < 1f && proportionX > 0f ) {
+		if (clamp)
+			proportionX = clamp(proportionX, 0f, 1f);
+
+		if (proportionX < 1f && proportionX > 0f || clamp) {
 
 
 			float[] bm = {bl[0], bl[1], bl[2]};
@@ -683,14 +678,15 @@ public class Renderer {
 
 			float proportionY = (orthoMouseY - bms[1]) / (tms[1] - bms[1]);
 
-			if (proportionY > 0f && proportionY < 1f) {
+
+			if (clamp)
+				proportionY = clamp(proportionY, 0f, 1f);
+
+			if (proportionY > 0f && proportionY < 1f || clamp) {
 				//--mm is the world position of the mous cursor on the selection plane
 				mm[1] += proportionY * plane.size.y;
 
 				return new Vector3(mm);
-
-//				this.mouseWorldPosition = new Vector3(mm);
-//				this.mouseScreenPosition = null;
 			}
 		}
 
@@ -702,6 +698,23 @@ public class Renderer {
 		this.height = height;
 	}
 
+	public Volume getWorldRelativeSlitherForPointCloud(PointCloud pc) {
+		int axis = pc.getSlitherAxis().ordinal();
+		float[] adjustedOriginArray = pc.getSlither().origin.toArray();
+		adjustedOriginArray[axis] = adjustedOriginArray[axis] + pc.getSlither().size.get(axis)/2f;
+		Vector3 normalisedOrigin = new Vector3(adjustedOriginArray);
+		Vector3 worldOrigin = normalisedOrigin.scale(pc.getVolume().size).add(pc.getVolume().origin);
+
+		float[] adjustedSizeArray = pc.getSlither().size.toArray();
+		adjustedSizeArray[axis] = 0f;
+		Vector3 normalisedSize = new Vector3(adjustedSizeArray);
+		Vector3 worldSize = normalisedSize.scale(pc.getVolume().size);
+
+		Volume vol = new Volume(worldOrigin, worldSize);
+
+		return vol;
+	}
+
 	
 	private float calculatePointRadiusInPixelsForSlice(VertexBufferSlice slice) {
 		Region cr = slice.region;
@@ -710,6 +723,7 @@ public class Renderer {
 		int nPointsY = cr.getHeightInPoints();
 		int nPointsZ = cr.getDepthInPoints();
 		float pointWidth = (float)this.width* this.orthoWidth* cr.getVolume().wd/ (float)cr.getWidthInPoints();
+//		float pointWidth = (float)this.width* this.orthoWidth* cr.getVolume().dp/ (float)cr.getDepthInPoints();	//THE correct but currently over bright one
 		float pointHeight = (float)this.height* this.orthoHeight* cr.getVolume().ht / (float)cr.getHeightInPoints();
 		float pointsDepth = (float)this.width* this.orthoWidth* cr.getVolume().dp / (float)cr.getDepthInPoints();
 
@@ -737,5 +751,29 @@ public class Renderer {
 
 	public void setSelectionDepth(float selectionDepth) {
 		this.selectionDepth = selectionDepth;
+	}
+
+	public float getSelectionDepth(float selectionDepth) {
+		return this.selectionDepth;
+	}
+
+	public boolean isCurrentlySelectingPlaneInPointClouds(int x, int y) {
+		Vector3 screenPos  = new Vector3(x, y, 3f);
+		boolean found = false;
+		for (PointCloud pc : this.pointClouds) {
+			if (pc.shouldDisplaySlitherenated()) {
+				Volume slither = getWorldRelativeSlitherForPointCloud(pc);
+				Vector3 worldPos = worldPositionOfPixelOnPlane(screenPos, slither, lastBaseMatrix, false);
+				if (worldPos != null)
+					found = true;
+			}
+
+		}
+
+		return found;
+	}
+
+	private float clamp(float val, float min, float max) {
+		return Math.max(min, Math.min(max, val));
 	}
 }

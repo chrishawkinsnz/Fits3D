@@ -72,7 +72,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
         this.canvas = makeCanvas();
 		this.viewer = createViewer();
-        attachControlsToCanvas(canvas, viewer);
+//        attachControlsToCanvas(canvas, viewer);
 
 		this.getContentPane().add(canvas, BorderLayout.CENTER);
 		this.getContentPane().add(makeFilePanel(), BorderLayout.WEST);
@@ -471,9 +471,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
     @Override
     public void init(GLAutoDrawable drawable) {
 		this.renderer = new Renderer(this.pointClouds, this.viewer, drawable.getGL().getGL3());
-		MouseSelectionController mouseSelectionController = new MouseSelectionController(this.renderer);
-		canvas.addMouseMotionListener(mouseSelectionController);
-		canvas.addMouseListener(mouseSelectionController);
+		attachControlsToCanvas();
+//		MouseSelectionController mouseSelectionController = new MouseSelectionController(this.renderer);
+//		canvas.addMouseMotionListener(mouseSelectionController);
+//		canvas.addMouseListener(mouseSelectionController);
     }
 
 
@@ -566,11 +567,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 	/**
 	 * Glues together the canvas to the worldViewer
-	 * @param canvas The canvas on which the events will occur
-	 * @param worldViewer The world viewer model that controls view state
 	 */
-	private void attachControlsToCanvas(Canvas canvas, WorldViewer worldViewer) {
-		MouseController mouseController = new MouseController(this.viewer);
+	private void attachControlsToCanvas() {
+		MouseController mouseController = new MouseController(this.viewer, this.renderer);
 		canvas.addMouseMotionListener(mouseController);
 		canvas.addMouseListener(mouseController);
 		canvas.addMouseWheelListener(mouseController);

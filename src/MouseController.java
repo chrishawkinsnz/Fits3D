@@ -9,17 +9,35 @@ import java.awt.event.MouseWheelListener;
 public class MouseController implements MouseMotionListener, MouseListener, MouseWheelListener {
 
 	private WorldViewer viewer;
+	private Renderer renderer;
 
 	private int lastX = 0;
 	private int lastY = 0;
-	public int camButton = 3;
-	public MouseController(WorldViewer viewer) {
+	public int selectButton = 1;
+	public int camButton = 1;
+
+	public enum MouseActionType{
+		Camera,
+		Select,
+		None
+	}
+
+	private MouseActionType currentDragType;
+
+
+	public MouseController(WorldViewer viewer, Renderer renderer) {
 		this.viewer = viewer;
+		this.renderer = renderer;
 	}
 	
 	@Override
 	public void mouseDragged(java.awt.event.MouseEvent e) {
-		if (e.getButton() == camButton) {
+		if (this.currentDragType == MouseActionType.Select) {
+			this.renderer.registerMousePosition(e.getX(), e.getY(), e.getButton());
+
+			FrameMaster.setNeedsDisplay();
+		}
+		else if (this.currentDragType == MouseActionType.Camera){
 			int diffX = e.getX() - this.lastX;
 			int diffY = e.getY() - this.lastY;
 
@@ -33,22 +51,50 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 		}
 	}
 
+	private MouseActionType lastMouseMotionType;
 	@Override
-	public void mouseMoved(java.awt.event.MouseEvent e) {}
+	public void mouseMoved(java.awt.event.MouseEvent e) {
+
+		this.renderer.registerMousePosition(e.getX(), e.getY(), 0);
+		if (this.renderer.isCurrentlySelectingPlaneInPointClouds(e.getX(), e.getY())) {
+			FrameMaster.setNeedsDisplay();
+			this.lastMouseMotionType = MouseActionType.Select;
+		}
+		else {
+			if (this.lastMouseMotionType == MouseActionType.Select) {
+				FrameMaster.setNeedsDisplay();
+			}
+			this.lastMouseMotionType = MouseActionType.Camera;
+		}
+		//TODO don't redraw unless is actually over square
+
+
+	}
 
 	@Override
 	public void mouseClicked(MouseEvent e) {}
 
 	@Override
 	public void mousePressed(MouseEvent e) {
-		if (e.getButton() == camButton) {
-			this.lastX = e.getX();
-			this.lastY = e.getY();
+
+		this.lastX = e.getX();
+		this.lastY = e.getY();
+
+		if (this.renderer.isCurrentlySelectingPlaneInPointClouds(e.getX(), e.getY())) {
+			this.renderer.registerStartDrag(e.getX(), e.getY(), e.getButton());
+			FrameMaster.setNeedsDisplay();
+			this.currentDragType = MouseActionType.Select;
 		}
+		else {
+			this.currentDragType = MouseActionType.Camera;
+		}
+
 	}
 
 	@Override
-	public void mouseReleased(MouseEvent e) {}
+	public void mouseReleased(MouseEvent e) {
+		this.currentDragType = MouseActionType.None;
+	}
 
 	@Override
 	public void mouseEntered(MouseEvent e) {}
@@ -58,7 +104,14 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
-		this.viewer.addRadiusAmount((float)e.getWheelRotation() *0.1f);
+		if (this.renderer.isCurrentlySelectingPlaneInPointClouds(e.getX(), e.getY())) {
+			float selectionDepthDelta = (float)e.getWheelRotation() * 0.1f;
+			this.renderer.setSelectionDepth(this.renderer.getSelectionDepth() + selectionDepthDelta);
+			FrameMaster.setNeedsDisplay();
+		}
+		else {
+			this.viewer.addRadiusAmount((float)e.getWheelRotation() *0.1f);
+		}
 	}
 
 }
