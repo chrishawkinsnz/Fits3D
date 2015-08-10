@@ -130,14 +130,14 @@ public class RegionRepresentation {
 		short minY = (short) (volume.origin.y * Short.MAX_VALUE);
 		short maxY = (short) ((volume.origin.y + volume.ht) * Short.MAX_VALUE);
 
-		short minZ = (short) (volume.origin.z * Short.MAX_VALUE);
-		short maxZ = (short) ((volume.origin.z + volume.dp) * Short.MAX_VALUE);
+		short minX = (short) (volume.origin.x * Short.MAX_VALUE);
+		short maxX = (short) ((volume.origin.x + volume.wd) * Short.MAX_VALUE);
 
 		for (VertexBufferSlice ss : this.slices) {
 
 			//guard against whole slice being outisde bounds
-			if(ss.z < volume.origin.x) { continue;}
-			if(ss.z >= volume.origin.x + volume.wd) { continue;}
+			if(ss.z < volume.origin.z) { continue;}
+			if(ss.z >= volume.origin.z + volume.dp) { continue;}
 
 			//--TODO currently assuming nothing about the order of the vertices so not skipping or anything
 			ShortBuffer sVerts = ss.vertexBuffer;
@@ -152,16 +152,16 @@ public class RegionRepresentation {
 			int cloneCount = 0;
 			for (int i = 0; i < ss.numberOfPts; i++) {
 				short y = sVerts.get(i * 3 + 1);
-				short z = sVerts.get(i * 3 + 2);
+				short x = sVerts.get(i * 3);
 				boolean withinYBounds = y > minY && y < maxY;
-				boolean withinZBounds = z > minZ && z < maxZ;
-				boolean withinSubsection = withinYBounds && withinZBounds;
+				boolean withinXBounds = x > minX && x < maxX;
+				boolean withinSubsection = withinYBounds && withinXBounds;
 
 				if (!withinSubsection && !replaceValues) {
 					continue;
 				}
 
-				short x = sVerts.get(i * 3);
+				short z = sVerts.get(i * 3 + 2);
 				float value = sValues.get(i);
 
 

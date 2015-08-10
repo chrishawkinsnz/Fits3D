@@ -516,6 +516,10 @@ public class PointCloud implements  AttributeProvider {
 		return this.displaySlitherenated.getValue();
 	}
 
+	public void setShouldDisplaySlitherenated(boolean shouldDisplay) {
+		this.displaySlitherenated.notifyWithValue(shouldDisplay);
+	}
+
 	public Axis getSlitherAxis() {
 		return this.slitherAxis;
 	}

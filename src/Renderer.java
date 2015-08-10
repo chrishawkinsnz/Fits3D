@@ -600,7 +600,7 @@ public class Renderer {
 						if (this.selection == null) {
 							this.selection = Selection.defaultSelection();
 						}
-						this.selection.setVolume(selectSquare);
+						this.selection.setVolume(selectSquare.rejiggeredForPositiveSize());
 						this.selection.setActive(true);
 					}
 				}

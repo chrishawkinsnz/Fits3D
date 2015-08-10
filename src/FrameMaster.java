@@ -414,9 +414,17 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	 * User chooses to cut out a subsection
 	 */
 	private void cutSelection() {
-		this.pointClouds.get(0).cutOutSubvolume(this.renderer.selection.getVolume());
-		this.toggleSelectMode();
+		PointCloud pc = this.pointClouds.get(0);
+		pc.cutOutSubvolume(this.renderer.selection.getVolume());
+		for (int i = 0; i < pc.getRegions().size() - 1; i++) {
+			Region region = pc.getRegions().get(i);
+			region.isVisible.notifyWithValue(false, true);
+		}
+		this.renderer.registerClick(0,0, MouseController.MouseActionType.Camera);
+		this.pointClouds.get(0).setShouldDisplaySlitherenated(false);
+//		this.toggleSelectMode();
 		reloadAttributePanel();
+		FrameMaster.setNeedsDisplay();
 	}
 
 

@@ -89,6 +89,25 @@ public class Volume {
 	}
 
 	/**
+	 * Juggles the volumes dimensions so that the size is always positive;
+	 * @return
+	 */
+	public Volume rejiggeredForPositiveSize() {
+		float[]positions = this.origin.toArray();
+		float[]sizes = this.size.toArray();
+
+		for (int i = 0; i < 3; i++) {
+			if (sizes[i] < 0f) {
+				positions[i] += sizes[i];
+				sizes[i] *= -1f;
+			}
+		}
+
+		Vector3 newOrigin = new Vector3(positions);
+		Vector3 newSize = new Vector3(sizes);
+		return new Volume(newOrigin, newSize);
+	}
+	/**
 	 * Checks to see if a point is contained within this volume
 	 * @param point The point to check
 	 * @return true if the point is contained within the volume false otherwise.
