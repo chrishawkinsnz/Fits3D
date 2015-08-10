@@ -421,8 +421,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
 			region.isVisible.notifyWithValue(false, true);
 		}
 		this.renderer.registerClick(0,0, MouseController.MouseActionType.Camera);
+		//TODO more elegant way to clear seleciton :/
 		this.pointClouds.get(0).setShouldDisplaySlitherenated(false);
-//		this.toggleSelectMode();
+
 		reloadAttributePanel();
 		FrameMaster.setNeedsDisplay();
 	}

@@ -247,8 +247,8 @@ public class RegionRepresentation {
 			for (int i = shortOnAxes; i < 4; i++) {
 
 				sourceLengths[i] = hdu.getAxes()[i - shortOnAxes];
-				float proportionalStart = i == 0 ? 0f : volume.origin.get(3- i + 1);
-				float proportionalEnd   = i == 0 ? 1f : volume.origin.get(3- i + 1) + volume.size.get(i - 1);
+				float proportionalStart = i == 0 ? 0f : volume.origin.get(3- i);
+				float proportionalEnd   = i == 0 ? 1f : volume.origin.get(3- i ) + volume.size.get(3 - i);
 
 				sourceStarts[i]  = (int)(proportionalStart * sourceLengths[i]);
 				sourceEnds[i] 	 = (int)(proportionalEnd * sourceLengths[i]);
@@ -363,7 +363,7 @@ public class RegionRepresentation {
 							adi.skipBytes(sourceLengths[3] * linesToSkip * typeSize);
 						}
 						//--skip to end of slice
-						int currentLine = stride * repLengths[2] + sourceStarts[1];
+						int currentLine = stride * repLengths[2] + sourceStarts[2];
 						int linesToSkip = sourceLengths[2] - currentLine;
 						adi.skip(sourceLengths[3] * linesToSkip * typeSize);
 
