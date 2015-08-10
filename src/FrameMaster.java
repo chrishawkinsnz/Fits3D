@@ -76,7 +76,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		this.getContentPane().add(canvas, BorderLayout.CENTER);
 		this.getContentPane().add(makeFilePanel(), BorderLayout.WEST);
 		this.getContentPane().add(makeAttributePanel(), BorderLayout.EAST);
-		this.getContentPane().add(makeSelectionPanel(), BorderLayout.SOUTH);
+//		this.getContentPane().add(makeSelectionPanel(), BorderLayout.SOUTH);
 
 		bl.getLayoutComponent(BorderLayout.WEST).setBackground(Color.WHITE);
 

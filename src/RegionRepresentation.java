@@ -376,8 +376,6 @@ public class RegionRepresentation {
 						vbs.valueBuffer = valueBuffer;
 						vbs.numberOfPts = pts;
 
-
-
 						vbs.w = (float) indices[0] / (float) repLengths[0];
 						vbs.z = (float) indices[1] / (float) repLengths[1];
 

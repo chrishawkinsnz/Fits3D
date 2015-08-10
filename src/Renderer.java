@@ -594,14 +594,19 @@ public class Renderer {
 					Vector3 size = new Vector3(this.endBoxPos.x - this.startBoxPos.x, this.endBoxPos.y - this.startBoxPos.y, this.selectionDepth);
 					Volume selectSquare = new Volume(origin, size);
 
-					renderOutline(baseMatrix,selectSquare, Color.white);
+
 
 					if (this.selectionDepth != 0f) {
 						if (this.selection == null) {
 							this.selection = Selection.defaultSelection();
 						}
-						this.selection.setVolume(selectSquare.rejiggeredForPositiveSize());
+						this.selection.setVolume(selectSquare.rejiggeredForPositiveSize().clampedToVolume(pc.getVolume()));
 						this.selection.setActive(true);
+						renderOutline(baseMatrix, this.selection.getVolume(), Color.white);
+					}
+					else {
+						renderOutline(baseMatrix,selectSquare, Color.white);
+
 					}
 				}
 				this.mouseButtonDown = -1;

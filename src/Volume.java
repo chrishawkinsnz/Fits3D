@@ -107,6 +107,32 @@ public class Volume {
 		Vector3 newSize = new Vector3(sizes);
 		return new Volume(newOrigin, newSize);
 	}
+
+	public Volume clampedToVolume(Volume volume) {
+		float[]positions = this.origin.toArray();
+		float[]sizes = this.size.toArray();
+
+		for (int i = 0; i < 3; i++) {
+			if (positions[i] < volume.origin.get(i)) {
+				float shortFall = volume.origin.get(i) - positions[i];
+				sizes[i] -= shortFall;
+				positions[i] = volume.origin.get(i);
+			}
+			if (positions[i] > volume.origin.get(i) + volume.size.get(i)) {
+				positions[i] = volume.origin.get(i) + volume.size.get(i);
+				sizes[i] = 0f;
+			}
+			if (sizes[i] + positions[i] > volume.origin.get(i) + volume.size.get(i)) {
+				float overflow = (sizes[i] + positions[i]) - (volume.origin.get(i) + volume.size.get(i));
+				sizes[i] -= overflow;
+			}
+		}
+
+		Vector3 newOrigin = new Vector3(positions);
+		Vector3 newSize = new Vector3(sizes);
+		return new Volume(newOrigin, newSize);
+
+	}
 	/**
 	 * Checks to see if a point is contained within this volume
 	 * @param point The point to check
