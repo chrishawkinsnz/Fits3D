@@ -233,7 +233,7 @@ public class RegionRepresentation {
 			int[]repLengths		 = new int[4];
 			float[]strides		 = new float[4];
 			int shortOnAxes = 4 - hdu.getAxes().length;
-			int actualDimension = 0;
+
 			//--first load uninitialised dimensions with defaults
 			for (int i = 0; i < shortOnAxes; i++) {
 				sourceLengths[i] = 1;
@@ -241,36 +241,38 @@ public class RegionRepresentation {
 				sourceEnds[i] 	 = 1;
 				repLengths[i] 	 = 1;
 				strides[i] 		 = 1;
-				rr.setNumPts(i, repLengths[i]);
+				rr.setNumPts(3-i, repLengths[i]);
 			}
 			//--then load the remaining genuine values
 			for (int i = shortOnAxes; i < 4; i++) {
 
 				sourceLengths[i] = hdu.getAxes()[i - shortOnAxes];
-				float proportionalStart = i == 0 ? 0f : volume.origin.get(i - 1);
-				float proportionalEnd   = i == 0 ? 1f : volume.origin.get(i - 1) + volume.size.get(i - 1);
+				float proportionalStart = i == 0 ? 0f : volume.origin.get(3- i + 1);
+				float proportionalEnd   = i == 0 ? 1f : volume.origin.get(3- i + 1) + volume.size.get(i - 1);
 
 				sourceStarts[i]  = (int)(proportionalStart * sourceLengths[i]);
 				sourceEnds[i] 	 = (int)(proportionalEnd * sourceLengths[i]);
 				repLengths[i]	 = (sourceEnds[i] - sourceStarts[i])/stride;
 				strides[i]		 = 1.0f/(float)repLengths[i];
 
-				rr.setNumPts(i, repLengths[i]);
-
-				actualDimension++;
+				rr.setNumPts(3-i , repLengths[i]);
 			}
 
 
 
 			if (fakeFourthDimension) {
-				rr.setNumPts(0, repLengths[1]);
+				rr.setNumPts(3, repLengths[1]);
 			}
 
 
+			//In this context
+			//0 = w
+			//1 = z
+			//2 = y
+			//3 = x
 
 
-
-			int yRemainder = sourceLengths[1] - stride*(sourceLengths[1]/stride);
+			int yRemainder = sourceLengths[2] - stride*(sourceLengths[2]/stride);
 
 			DataType dataType = null;
 			if 		(hdu.getBitPix() == -64) dataType = DataType.DOUBLE;
@@ -304,7 +306,7 @@ public class RegionRepresentation {
 
 					for (indices[1] = 0; indices[1] < repLengths[1]; indices[1]++) {
 						proportion = (float) indices[1] / (float) repLengths[1];
-						position[1] = volume.x + volume.wd * proportion;
+						position[1] = volume.z + volume.dp * proportion;
 						int pts = 0;
 						int maxPts = repLengths[2] * repLengths[3];
 
@@ -325,7 +327,7 @@ public class RegionRepresentation {
 
 							for (indices[3] = 0; indices[3] < repLengths[3]; indices[3]++) {
 								proportion = (float) indices[3] / (float) repLengths[3];
-								position[3] = volume.z + volume.dp * proportion;
+								position[3] = volume.x + volume.wd * proportion;
 
 								float val;
 								if (dataType == DataType.DOUBLE) {
@@ -347,7 +349,8 @@ public class RegionRepresentation {
 										fudge = 0.0f;
 									}
 
-									for (int i = 1; i < 4; i++)
+//									for (int i = 1; i < 4; i++)
+									for (int i = 3; i > 0; i--)
 										vertexBuffer.put((short) ((position[i] + fudge * strides[i]) * Short.MAX_VALUE));
 
 									valueBuffer.put(val);
