@@ -17,8 +17,6 @@ public class Region implements  AttributeProvider{
 	private List<Region> minusRegions;
 	private RegionRepresentation regionRepresentation;
 
-	private float depth;
-
 	/**
 	 * Volume is a region of space within the overall point cloud.  that is the largest possible volume for a region is
 	 * {0, 0, 0, 1, 1, 1}
@@ -38,7 +36,6 @@ public class Region implements  AttributeProvider{
 
 	private Region(Volume volume, float initialFidelity) {
 		this.volume = volume;
-		this.setDepth(this.getVolume().origin.z + 0.5f * this.getVolume().dp);
 
 		this.nameAttribute = new Attribute.TextAttribute("Name", "Region "+regionCount++, false);
 		this.attributes.add(this.nameAttribute);
@@ -219,17 +216,6 @@ public class Region implements  AttributeProvider{
 	public void setRegionRepresentation(RegionRepresentation regionRepresentation) {
 		this.regionRepresentation = regionRepresentation;
 	}
-
-
-	public float getDepth() {
-		return depth;
-	}
-
-
-	public void setDepth(float depth) {
-		this.depth = depth;
-	}
-
 
 	public Volume getVolume() {
 		return volume;

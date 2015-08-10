@@ -47,7 +47,7 @@ public class PointCloud implements  AttributeProvider {
 	private Volume backupVolume;
 	private Volume galacticVolume;
 
-	private Axis slitherAxis = Axis.x;
+	private Axis slitherAxis = Axis.z;
 
 	public final Color color;
 	
@@ -499,7 +499,7 @@ public class PointCloud implements  AttributeProvider {
 		originArray[this.slitherAxis.ordinal()] = this.slitherPositionAttribute.getValue();
 		Vector3 origin = new Vector3(originArray);
 
-		float sliceWidth = 1.0f/(float)this.regions.get(0).getDepthInPoints();
+		float sliceWidth = 1.0f/(float)this.regions.get(0).getDimensionInPts(this.slitherAxis.ordinal());
 		float []sizeArray = {1.0f, 1.0f, 1.0f};
 		sizeArray[this.slitherAxis.ordinal()] = sliceWidth;
 		Vector3 size = new Vector3(sizeArray);

@@ -105,7 +105,7 @@ public class RegionRepresentation {
 
 			VertexBufferSlice newSlice = new VertexBufferSlice();
 			newSlice.numberOfPts = cloneCount;
-			newSlice.x = ss.x;
+			newSlice.z = ss.z;
 			newSlice.vertexBuffer = cloneVerts;
 			newSlice.valueBuffer = cloneValues;
 
@@ -136,8 +136,8 @@ public class RegionRepresentation {
 		for (VertexBufferSlice ss : this.slices) {
 
 			//guard against whole slice being outisde bounds
-			if(ss.x < volume.origin.x) { continue;}
-			if(ss.x >= volume.origin.x + volume.wd) { continue;}
+			if(ss.z < volume.origin.x) { continue;}
+			if(ss.z >= volume.origin.x + volume.wd) { continue;}
 
 			//--TODO currently assuming nothing about the order of the vertices so not skipping or anything
 			ShortBuffer sVerts = ss.vertexBuffer;
@@ -186,7 +186,7 @@ public class RegionRepresentation {
 
 			VertexBufferSlice newSlice = new VertexBufferSlice();
 			newSlice.numberOfPts = subsectionCount;
-			newSlice.x = ss.x;
+			newSlice.z = ss.z;
 			newSlice.vertexBuffer = subsectionVerts;
 			newSlice.valueBuffer = subsectionValues;
 
@@ -269,7 +269,7 @@ public class RegionRepresentation {
 			//0 = w
 			//1 = z
 			//2 = y
-			//3 = x
+			//3 = z
 
 
 			int yRemainder = sourceLengths[2] - stride*(sourceLengths[2]/stride);
@@ -296,7 +296,7 @@ public class RegionRepresentation {
 			if (hdu.getData().reset()) {
 				ArrayDataInput adi = fits.getStream();
 
-				//--skip whole planes at the start if the volume doesn't start at zero x
+				//--skip whole planes at the start if the volume doesn't start at zero z
 				adi.skipBytes(sourceLengths[3] * sourceLengths[2] * sourceStarts[1] * typeSize);
 				int[] indices = new int[4];
 				float[] position = new float[4];
@@ -379,7 +379,7 @@ public class RegionRepresentation {
 
 
 						vbs.w = (float) indices[0] / (float) repLengths[0];
-						vbs.x = (float) indices[1] / (float) repLengths[1];
+						vbs.z = (float) indices[1] / (float) repLengths[1];
 
 						if (fakeFourthDimension) {
 							vbs.w = (float) indices[1] / (float) repLengths[1];
@@ -393,7 +393,7 @@ public class RegionRepresentation {
 
 				}
 			}
-			System.out.println("fits file loaded " + repLengths[0] + " x " + repLengths[1] + " x " + repLengths[2] + " x " + repLengths[3]);
+			System.out.println("fits file loaded " + repLengths[0] + " z " + repLengths[1] + " z " + repLengths[2] + " z " + repLengths[3]);
 
 		}catch (Exception e) {
 			JOptionPane.showMessageDialog(null, e.getClass().getName()+": " + e.getMessage(), "Error!", JOptionPane.ERROR_MESSAGE);
@@ -521,7 +521,7 @@ public class RegionRepresentation {
 				}
 			}
 
-			System.out.println("fits file loaded " + maxWidth + " x " + maxHeight + " x " + maxDepth);
+			System.out.println("fits file loaded " + maxWidth + " z " + maxHeight + " z " + maxDepth);
 			System.out.println("min" + minn);
 			System.out.println("max" + maxx);
 			allOfThemFloats.sort(new Comparator<Float>() {
@@ -632,13 +632,13 @@ public class RegionRepresentation {
 
 	public void setNumPts(int axis, int number) {
 		if (axis == 0) {
-			this.setNumPtsW(number);
-		}else if (axis == 1) {
 			this.setNumPtsX(number);
-		}else if (axis == 2) {
+		}else if (axis == 1) {
 			this.setNumPtsY(number);
-		}else if (axis == 3) {
+		}else if (axis == 2) {
 			this.setNumPtsZ(number);
+		}else if (axis == 3) {
+			this.setNumPtsW(number);
 		}
 		else {
 			System.out.println("hey hey hey whoops we don't really support this many axis eh");
@@ -654,6 +654,9 @@ public class RegionRepresentation {
 		}
 		if (dimension == 2) {
 			return this.getNumPtsZ();
+		}
+		if (dimension == 3) {
+			return this.getNumPtsW();
 		}
 		return 0;
 	}

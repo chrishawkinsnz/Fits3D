@@ -5,7 +5,6 @@ import static com.jogamp.opengl.GL.GL_FLOAT;
 import static com.jogamp.opengl.GL.GL_STATIC_DRAW;
 
 import java.awt.Color;
-import java.awt.event.MouseListener;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.*;
@@ -203,7 +202,7 @@ public class Renderer {
 			float[] black = {0f, 0f, 0f, 0f};
 			legendLines[axisNumber] = makeLine(origin, dest, col, black);
 		}
-		this.backLines.add(legendLines[0]);	//--add red x axis line
+		this.backLines.add(legendLines[0]);	//--add red z axis line
 		this.backLines.add(legendLines[1]);	//--add green y axis line
 		this.leftLines.add(legendLines[2]);	//--add blue z axis line
 
@@ -361,7 +360,7 @@ public class Renderer {
 
 		gl.glUseProgram(this.shaderProgram);
 		if (this.selection != null) {
-
+			System.out.println(this.selection.getVolume());
 			gl.glUniform1i(uniformIsSelecting, GL_TRUE);
 
 			PointCloud cloudOfInterest = this.pointClouds.get(0);
@@ -395,7 +394,9 @@ public class Renderer {
 		float moddedSpin = this.viewer.getxSpin() % (2f * pi);
 		float spin = moddedSpin < 0f ? (2f * pi) + moddedSpin : moddedSpin;
 
-		boolean flippityFlop = spin > pi;
+		System.out.println("spin:" + spin);
+
+		boolean flippityFlop = spin > pi/2f && spin < (3f/2f) * pi  ;
 
 
 		lastFlippity = flippityFlop;
@@ -403,8 +404,8 @@ public class Renderer {
 
 		List<VertexBufferSlice> allSlicesLikeEver = new ArrayList<VertexBufferSlice>();
 
-		float minScratchX =  Float.MAX_VALUE;
-		float maxScractchX = Float.MIN_VALUE;
+		float minScratchZ =  Float.MAX_VALUE;
+		float maxScratchZ = Float.MIN_VALUE;
 		for (PointCloud cloud : this.pointClouds){
 			if (cloud.isVisible.getValue() == false) {continue;}
 			for (Region cr: cloud.getRegions()) {
@@ -415,12 +416,12 @@ public class Renderer {
 					if (!slice.isLive) {continue;}
 					if (!cloud.shouldDisplayFrameWithW(slice.w)) {continue;}
 
-					slice.scratchX = (cr.getVolume().x + cr.getVolume().wd * slice.x) * cloud.volume.wd + cloud.volume.x;
-					if (slice.scratchX > maxScractchX) {
-						maxScractchX = slice.scratchX;
+					slice.scratchZ = (cr.getVolume().z + cr.getVolume().dp * slice.z) * cloud.volume.dp + cloud.volume.z;
+					if (slice.scratchZ > maxScratchZ) {
+						maxScratchZ = slice.scratchZ;
 					}
-					if (slice.scratchX < minScratchX) {
-						minScratchX = slice.scratchX;
+					if (slice.scratchZ < minScratchZ) {
+						minScratchZ = slice.scratchZ;
 					}
 					slice.region = cr;
 					slice.cloud = cloud;
@@ -433,7 +434,7 @@ public class Renderer {
 		
 		class RegionOrderer implements Comparator<VertexBufferSlice> {
 			public int compare(VertexBufferSlice a, VertexBufferSlice b) {
-				return a.scratchX < b.scratchX ? 1 : -1;
+				return a.scratchZ < b.scratchZ ? 1 : -1;
 			}
 		}
 		Collections.sort(allSlicesLikeEver, new RegionOrderer());
@@ -502,7 +503,7 @@ public class Renderer {
 			Color[] cols = {Color.red, Color.orange, Color.yellow, Color.green, Color.blue, Color.cyan, Color.magenta};
 			Color col = cloud.color;
 			if (gay) {
-				float proportion = (slice.scratchX - minScratchX) / (maxScractchX - minScratchX);
+				float proportion = (slice.scratchZ - minScratchZ) / (maxScratchZ - minScratchZ);
 				col = new Color(0.1f + 0.8f * proportion, 0.9f - 0.8f * proportion, 0.0f, 1.0f);
 
 				col = cols[i%cols.length];
@@ -563,11 +564,12 @@ public class Renderer {
 				//--draw axes for mouse highlighting
 				if (this.mouseWorldPosition != null) {
 					//--ensure on correct plane
-					this.mouseWorldPosition = new Vector3(worldOrigin.x, this.mouseWorldPosition.y, this.mouseWorldPosition.z);
-					Vector3 lm = new Vector3(this.mouseWorldPosition.x, this.mouseWorldPosition.y, worldOrigin.z);
-					Vector3 rm = new Vector3(this.mouseWorldPosition.x, this.mouseWorldPosition.y, worldOrigin.z + worldSize.z);
-					Vector3 bm = new Vector3(this.mouseWorldPosition.x, worldOrigin.y, this.mouseWorldPosition.z);
-					Vector3 tm = new Vector3(this.mouseWorldPosition.x, worldOrigin.y + worldSize.y, this.mouseWorldPosition.z);
+					this.mouseWorldPosition = 	new Vector3(this.mouseWorldPosition.x				, this.mouseWorldPosition.y		, worldOrigin.z);
+
+					Vector3 lm = 				new Vector3(worldOrigin.x							, this.mouseWorldPosition.y		, worldOrigin.z);
+					Vector3 rm = 				new Vector3(worldOrigin.x + worldSize.x 			, this.mouseWorldPosition.y		, worldOrigin.z);
+					Vector3 bm = 				new Vector3(this.mouseWorldPosition.x				, worldOrigin.y					, worldOrigin.z);
+					Vector3 tm = 				new Vector3(this.mouseWorldPosition.x				, worldOrigin.y + worldSize.y	, worldOrigin.z);
 					Line l2r = makeLine(lm, rm);
 					Line t2b = makeLine(bm, tm);
 					renderLine(l2r, baseMatrix);
@@ -588,8 +590,8 @@ public class Renderer {
 
 				if (this.startBoxPos != null && this.endBoxPos != null) {
 //					Vector3 size = this.endBoxPos.minus(this.startBoxPos);
-					Vector3 origin = new Vector3(worldOrigin.x, this.startBoxPos.y, this.startBoxPos.z);
-					Vector3 size = new Vector3(this.selectionDepth, this.endBoxPos.y - this.startBoxPos.y, this.endBoxPos.z - this.startBoxPos.z);
+					Vector3 origin = new Vector3(this.startBoxPos.x, this.startBoxPos.y, worldOrigin.z);
+					Vector3 size = new Vector3(this.endBoxPos.x - this.startBoxPos.x, this.endBoxPos.y - this.startBoxPos.y, this.selectionDepth);
 					Volume selectSquare = new Volume(origin, size);
 
 					renderOutline(baseMatrix,selectSquare, Color.white);
@@ -625,11 +627,10 @@ public class Renderer {
 
 		float[] mat = baseMatrix.getMatrix();
 
-		float[]result = new float[3];
 		float[]bl = {plane.origin.x					, plane.origin.y				 , plane.origin.z			  	};
-		float[]br = {plane.origin.x + plane.size.x	, plane.origin.y				 , plane.origin.z + plane.size.z};
+		float[]br = {plane.origin.x + plane.size.x	, plane.origin.y				 , plane.origin.z};
 		float[]tl = {plane.origin.x					, plane.origin.y + plane.size.y	 , plane.origin.z			  	};
-		float[]tr = {plane.origin.x + plane.size.x	, plane.origin.y + plane.size.y	 , plane.origin.z + plane.size.z};
+		float[]tr = {plane.origin.x + plane.size.x	, plane.origin.y + plane.size.y	 , plane.origin.z};
 
 		float[]bls = new float[3];
 		float[]brs = new float[3];
@@ -646,7 +647,6 @@ public class Renderer {
 		//--factor in the z position of the slice to work out the
 		float orthoMouseX = this.orthoOrigX -(this.orthoWidth)+ 4f * this.orthoWidth * (pixelPosition.x/(float)this.width);
 		float orthoMouseY = this.orthoOrigY +(this.orthoHeight)- 4f * this.orthoHeight * (pixelPosition.y/(float)this.height);
-		Vector3 pos = new Vector3(result[0], origin.y, origin.z);
 
 		float proportionX = (orthoMouseX - bls[0]) /(brs[0] - bls[0]);
 
@@ -657,10 +657,10 @@ public class Renderer {
 
 
 			float[] bm = {bl[0], bl[1], bl[2]};
-			bm[2] += proportionX * plane.size.z;
+			bm[0] += proportionX * plane.size.x;
 
 			float[] tm = {tl[0], tl[1], tl[2]};
-			tm[2] += proportionX * plane.size.z;
+			tm[0] += proportionX * plane.size.x;
 
 			float[] mm = {bm[0], bm[1], bm[2]};
 
@@ -773,8 +773,10 @@ public class Renderer {
 			if (pc.shouldDisplaySlitherenated()) {
 				Volume slither = getWorldRelativeSlitherForPointCloud(pc);
 				Vector3 worldPos = worldPositionOfPixelOnPlane(screenPos, slither, lastBaseMatrix, false);
-				if (worldPos != null)
+				if (worldPos != null) {
 					found = true;
+
+				}
 			}
 
 		}
