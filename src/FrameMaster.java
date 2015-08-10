@@ -72,7 +72,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
         this.canvas = makeCanvas();
 		this.viewer = createViewer();
-//        attachControlsToCanvas(canvas, viewer);
 
 		this.getContentPane().add(canvas, BorderLayout.CENTER);
 		this.getContentPane().add(makeFilePanel(), BorderLayout.WEST);
@@ -202,12 +201,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				float valuef = (float)sliderDepth.getValue()/(float)sliderDepth.getMaximum();
-
-
 				valuef *= 2f;
-
-
-				System.out.println(valuef);
 				FrameMaster.this.renderer.setSelectionDepth(valuef);
 				setNeedsDisplay();
 			}
@@ -420,7 +414,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	 * User chooses to cut out a subsection
 	 */
 	private void cutSelection() {
-		this.pointClouds.get(0).cutOutSubvolume(this.selection.getVolume());
+		this.pointClouds.get(0).cutOutSubvolume(this.renderer.selection.getVolume());
 		this.toggleSelectMode();
 		reloadAttributePanel();
 	}

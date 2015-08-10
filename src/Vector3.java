@@ -66,4 +66,19 @@ public class Vector3 {
 	public String toString(){
 		return "Vec{"+x+", "+y+", "+z+"}";
 	}
+
+	@Override
+	public boolean equals(Object other) {
+		if (!(other instanceof  Vector3)) {
+			return false;
+		}
+
+		Vector3 otherv = (Vector3)other;
+		for (int i = 0; i < 3; i++) {
+			if (otherv.get(i) != this.get(i)) {
+				return false;
+			}
+		}
+		return true;
+	}
 }

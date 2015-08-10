@@ -374,7 +374,6 @@ public class Renderer {
 			int axis = cloudOfInterest.getSlitherAxis().ordinal();
 			float adjusted = cloudOfInterest.getVolume().size.get(axis) * base /(float) cloudOfInterest.getRegions().get(0).getDimensionInPts(axis);
 
-			System.out.println(this.selection.getVolume());
 			gl.glUniform1f(uniformLowLight, adjusted);
 			int dimensions = 3;
 			int[] uniformsMin = {uniformSelectionMinX, uniformSelectionMinY, uniformSelectionMinZ};
@@ -453,8 +452,6 @@ public class Renderer {
 		renderPrimitives(baseMatrix, spin, true);
 
 
-
-
 		for (int i = 0; i < allSlicesLikeEver.size(); i++){
 			
 			//-if Z is now pointing out of the screen take slices from the back of the list forward
@@ -507,7 +504,6 @@ public class Renderer {
 			if (gay) {
 				float proportion = (slice.scratchX - minScratchX) / (maxScractchX - minScratchX);
 				col = new Color(0.1f + 0.8f * proportion, 0.9f - 0.8f * proportion, 0.0f, 1.0f);
-				System.out.println(col);
 
 				col = cols[i%cols.length];
 			}
@@ -589,7 +585,6 @@ public class Renderer {
 					}
 				}
 
-				System.out.println(this.mouseButtonDown);
 
 				if (this.startBoxPos != null && this.endBoxPos != null) {
 //					Vector3 size = this.endBoxPos.minus(this.startBoxPos);
@@ -743,6 +738,20 @@ public class Renderer {
 		this.mouseScreenPosition = new Vector3(x, y, 3f);
 		this.mouseButtonDown = button;
 		this.startBoxPos = null;
+	}
+
+	public void registerLeaveSelectionZone() {
+		this.mouseScreenPosition = null;
+		this.mouseWorldPosition = null;
+	}
+
+	public void registerClick(int x, int y, MouseController.MouseActionType type) {
+			this.selectionDepth = 0f;
+			this.startBoxPos = null;
+			this.endBoxPos = null;
+			this.selection = null;
+			this.mouseScreenPosition = null;
+			this.mouseWorldPosition = null;
 	}
 
 	public float getSelectionDepth() {

@@ -62,17 +62,19 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 		}
 		else {
 			if (this.lastMouseMotionType == MouseActionType.Select) {
+				this.renderer.registerLeaveSelectionZone();
 				FrameMaster.setNeedsDisplay();
 			}
 			this.lastMouseMotionType = MouseActionType.Camera;
 		}
 		//TODO don't redraw unless is actually over square
-
-
 	}
 
 	@Override
-	public void mouseClicked(MouseEvent e) {}
+	public void mouseClicked(MouseEvent e) {
+		this.renderer.registerClick(e.getX(), e.getY(), MouseActionType.Select);
+		FrameMaster.setNeedsDisplay();
+	}
 
 	@Override
 	public void mousePressed(MouseEvent e) {
@@ -90,6 +92,7 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 		}
 
 	}
+
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
