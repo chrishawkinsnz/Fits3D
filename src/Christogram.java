@@ -376,6 +376,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		public static Filter distributionWithExponentialIncrease(float startValue, float endValue) {
 			return new Filter(startValue, endValue, true);
 		}
+
 		
 		private static int currentDefault = 0;
 //		public static Filter nextDefault() {

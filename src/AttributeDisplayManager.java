@@ -26,7 +26,14 @@ public class AttributeDisplayManager {
     	}
     	else if (attribute instanceof Attribute.TextAttribute) {
     		Attribute.TextAttribute nAttribute = (Attribute.TextAttribute)attribute;
-    		tweakable = new Tweakable.ChrisLabel(nAttribute.getValue());
+			if (nAttribute.isTitle) {
+				tweakable = new Tweakable.ChrisTitle(nAttribute.getValue());
+			}
+			else {
+				tweakable = new Tweakable.ChrisLabel(nAttribute.getValue());
+			}
+
+
     	}
     	else if (attribute instanceof Attribute.SteppedRangeAttribute) {
     		Attribute.SteppedRangeAttribute srAttribute = (Attribute.SteppedRangeAttribute)attribute;
@@ -35,7 +42,7 @@ public class AttributeDisplayManager {
     	else if (attribute instanceof Attribute.FilterSelectionAttribute) {
     		Attribute.FilterSelectionAttribute fsAttribute = (Attribute.FilterSelectionAttribute)attribute;
 			PointCloud pc = (PointCloud)attributeDisplayer;
-    		tweakable = new Tweakable.ChristogramTweakable(pc.getHistBuckets(), fsAttribute, pc.getHistMin(), pc.getHistMax());
+    		tweakable = new Tweakable.ChristogramTweakable(pc.getHistBuckets(), fsAttribute, pc.getHistMin(), pc.getHistMax(), fsAttribute.getAxisName());
     	}
 		else if (attribute instanceof Attribute.MultiChoiceAttribute) {
 			Attribute.MultiChoiceAttribute mcAttribute = (Attribute.MultiChoiceAttribute)attribute;

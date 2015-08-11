@@ -60,7 +60,6 @@ public class PointCloud implements  AttributeProvider {
 	public Attribute.BinaryAttribute isVisible;
 	public Attribute.SteppedRangeAttribute quality;
 	public Attribute.FilterSelectionAttribute filterSelection;
-	public Attribute.BinaryAttribute isSelected;
 	public Attribute.MultiChoiceAttribute relativeTo;
 	public Attribute.RangedAttribute frame;
 	private final Attribute.BinaryAttribute cycling;
@@ -77,7 +76,16 @@ public class PointCloud implements  AttributeProvider {
 		fileName = new Attribute.PathName("Filename", pathName, false);
 		attributes.add(fileName);
 
-		intensity = new Attribute.RangedAttribute("Visibility", 0.001f, 1f, 0.5f, false);
+
+		Attribute.TextAttribute optionsTitleAttribute = new Attribute.TextAttribute(" ", "Options", false);
+		optionsTitleAttribute.isTitle = true;
+		attributes.add(optionsTitleAttribute);
+
+		isVisible = new Attribute.BinaryAttribute("Visible", true, true);
+		attributes.add(isVisible);
+
+
+		intensity = new Attribute.RangedAttribute("Brightness", 0.001f, 1f, 0.5f, false);
 		attributes.add(intensity);
 
 		float fidelity = STARTING_FIDELITY;
@@ -87,6 +95,7 @@ public class PointCloud implements  AttributeProvider {
 		}catch (Exception e) {
 			e.printStackTrace();
 		}
+
 		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, fidelity, 10, true);
 		quality.callback = (obj) -> {
 			float newQuality = ((Float) obj).floatValue();
@@ -116,15 +125,22 @@ public class PointCloud implements  AttributeProvider {
 		};
 		attributes.add(quality);
 
-		isVisible = new Attribute.BinaryAttribute("Visible", true, true);
 
-		attributes.add(isVisible);
 
-		isSelected = new Attribute.BinaryAttribute("Selected", false, true);
-		attributes.add(isSelected);
+
+		Attribute.TextAttribute filteringTitleAttribute = new Attribute.TextAttribute(" ", "Filters", false);
+		filteringTitleAttribute.isTitle = true;
+		attributes.add(filteringTitleAttribute);
+
+
+
+
+
+
 
 		Christogram.Filter data = new Christogram.Filter(0f, 1f, 0f, 1f, false);
-		filterSelection = new Attribute.FilterSelectionAttribute("Filter", false, data);
+		filterSelection = new Attribute.FilterSelectionAttribute("Value Filter", false, data);
+
 		attributes.add(filterSelection);
 
 		this.frame = new Attribute.RangedAttribute("Waxis", 0f, 1f, 0f, false);
@@ -174,11 +190,7 @@ public class PointCloud implements  AttributeProvider {
 			pos[slitherAxis.ordinal()] = newZ;
 
 			Vector3 newOrigin = new Vector3(pos);
-//			float[] pos = oldOrigin.toArray();
-//
-//			pos[PointCloud.this.slitherAxis.ordinal()] = this.volume.size.scale(this.slitherPositionAttribute.getValue()).get(PointCloud.this.slitherAxis.ordinal()) + this.volume.origin.get(PointCloud.this.slitherAxis.ordinal());
-//
-//			Vector3 newOrigin = new Vector3(pos);
+
 			Volume volume = new Volume(newOrigin, oldSize);
 			FrameMaster.getSelection().setVolume(volume);
 		};
@@ -247,24 +259,29 @@ public class PointCloud implements  AttributeProvider {
 			this.fits = new Fits(this.fileName.getValue());
 
 			ImageHDU hdu = (ImageHDU)this.fits.getHDU(0);
-			attributes.add(0,new Attribute.TextAttribute("Data Type", BitPix.dataTypeForBitPix(hdu.getBitPix()).name(), false));
-			attributes.add(1,new Attribute.TextAttribute("Observer", hdu.getObserver(), false));
-			attributes.add(2, new Attribute.TextAttribute("Observed", "" + hdu.getObservationDate(), false));
+
+
+			Attribute.TextAttribute unitAttribute = new Attribute.TextAttribute("Value Unit", "" + hdu.getHeader().getStringValue("BUNIT"), false);
+			attributes.add(1, unitAttribute);
+
+			this.filterSelection.setAxisName(unitAttribute.getValue());
 
 			this.unitTypes = new Attribute.TextAttribute[3];
-			for (int i = 0; i < 3; i++) {
-				Attribute.TextAttribute unitAttribute = new Attribute.TextAttribute("Unit "+ AXES_NAMES[i], "" + hdu.getHeader().getStringValue("CTYPE"+(i+1)), false);
+			for (int i = hdu.getAxes().length-1; i >= 0 ; i--) {
+				unitAttribute = new Attribute.TextAttribute(AXES_NAMES[i] + " Unit", "" + hdu.getHeader().getStringValue("CTYPE"+(i+1)), false);
 				this.unitTypes[i] = unitAttribute;
-				attributes.add(attributes.size() - 1, unitAttribute);
+				attributes.add(1, unitAttribute);
 			}
-			Attribute.TextAttribute unitAttribute = new Attribute.TextAttribute("Unit Z", "" + hdu.getHeader().getStringValue("BUNIT"), false);
-			attributes.add(attributes.size() - 1, unitAttribute);
+
 
 			for (int i = hdu.getAxes().length-1; i >= 0 ; i--) {
-				attributes.add(attributes.size() - 1,new Attribute.TextAttribute(AXES_NAMES[i] + " Resolution", "" + hdu.getAxes()[i], false));
+				attributes.add(1,new Attribute.TextAttribute(AXES_NAMES[i] + " pts", "" + hdu.getAxes()[i], false));
 			}
 
-			attributes.add(attributes.size() - 1, new Attribute.TextAttribute("Instrument", hdu.getInstrument(), false));
+
+
+
+
 			for (Attribute attr : attributes) {
 				if (attr instanceof Attribute.TextAttribute) {
 					Attribute.TextAttribute namedAttr = (Attribute.TextAttribute)attr;

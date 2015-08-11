@@ -359,7 +359,7 @@ public class RegionRepresentation {
 										if (val > rr.estMax)
 											rr.estMax = val;
 									}
-//									for (int i = 1; i < 4; i++)
+
 									for (int i = 3; i > 0; i--)
 										vertexBuffer.put((short) ((position[i] + fudge * strides[i]) * Short.MAX_VALUE));
 
@@ -435,7 +435,7 @@ public class RegionRepresentation {
 
 		mam.min = rr.estMin - 0.25f * range;
 		mam.max = rr.estMax + 0.25f * range;
-		
+
 		return mam;
 	}
 

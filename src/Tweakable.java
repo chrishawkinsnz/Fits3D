@@ -254,10 +254,10 @@ public abstract class Tweakable implements  AttributeDisplayer{
 	public static class ChristogramTweakable extends Tweakable implements AttributeDisplayer, ChangeListener {
 		private Christogram christogram;
 		
-		public ChristogramTweakable(int[]buckets, Attribute attribute, float min, float max){
+		public ChristogramTweakable(int[]buckets, Attribute attribute, float min, float max, String title){
 			super(attribute);
 	        christogram = new Christogram(buckets, min, max);
-	        christogram.setXAxisTitle("Intensity");
+	        christogram.setXAxisTitle(title != null ? title : " ");
 	        christogram.setMinimumSize(new Dimension(800,200));
 	        christogram.setPreferredSize(new Dimension(800,200));
 	        christogram.addChangeListener(this);

@@ -173,10 +173,19 @@ public abstract class Attribute {
 	
 	public static class FilterSelectionAttribute extends Attribute {
 		private Christogram.Filter filter;
-		
+		private String axisName;
+
 		public FilterSelectionAttribute(String displayName, boolean shouldAggregate, Christogram.Filter filter) {
 			super(displayName, shouldAggregate);
 			this.filter = filter;
+		}
+
+		public void setAxisName(String axisName) {
+			this.axisName = axisName;
+		}
+
+		public String getAxisName() {
+			return this.axisName;
 		}
 
 		@Override
@@ -218,4 +227,6 @@ public abstract class Attribute {
 		}
 
 	}
+
+
 }
