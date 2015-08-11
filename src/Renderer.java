@@ -13,16 +13,11 @@ import static com.jogamp.opengl.GL2.*;
 
 import com.jogamp.opengl.GL3;
 import com.jogamp.opengl.math.Matrix4;
-import com.jogamp.opengl.math.VectorUtil;
 
 public class Renderer {
 	private static long lastTime = 0;
 
-
-
-
 	//--SETTINGS
-	public boolean isOrthographic = true;
 	private int width;
 	private int height;
 
@@ -64,14 +59,10 @@ public class Renderer {
 	private int uniformSelectionMaxZ;
 
 	private int uniformLowLight;
-	//--highlighting shader uniforms
+
 
 	private int legendMvpUniformHandle;
 
-	private Matrix4 lastBaseMatrix;
-
-	private Vector3 startBoxPos;
-	private Vector3 endBoxPos;
 
 	//--Primitives
 	private List<Line>backLines = new ArrayList<Line>();
@@ -82,23 +73,13 @@ public class Renderer {
 	private List<Line>leftLines = new ArrayList<Line>();
 
 
-	//--SELECTIOn
-	private Volume selectionVolume = Volume.unitVolume();
-
-
 
 	//--DEBUG FLAGS
-	private boolean legendary = true;
 	public	boolean gay = false;
 	private int uniformIsSelecting;
 
+	public Vector3 mouseWorldPosition;
 
-	private int mouseButtonDown = 0;
-	private Vector3 mouseScreenPosition;
-	
-	private Vector3 mouseWorldPosition;
-
-	private float selectionDepth = 0f;
 
 	public Renderer(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl, Selection selection){
 		this.selection = selection;
@@ -142,7 +123,6 @@ public class Renderer {
 
 		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "shaderCloud.vert", "shaderCloud.frag");
 
-
 		this.uniformMvpHandle 		= gl.glGetUniformLocation(this.shaderProgram, "mvp");
 		this.uniformAlphaFudgeHandle= gl.glGetUniformLocation(this.shaderProgram, "alphaFudge");
 		this.uniformPointAreaHandle = gl.glGetUniformLocation(this.shaderProgram, "pointArea");
@@ -170,6 +150,9 @@ public class Renderer {
 		gl.glDisable(GL_CULL_FACE);
 
 		setupLegend();
+
+		this.shaderProgramLegend = ShaderHelper.programWithShaders2(gl, "shaderFlat.vert", "shaderFlat.frag");
+		this.legendMvpUniformHandle = gl.glGetUniformLocation(this.shaderProgramLegend, "mvp");
 	}
 
 	private void printFps() {
@@ -178,10 +161,6 @@ public class Renderer {
 		System.out.println("FPS: " + (int) fps);
 		lastTime = System.nanoTime();
 	}
-
-
-	boolean first = true;
-
 
 
 
@@ -204,9 +183,8 @@ public class Renderer {
 		this.leftLines.add(legendLines[2]);	//--add blue z axis line
 
 	}
-	private void renderPrimitives(Matrix4 mvp, float spin, boolean firstPass) {
+	private void renderBackgroundLines(Matrix4 mvp, float spin, boolean firstPass) {
 
-		float zero = 0f;
 		float halfPi = 3.141592f/2f;
 		float pi = 3.141592f;
 		float piAndAHalf = 3.141592f * 1.5f;
@@ -280,13 +258,6 @@ public class Renderer {
 	}
 
 	private Line makeLine(float[]posa, float[]posb, float []cola, float[]colb) {
-		if (first) {
-			//--load the shader files in
-			this.shaderProgramLegend = ShaderHelper.programWithShaders2(gl, "shaderFlat.vert", "shaderFlat.frag");
-			this.legendMvpUniformHandle = gl.glGetUniformLocation(this.shaderProgramLegend, "mvp");
-			first = false;
-		}
-
 		int[] vertHandle = new int[1];
 		gl.glGenBuffers(1, vertHandle, 0);
 
@@ -345,16 +316,13 @@ public class Renderer {
 			gl.glDrawArrays(GL_LINES, 0, 2);
 		}
 
-			gl.glUseProgram(this.shaderProgram);
+		gl.glUseProgram(this.shaderProgram);
 	}
 
-	private boolean lastFlippity = true;
 	public void display() {
-
-//		printFps();
+		printFps();
 
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		gl.glUseProgram(this.shaderProgram);
 		if (this.selection.isActive()) {
 			gl.glUniform1i(uniformIsSelecting, GL_TRUE);
@@ -365,11 +333,12 @@ public class Renderer {
 			Vector3 normalisedPosition = originRelativeToCloud.divideBy(cloudOfInterest.getVolume().size);
 			Vector3 normalisedSize = this.selection.getVolume().size.divideBy(cloudOfInterest.getVolume().size);
 
+			//--figure out an appropriate brightness given the density of points TODO implement this weverywhere.
 			float base = 10f;
 			int axis = cloudOfInterest.getSlitherAxis().ordinal();
 			float adjusted = cloudOfInterest.getVolume().size.get(axis) * base /(float) cloudOfInterest.getRegions().get(0).getDimensionInPts(axis);
-
 			gl.glUniform1f(uniformLowLight, adjusted);
+
 			int dimensions = 3;
 			int[] uniformsMin = {uniformSelectionMinX, uniformSelectionMinY, uniformSelectionMinZ};
 			int[] uniformsMax = {uniformSelectionMaxX, uniformSelectionMaxY, uniformSelectionMaxZ};
@@ -380,7 +349,6 @@ public class Renderer {
 				gl.glUniform1f(uniformsMax[i], Math.max(a,b));
 			}
 		}
-
 		else {
 			gl.glUniform1i(uniformIsSelecting, GL_FALSE);
 		}
@@ -393,53 +361,33 @@ public class Renderer {
 		boolean flippityFlop = spin > pi/2f && spin < (3f/2f) * pi  ;
 
 
-		lastFlippity = flippityFlop;
-
-
 		List<VertexBufferSlice> allSlicesLikeEver = new ArrayList<VertexBufferSlice>();
 
-		float minScratchZ =  Float.MAX_VALUE;
-		float maxScratchZ = Float.MIN_VALUE;
+
+
 		for (PointCloud cloud : this.pointClouds){
 			if (cloud.isVisible.getValue() == false) {continue;}
 			for (Region cr: cloud.getRegions()) {
 				if (cr.isVisible.getValue() == false) {continue;}
-
 				for (VertexBufferSlice slice: cr.getSlices()) {
-
 					if (!slice.isLive) {continue;}
 					if (!cloud.shouldDisplayFrameWithW(slice.w)) {continue;}
 
-					slice.scratchZ = (cr.getVolume().z + cr.getVolume().dp * slice.z) * cloud.volume.dp + cloud.volume.z;
-					if (slice.scratchZ > maxScratchZ) {
-						maxScratchZ = slice.scratchZ;
-					}
-					if (slice.scratchZ < minScratchZ) {
-						minScratchZ = slice.scratchZ;
-					}
 					slice.region = cr;
 					slice.cloud = cloud;
+
 					allSlicesLikeEver.add(slice);
 				}
-
-			}
-		}
-
-		
-		class RegionOrderer implements Comparator<VertexBufferSlice> {
-			public int compare(VertexBufferSlice a, VertexBufferSlice b) {
-				return a.scratchZ < b.scratchZ ? 1 : -1;
 			}
 		}
 		Collections.sort(allSlicesLikeEver, new RegionOrderer());
 
-
-
 		Matrix4 baseMatrix = viewer.getBaseMatrix();
 
-		renderPrimitives(baseMatrix, spin, true);
+		renderBackgroundLines(baseMatrix, spin, true);
 
-
+		PointCloud lastCloud = null;
+		Region lastRegion = null;
 		for (int i = 0; i < allSlicesLikeEver.size(); i++){
 			
 			//-if Z is now pointing out of the screen take slices from the back of the list forward
@@ -450,11 +398,11 @@ public class Renderer {
 
 			VertexBufferSlice slice = allSlicesLikeEver.get(sliceIndex);
 			PointCloud cloud = slice.cloud;
-			Region cr = slice.region;
-			if (cr == null || cloud == null) {
+			Region region = slice.region;
+			if (region == null || cloud == null) {
 				return;
 			}
-			gl.glUniform1f(this.uniformAlphaFudgeHandle, cr.intensity.getValue() * cloud.intensity.getValue());
+			gl.glUniform1f(this.uniformAlphaFudgeHandle, region.intensity.getValue() * cloud.intensity.getValue());
 
 			if (cloud.shouldDisplaySlitherenated() && !selection.isActive()) {
 				gl.glUniform1i(uniformIsSelecting, GL_TRUE);
@@ -462,7 +410,7 @@ public class Renderer {
 				int axis = cloud.getSlitherAxis().ordinal();
 				//--figure out a good alpha for the rest of the stuff
 				float base = 10f;
-				float adjusted = cr.getVolume().size.get(axis) * base /(float) cr.getDimensionInPts(axis);
+				float adjusted = region.getVolume().size.get(axis) * base /(float) region.getDimensionInPts(axis);
 
 				gl.glUniform1f(uniformLowLight, adjusted);
 				Volume slither = cloud.getSlither(true);
@@ -472,47 +420,44 @@ public class Renderer {
 					gl.glUniform1f(uniformsMin[j], slither.origin.get(j));
 					gl.glUniform1f(uniformsMax[j], slither.origin.get(j) + slither.size.get(j));
 				}
-
 			}
 
-			//--filtery doodle TODO probably move this out one level of the loop
-			
-			Christogram.Filter filter = cloud.getFilter();
-			gl.glUniform1f(this.uniformFilterMinX, filter.minX);
-			gl.glUniform1f(this.uniformFilterMaxX, filter.maxX);
-			
-			float gradient = (filter.maxY - filter.minY) / (filter.maxX - filter.minX);
-			float constant = filter.minY - gradient * filter.minX;
-			
-			gl.glUniform1f(this.uniformFilterGradient, gradient);
-			gl.glUniform1f(this.uniformFilterConstant, constant);
+			//--if there's a new cloud then update the filtering uniforms
+			if(lastCloud != cloud) {
 
-			Color[] cols = {Color.red, Color.orange, Color.yellow, Color.green, Color.blue, Color.cyan, Color.magenta};
-			Color col = cloud.color;
-			if (gay) {
-				float proportion = (slice.scratchZ - minScratchZ) / (maxScratchZ - minScratchZ);
-				col = new Color(0.1f + 0.8f * proportion, 0.9f - 0.8f * proportion, 0.0f, 1.0f);
+				Christogram.Filter filter = cloud.getFilter();
+				gl.glUniform1f(this.uniformFilterMinX, filter.minX);
+				gl.glUniform1f(this.uniformFilterMaxX, filter.maxX);
 
-				col = cols[i%cols.length];
+				float gradient = (filter.maxY - filter.minY) / (filter.maxX - filter.minX);
+				float constant = filter.minY - gradient * filter.minX;
+
+				gl.glUniform1f(this.uniformFilterGradient, gradient);
+				gl.glUniform1f(this.uniformFilterConstant, constant);
+
+				Color[] cols = {Color.red, Color.orange, Color.yellow, Color.green, Color.blue, Color.cyan, Color.magenta};
+				Color col = cloud.color;
+				if (gay) {
+					col = cols[i % cols.length];
+				}
+
+				float[] colArray = new float[4];
+				col.getComponents(colArray);
+				gl.glUniform4f(this.uniformColorHandle, colArray[0], colArray[1], colArray[2], colArray[3]);
+
 			}
+			//--if there's a new region then we'd better update the point size
+			if (lastRegion != region) {
 
-			float[] colArray = new float[4];
-			col.getComponents(colArray);
-			gl.glUniform4f(this.uniformColorHandle, colArray[0], colArray[1], colArray[2], colArray[3]);
-
-    		
-
-    		float pointRadius = this.calculatePointRadiusInPixelsForSlice(slice) * 1.0f/this.viewer.getRadius();
-			float ptArea = 0.5f * pointRadius * pointRadius * (float)Math.PI;
-    		gl.glPointSize(Math.max(pointRadius, 1f));
-			gl.glUniform1f(this.uniformPointAreaHandle, ptArea);
-
-
+				//--calculate the point radius
+				float pointRadius = this.calculatePointRadiusInPixelsForSlice(slice) * 1.0f / this.viewer.getRadius();
+				float ptArea = 0.5f * pointRadius * pointRadius * (float) Math.PI;
+				gl.glPointSize(Math.max(pointRadius, 1f));
+				gl.glUniform1f(this.uniformPointAreaHandle, ptArea);
+			}
 
 	    	Matrix4 m = new Matrix4();
-			m.loadIdentity();
 			m.multMatrix(baseMatrix);
-
 
 	    	m.translate(cloud.volume.x, cloud.volume.y, cloud.volume.z);
 	    	m.scale(cloud.volume.wd, cloud.volume.ht, cloud.volume.dp);
@@ -529,9 +474,12 @@ public class Renderer {
 	    	gl.glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
 	    	
 	    	gl.glDrawArrays(GL_POINTS, 0, slice.numberOfPts);
+
+			lastCloud = cloud;
+			lastRegion = region;
 		}
 
-		renderPrimitives(baseMatrix, spin, false);
+		renderBackgroundLines(baseMatrix, spin, false);
 
 		//--draw outlines
 		for (PointCloud pc : this.pointClouds) {
@@ -542,62 +490,27 @@ public class Renderer {
 
 				renderOutline(baseMatrix, vol, pc.color);
 
-				if (this.mouseScreenPosition != null) {
-					//find far left of slice
-					this.mouseWorldPosition = this.viewer.getWorldPositionOfPixelOnPlane(this.mouseScreenPosition, vol, true);
-
-					this.mouseScreenPosition = null;
-
-				}
 				//--draw axes for mouse highlighting
 				if (this.mouseWorldPosition != null) {
 					//--ensure on correct plane
-					this.mouseWorldPosition = 	new Vector3(this.mouseWorldPosition.x				, this.mouseWorldPosition.y		, worldOrigin.z);
+					this.mouseWorldPosition = 	new Vector3(this.mouseWorldPosition.x		, this.mouseWorldPosition.y		, worldOrigin.z);
 
-					Vector3 lm = 				new Vector3(worldOrigin.x							, this.mouseWorldPosition.y		, worldOrigin.z);
-					Vector3 rm = 				new Vector3(worldOrigin.x + worldSize.x 			, this.mouseWorldPosition.y		, worldOrigin.z);
-					Vector3 bm = 				new Vector3(this.mouseWorldPosition.x				, worldOrigin.y					, worldOrigin.z);
-					Vector3 tm = 				new Vector3(this.mouseWorldPosition.x				, worldOrigin.y + worldSize.y	, worldOrigin.z);
-					Line l2r = makeLine(lm, rm);
-					Line t2b = makeLine(bm, tm);
+					Vector3 lm = 				new Vector3(worldOrigin.x					, this.mouseWorldPosition.y		, worldOrigin.z);
+					Vector3 rm = 				new Vector3(worldOrigin.x + worldSize.x 	, this.mouseWorldPosition.y		, worldOrigin.z);
+					Vector3 bm = 				new Vector3(this.mouseWorldPosition.x		, worldOrigin.y					, worldOrigin.z);
+					Vector3 tm = 				new Vector3(this.mouseWorldPosition.x		, worldOrigin.y + worldSize.y	, worldOrigin.z);
+					float[]grey = {0.5f, 0.5f, 0.5f, 1f};
+					Line l2r = makeLine(lm, rm, grey, grey);
+					Line t2b = makeLine(bm, tm, grey, grey);
 					renderLine(l2r, baseMatrix);
 					renderLine(t2b, baseMatrix);
 				}
 
-
-				if (this.mouseButtonDown == 1) {
-					if (this.startBoxPos == null) {
-						this.startBoxPos = this.mouseWorldPosition;
-						this.endBoxPos = this.mouseWorldPosition;
-					}
-					else {
-						this.endBoxPos = this.mouseWorldPosition;
-					}
+				if (this.selection.isActive()) {
+					renderOutline(viewer.getBaseMatrix(), selection.getVolume(), Color.white);
 				}
-
-
-				if (this.startBoxPos != null && this.endBoxPos != null) {
-//					Vector3 size = this.endBoxPos.minus(this.startBoxPos);
-					Vector3 origin = new Vector3(this.startBoxPos.x, this.startBoxPos.y, worldOrigin.z);
-					Vector3 size = new Vector3(this.endBoxPos.x - this.startBoxPos.x, this.endBoxPos.y - this.startBoxPos.y, this.selectionDepth);
-					Volume selectSquare = new Volume(origin, size);
-
-
-
-					if (this.selectionDepth != 0f) {
-						this.selection.setVolume(selectSquare.rejiggeredForPositiveSize().clampedToVolume(pc.getVolume()));
-						this.selection.setActive(true);
-						renderOutline(baseMatrix, this.selection.getVolume(), Color.white);
-					}
-					else {
-						renderOutline(baseMatrix,selectSquare, Color.white);
-
-					}
-				}
-				this.mouseButtonDown = -1;
 			}
 		}
-
 
     	gl.glEnableVertexAttribArray(0);
     	gl.glDisableVertexAttribArray(1);
@@ -610,7 +523,8 @@ public class Renderer {
 		this.width = width;
 		this.height = height;
 	}
-	
+
+
 	private float calculatePointRadiusInPixelsForSlice(VertexBufferSlice slice) {
 		Region cr = slice.region;
 
@@ -626,41 +540,11 @@ public class Renderer {
 	}
 
 
-	public void registerMousePosition(int x, int y, int button) {
-		this.mouseScreenPosition = new Vector3(x, y, 3f);
-		this.mouseButtonDown = button;
-	}
 
-	public void registerStartDrag(int x, int y, int button) {
-		this.mouseScreenPosition = new Vector3(x, y, 3f);
-		this.mouseButtonDown = button;
-		this.startBoxPos = null;
-	}
-
-	public void registerLeaveSelectionZone() {
-		this.mouseScreenPosition = null;
-		this.mouseWorldPosition = null;
-	}
-
-	public void registerClick(int x, int y, MouseController.MouseActionType type) {
-			this.selectionDepth = 0f;
-			this.startBoxPos = null;
-			this.endBoxPos = null;
-			this.selection.setActive(false);
-			this.mouseScreenPosition = null;
-			this.mouseWorldPosition = null;
-	}
-
-	public float getSelectionDepth() {
-		return selectionDepth;
-	}
-
-	public void setSelectionDepth(float selectionDepth) {
-		this.selectionDepth = selectionDepth;
-	}
-
-	public float getSelectionDepth(float selectionDepth) {
-		return this.selectionDepth;
+	public static class RegionOrderer implements Comparator<VertexBufferSlice> {
+		public int compare(VertexBufferSlice a, VertexBufferSlice b) {
+			return a.getOverallZ() > b.getOverallZ() ? 1 : -1;
+		}
 	}
 
 }

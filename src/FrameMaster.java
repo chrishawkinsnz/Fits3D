@@ -193,23 +193,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		title.setFont(new Font("Dialog", Font.BOLD, 24));
 		selectionPanel.add(title, "span 2");
 
-		JLabel labelDepth = new JLabel("Depth");
-		selectionPanel.add(labelDepth);
-
-		JSlider sliderDepth = new JSlider(-100,100);
-		sliderDepth.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				float valuef = (float)sliderDepth.getValue()/(float)sliderDepth.getMaximum();
-				valuef *= 2f;
-				FrameMaster.this.renderer.setSelectionDepth(valuef);
-				setNeedsDisplay();
-			}
-		});
-		selectionPanel.add(sliderDepth);
-
-
-
 		return selectionPanel;
 
 	}
@@ -335,14 +318,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		cutItem.addActionListener(e -> this.cutSelection());
 		fileMenu.add(cutItem);
 
-//		JCheckBoxMenuItem selectItem = new JCheckBoxMenuItem("Selection Mode");
-//		setKeyboardShortcutTo(KeyEvent.VK_H, selectItem);
-//		selectItem.addActionListener(e -> this.toggleSelectMode());
-//		fileMenu.add(selectItem);
-
-
-
-
 		return fileMenu;
 	}
 
@@ -388,27 +363,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 //	//==================================================================================================================
 //	//  USER ACTIONS
 //	//==================================================================================================================
-//
-//	/**
-//	 * User chooses to begin making a selection of a volume
-//	 */
-//	private void toggleSelectMode() {
-//		if (this.selection == null || this.selectionController == null) {
-//			this.selection = Selection.defaultSelection();
-//			this.selection.setActive(false);
-////			this.selectionController = new KeyboardSelectionController(this.selection);
-//		}
-//
-//		if (this.renderer.selection == null) {
-//			this.renderer.selection = this.selection;
-//			canvas.addKeyListener(this.selectionController);
-//		}
-//		else {
-//			this.renderer.selection = null;
-//			canvas.removeKeyListener(this.selectionController);
-//		}
-//		FrameMaster.setNeedsDisplay();
-//	}
+
 
 
 	/**
@@ -416,12 +371,13 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	 */
 	private void cutSelection() {
 		PointCloud pc = this.pointClouds.get(0);
-		pc.cutOutSubvolume(this.renderer.selection.getVolume());
+		pc.cutOutSubvolume(this.renderer.selection.getVolume().rejiggeredForPositiveSize());
 		for (int i = 0; i < pc.getRegions().size() - 1; i++) {
 			Region region = pc.getRegions().get(i);
 			region.isVisible.notifyWithValue(false, true);
 		}
-		this.renderer.registerClick(0,0, MouseController.MouseActionType.Camera);
+		this.selection.setActive(false);
+//		this.renderer.registerClick(0,0, MouseController.MouseActionType.Camera);
 		//TODO more elegant way to clear seleciton :/
 		this.pointClouds.get(0).setShouldDisplaySlitherenated(false);
 
@@ -575,7 +531,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	 * Glues together the canvas to the worldViewer
 	 */
 	private void attachControlsToCanvas() {
-		MouseController mouseController = new MouseController(this.viewer, this.canvas, this.renderer, this.pointClouds);
+		MouseController mouseController = new MouseController(this.viewer, this.renderer, this.pointClouds);
 		canvas.addMouseMotionListener(mouseController);
 		canvas.addMouseListener(mouseController);
 		canvas.addMouseWheelListener(mouseController);
@@ -596,5 +552,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		this.getContentPane().add(attributPanel, BorderLayout.EAST);
 		SwingUtilities.updateComponentTreeUI(this);
 		this.getContentPane().repaint();
+	}
+
+
+	public static Selection getSelection() {
+		return singleton.selection;
 	}
 }

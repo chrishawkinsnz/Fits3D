@@ -85,9 +85,9 @@ public class WorldViewer {
 		float[] mat = getBaseMatrix().getMatrix();
 
 		float[]bl = {plane.origin.x					, plane.origin.y				 , plane.origin.z			  	};
-		float[]br = {plane.origin.x + plane.size.x	, plane.origin.y				 , plane.origin.z};
+		float[]br = {plane.origin.x + plane.size.x	, plane.origin.y				 , plane.origin.z				};
 		float[]tl = {plane.origin.x					, plane.origin.y + plane.size.y	 , plane.origin.z			  	};
-		float[]tr = {plane.origin.x + plane.size.x	, plane.origin.y + plane.size.y	 , plane.origin.z};
+		float[]tr = {plane.origin.x + plane.size.x	, plane.origin.y + plane.size.y	 , plane.origin.z				};
 
 		float[]bls = new float[3];
 		float[]brs = new float[3];
@@ -106,10 +106,7 @@ public class WorldViewer {
 
 		if (clamp)
 			proportionX = clamp(proportionX, 0f, 1f);
-
 		if (proportionX < 1f && proportionX > 0f || clamp) {
-
-
 			float[] bm = {bl[0], bl[1], bl[2]};
 			bm[0] += proportionX * plane.size.x;
 
@@ -126,7 +123,6 @@ public class WorldViewer {
 			tms[1] += proportionX * (trs[1] - tls[1]);
 
 			float proportionY = (orthoMouseY - bms[1]) / (tms[1] - bms[1]);
-
 
 			if (clamp)
 				proportionY = clamp(proportionY, 0f, 1f);

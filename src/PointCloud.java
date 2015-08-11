@@ -107,7 +107,6 @@ public class PointCloud implements  AttributeProvider {
 						region.quality.notifyWithValue(newQuality, false);
 					}
 
-
 					primaryRegion.setMinusRegions(children);
 					FrameMaster.setNeedsNewRenderer();
 					FrameMaster.setNeedsDisplay();
@@ -165,10 +164,25 @@ public class PointCloud implements  AttributeProvider {
 		};
 		attributes.add(this.cycling);
 
-
-
-
 		this.slitherPositionAttribute = new Attribute.RangedAttribute("Slither Pos", 0f, 1f, 0f, false);
+		this.slitherPositionAttribute.callback = (obj) -> {
+			Vector3 oldOrigin = FrameMaster.getSelection().getVolume().origin;
+			Vector3 oldSize = FrameMaster.getSelection().getVolume().size;
+
+			float newZ = this.getSlither(false).origin.get(this.slitherAxis.ordinal());
+			float[]pos = oldOrigin.toArray();
+			pos[slitherAxis.ordinal()] = newZ;
+
+			Vector3 newOrigin = new Vector3(pos);
+//			float[] pos = oldOrigin.toArray();
+//
+//			pos[PointCloud.this.slitherAxis.ordinal()] = this.volume.size.scale(this.slitherPositionAttribute.getValue()).get(PointCloud.this.slitherAxis.ordinal()) + this.volume.origin.get(PointCloud.this.slitherAxis.ordinal());
+//
+//			Vector3 newOrigin = new Vector3(pos);
+			Volume volume = new Volume(newOrigin, oldSize);
+			FrameMaster.getSelection().setVolume(volume);
+		};
+
 		this.attributes.add(this.slitherPositionAttribute);
 
 		this.displaySlitherenated = new Attribute.BinaryAttribute("Slitherise", false, false);
@@ -206,7 +220,6 @@ public class PointCloud implements  AttributeProvider {
 			}
 		};
 
-
 		List<Object> possiblePairings = new ArrayList<>();
 		possiblePairings.add("-");
 		relativeTo = new Attribute.MultiChoiceAttribute("Relative to", possiblePairings, possiblePairings.get(0));
@@ -220,7 +233,6 @@ public class PointCloud implements  AttributeProvider {
 		};
 
 		attributes.add(relativeTo);
-
 		this.color = DEFAULT_COLORS[clouds++ % DEFAULT_COLORS.length];
 	}
 
