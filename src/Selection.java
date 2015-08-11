@@ -1,13 +1,21 @@
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by chrishawkins on 20/07/15.
  */
-public class Selection {
+public class Selection implements  AttributeProvider{
     private static Volume DEFAULT_VOLUME = new Volume(-0.5f, -0.5f, -0.5f, 1f, 1f, 1f);
     private boolean active = false;
     private Volume volume;
 
-    private Selection() {
+    private List<Attribute>attributes;
 
+    private Selection() {
+        attributes = new ArrayList<>();
+
+        Attribute.TextAttribute test  = new Attribute.TextAttribute("it's a test"," it's going well", false);
+        attributes.add(test);
     }
 
     public static Selection defaultSelection() {
@@ -78,5 +86,15 @@ public class Selection {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    @Override
+    public List<Attribute> getAttributes() {
+        return attributes;
+    }
+
+    @Override
+    public List<AttributeProvider> getChildProviders() {
+        return new ArrayList<>();
     }
 }

@@ -43,7 +43,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	private AttributeProvider selectedAttributeProvider = null;
 	private List<PointCloud> pointClouds = new ArrayList<PointCloud>();
 	private WorldViewer viewer;
-	private Selection selection = Selection.defaultSelection();;
+//	private Selection selection = Selection.defaultSelection();;
 	private DefaultTreeModel treeModel;
 
 	//VIEW
@@ -52,6 +52,11 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 	//CONTROLLER
 	private KeyboardSelectionController selectionController;
+
+	private PointCloud activePointCloud;
+
+
+
 
 
 	public FrameMaster() {
@@ -370,16 +375,17 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	 * User chooses to cut out a subsection
 	 */
 	private void cutSelection() {
-		PointCloud pc = this.pointClouds.get(0);
-		pc.cutOutSubvolume(this.renderer.selection.getVolume().rejiggeredForPositiveSize());
+		PointCloud pc = getActivePointCloud();
+		pc.cutOutSubvolume(pc.getSelection().getVolume().rejiggeredForPositiveSize());
 		for (int i = 0; i < pc.getRegions().size() - 1; i++) {
 			Region region = pc.getRegions().get(i);
 			region.isVisible.notifyWithValue(false, true);
 		}
-		this.selection.setActive(false);
-//		this.renderer.registerClick(0,0, MouseController.MouseActionType.Camera);
-		//TODO more elegant way to clear seleciton :/
-		this.pointClouds.get(0).setShouldDisplaySlitherenated(false);
+
+
+		pc.getSelection().setActive(false);
+
+		pc.setShouldDisplaySlitherenated(false);
 
 		reloadAttributePanel();
 		FrameMaster.setNeedsDisplay();
@@ -430,7 +436,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
     @Override
     public void init(GLAutoDrawable drawable) {
-		this.renderer = new Renderer(this.pointClouds, this.viewer, drawable.getGL().getGL3(), this.selection);
+		this.renderer = new Renderer(this.pointClouds, this.viewer, drawable.getGL().getGL3());
 		attachControlsToCanvas();
     }
 
@@ -527,7 +533,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	 * Glues together the canvas to the worldViewer
 	 */
 	private void attachControlsToCanvas() {
-		MouseController mouseController = new MouseController(this.viewer, this.renderer, this.pointClouds);
+		MouseController mouseController = new MouseController(this.viewer, this.renderer);
 		canvas.addMouseMotionListener(mouseController);
 		canvas.addMouseListener(mouseController);
 		canvas.addMouseWheelListener(mouseController);
@@ -551,7 +557,19 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	}
 
 
-	public static Selection getSelection() {
-		return singleton.selection;
+	public static PointCloud getActivePointCloud() {
+		AttributeProvider ap = singleton.selectedAttributeProvider;
+		if (ap instanceof  PointCloud) {
+			return (PointCloud)ap;
+		}
+		else if (ap instanceof Region) {
+			Region region = (Region)ap;
+			for (PointCloud pc: singleton.pointClouds) {
+				if(pc.getRegions().contains(region)){
+					return pc;
+				}
+			}
+		}
+		return null;
 	}
 }

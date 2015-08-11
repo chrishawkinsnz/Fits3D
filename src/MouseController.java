@@ -13,8 +13,6 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 	private WorldViewer viewer;
 	private Renderer renderer;
-	private List<PointCloud>pointClouds;
-	private  Selection selection;
 
 	private MouseActionType lastMouseMotionType;
 
@@ -33,11 +31,9 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 	private MouseActionType currentDragType;
 
 
-	public MouseController(WorldViewer viewer, Renderer renderer, List<PointCloud>pointClouds) {
+	public MouseController(WorldViewer viewer, Renderer renderer) {
 		this.viewer = viewer;
 		this.renderer = renderer;
-		this.pointClouds = pointClouds;
-		this.selection = this.renderer.selection;
 	}
 	
 	@Override
@@ -80,7 +76,7 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
-		this.selection.setActive(false);
+		this.getSelection().setActive(false);
 		this.renderer.mouseWorldPosition = null;
 		FrameMaster.setNeedsDisplay();
 	}
@@ -117,12 +113,12 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 		if (isCurrentlySelectingPlaneInPointClouds(e.getX(), e.getY())) {
 			float selectionDepthDelta = (float)e.getWheelRotation() * 0.1f;
 
-			Vector3 oldOrigin = this.selection.getVolume().origin;
-			Vector3 oldSize = this.selection.getVolume().size;
+			Vector3 oldOrigin = this.getSelection().getVolume().origin;
+			Vector3 oldSize = this.getSelection().getVolume().size;
 			Vector3 newSize = oldSize.add(Vector3.in.scale(selectionDepthDelta));
 			Volume newVolume = new Volume(oldOrigin, newSize);
 
-			this.selection.setVolume(newVolume);
+			this.getSelection().setVolume(newVolume);
 			FrameMaster.setNeedsDisplay();
 		}
 		else {
@@ -134,54 +130,55 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 		Vector3 screenPos  = new Vector3(x, y, 3f);
 		boolean found = false;
-		for (PointCloud pc : this.pointClouds) {
-			if (pc.shouldDisplaySlitherenated() == false) {continue;}
 
-			Volume slither = pc.getSlither(false);
-			Vector3 worldPos = this.viewer.getWorldPositionOfPixelOnPlane(screenPos, slither, false);
+		if (FrameMaster.getActivePointCloud() == null)									{return false;}
+		if (FrameMaster.getActivePointCloud().shouldDisplaySlitherenated() == false)	{return false;}
 
-			if (worldPos != null) {
-				found = true;
-			}
-		}
+		Volume slither = FrameMaster.getActivePointCloud().getSlither(false);
+		Vector3 worldPos = this.viewer.getWorldPositionOfPixelOnPlane(screenPos, slither, false);
 
-		return found;
+		return worldPos != null;
 	}
 
 	public void registerMousePosition(int x, int y, int button) {
-		for (PointCloud pc : this.pointClouds) {
-			if (pc.shouldDisplaySlitherenated() == false) {continue;}
+		PointCloud pc = FrameMaster.getActivePointCloud();
+		if (pc == null)									{return;}
+		if (pc.shouldDisplaySlitherenated() == false) 	{return;}
 
-			this.renderer.mouseWorldPosition = this.viewer.getWorldPositionOfPixelOnPlane(new Vector3(x, y, 3f), pc.getSlither(false), true);
+		this.renderer.mouseWorldPosition = this.viewer.getWorldPositionOfPixelOnPlane(new Vector3(x, y, 3f), pc.getSlither(false), true);
 
+		//--if this is some continuation of a drag
+		if (button == selectButton && this.getSelection().isActive()) {
+			Vector3 oldOrigin = this.getSelection().getVolume().origin;
 
-			//--if this is some continuation of a drag
-			if (button == selectButton && this.selection.isActive()) {
-				Vector3 oldOrigin = this.selection.getVolume().origin;
-
-				Vector3 newSize = this.renderer.mouseWorldPosition.minus(oldOrigin);
-				float[] sizeArr = newSize.toArray();
-				sizeArr[pc.getSlitherAxis().ordinal()] = this.selection.getVolume().size.get(pc.getSlitherAxis().ordinal());
-				newSize = new Vector3(sizeArr);
-				Volume newVolume = new Volume(oldOrigin, newSize);
-				this.selection.setVolume(newVolume.clampedToVolume(pc.getVolume()));
-			}
-
+			Vector3 newSize = this.renderer.mouseWorldPosition.minus(oldOrigin);
+			float[] sizeArr = newSize.toArray();
+			sizeArr[pc.getSlitherAxis().ordinal()] = this.getSelection().getVolume().size.get(pc.getSlitherAxis().ordinal());
+			newSize = new Vector3(sizeArr);
+			Volume newVolume = new Volume(oldOrigin, newSize);
+			this.getSelection().setVolume(newVolume.clampedToVolume(pc.getVolume()));
 		}
+
+
 	}
 
 	public void registerStartDrag(int x, int y, int button) {
-		for (PointCloud pc : this.pointClouds) {
-			if (pc.shouldDisplaySlitherenated() == false) {continue;}
-			this.renderer.mouseWorldPosition = this.viewer.getWorldPositionOfPixelOnPlane(new Vector3(x, y, 3f), pc.getSlither(false), true);
-			float depth = this.selection!=null ? this.selection.getVolume().size.get(pc.getSlitherAxis().ordinal()) : 0f;
-			float[] sizeArr = new float[3];
-			sizeArr[pc.getSlitherAxis().ordinal()] = depth;
-			Vector3 size = new Vector3(sizeArr);
-			Volume newSelection = new Volume(this.renderer.mouseWorldPosition, size);
-			this.selection.setVolume(newSelection);
-			this.selection.setActive(true);
-		}
+		PointCloud pc = FrameMaster.getActivePointCloud();
+		if (pc == null)									{return;}
+		if (pc.shouldDisplaySlitherenated() == false) 	{return;}
+
+		this.renderer.mouseWorldPosition = this.viewer.getWorldPositionOfPixelOnPlane(new Vector3(x, y, 3f), pc.getSlither(false), true);
+		float depth = this.getSelection()!=null ? this.getSelection().getVolume().size.get(pc.getSlitherAxis().ordinal()) : 0f;
+		float[] sizeArr = new float[3];
+		sizeArr[pc.getSlitherAxis().ordinal()] = depth;
+		Vector3 size = new Vector3(sizeArr);
+		Volume newSelection = new Volume(this.renderer.mouseWorldPosition, size);
+		this.getSelection().setVolume(newSelection);
+		this.getSelection().setActive(true);
 	}
 
+
+	public Selection getSelection() {
+		return FrameMaster.getActivePointCloud().getSelection();
+	}
 }

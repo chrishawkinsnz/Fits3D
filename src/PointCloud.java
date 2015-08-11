@@ -55,6 +55,8 @@ public class PointCloud implements  AttributeProvider {
 	
 	private List<Attribute>attributes = new ArrayList<Attribute>();
 
+	private Selection selection;
+
 	//--interactive attributes
 	public Attribute.RangedAttribute intensity;
 	public Attribute.BinaryAttribute isVisible;
@@ -70,6 +72,9 @@ public class PointCloud implements  AttributeProvider {
 
 
 	public PointCloud(String pathName) {
+		this.selection = Selection.defaultSelection();
+		this.selection.setActive(false);
+
 		this.regions = new ArrayList<Region>();
 		this.volume = new Volume(BOX_ORIGIN_X, BOX_ORIGIN_Y, BOX_ORIGIN_Z, BOX_WIDTH, BOX_HEIGHT, BOX_DEPTH);
 		this.backupVolume = this.volume;
@@ -182,8 +187,8 @@ public class PointCloud implements  AttributeProvider {
 
 		this.slitherPositionAttribute = new Attribute.RangedAttribute("Slither Pos", 0f, 1f, 0f, false);
 		this.slitherPositionAttribute.callback = (obj) -> {
-			Vector3 oldOrigin = FrameMaster.getSelection().getVolume().origin;
-			Vector3 oldSize = FrameMaster.getSelection().getVolume().size;
+			Vector3 oldOrigin = this.selection.getVolume().origin;
+			Vector3 oldSize = this.selection.getVolume().size;
 
 			float newZ = this.getSlither(false).origin.get(this.slitherAxis.ordinal());
 			float[]pos = oldOrigin.toArray();
@@ -192,7 +197,7 @@ public class PointCloud implements  AttributeProvider {
 			Vector3 newOrigin = new Vector3(pos);
 
 			Volume volume = new Volume(newOrigin, oldSize);
-			FrameMaster.getSelection().setVolume(volume);
+			this.selection.setVolume(volume);
 		};
 
 		this.attributes.add(this.slitherPositionAttribute);
@@ -561,5 +566,9 @@ public class PointCloud implements  AttributeProvider {
 
 	public Axis getSlitherAxis() {
 		return this.slitherAxis;
+	}
+
+	public Selection getSelection() {
+		return selection;
 	}
 }

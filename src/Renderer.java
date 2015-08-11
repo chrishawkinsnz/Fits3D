@@ -39,7 +39,7 @@ public class Renderer {
 	
 	//--MODEL STUFF
 	private WorldViewer viewer;
-	public Selection selection;
+//	public Selection selection;
 
 	private List<PointCloud> pointClouds;
 	public boolean isTrippy;
@@ -81,8 +81,7 @@ public class Renderer {
 	public Vector3 mouseWorldPosition;
 
 
-	public Renderer(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl, Selection selection){
-		this.selection = selection;
+	public Renderer(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl){
 		setupWith(pointClouds, viewer, gl);
 	}
 
@@ -324,34 +323,40 @@ public class Renderer {
 
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl.glUseProgram(this.shaderProgram);
-		if (this.selection.isActive()) {
-			gl.glUniform1i(uniformIsSelecting, GL_TRUE);
+		//TODO assuming first point cloud here as well you monster
+		//TODO assuming first point cloud here as well you monster
+		//TODO assuming first point cloud here as well you monster
+		//TODO assuming first point cloud here as well you monster
+		//TODO assuming first point cloud here as well you monster
 
-			PointCloud cloudOfInterest = this.pointClouds.get(0);
-			//--normalise the origin
-			Vector3 originRelativeToCloud = this.selection.getVolume().origin.minus(cloudOfInterest.getVolume().origin);
-			Vector3 normalisedPosition = originRelativeToCloud.divideBy(cloudOfInterest.getVolume().size);
-			Vector3 normalisedSize = this.selection.getVolume().size.divideBy(cloudOfInterest.getVolume().size);
-
-			//--figure out an appropriate brightness given the density of points TODO implement this weverywhere.
-			float base = 10f;
-			int axis = cloudOfInterest.getSlitherAxis().ordinal();
-			float adjusted = cloudOfInterest.getVolume().size.get(axis) * base /(float) cloudOfInterest.getRegions().get(0).getDimensionInPts(axis);
-			gl.glUniform1f(uniformLowLight, adjusted);
-
-			int dimensions = 3;
-			int[] uniformsMin = {uniformSelectionMinX, uniformSelectionMinY, uniformSelectionMinZ};
-			int[] uniformsMax = {uniformSelectionMaxX, uniformSelectionMaxY, uniformSelectionMaxZ};
-			for (int i = 0; i < dimensions; i++) {
-				float a = normalisedPosition.get(i);
-				float b = normalisedPosition.get(i) + normalisedSize.get(i);
-				gl.glUniform1f(uniformsMin[i], Math.min(a,b));
-				gl.glUniform1f(uniformsMax[i], Math.max(a,b));
-			}
-		}
-		else {
-			gl.glUniform1i(uniformIsSelecting, GL_FALSE);
-		}
+//		PointCloud cloudOfInterest = FrameMaster.getActivePointCloud();
+//		if (cloudOfInterest!=null && cloudOfInterest.getSelection().isActive()) {
+//			gl.glUniform1i(uniformIsSelecting, GL_TRUE);
+//
+//			//--normalise the origin
+//			Vector3 originRelativeToCloud = cloudOfInterest.getSelection().getVolume().origin.minus(cloudOfInterest.getVolume().origin);
+//			Vector3 normalisedPosition = originRelativeToCloud.divideBy(cloudOfInterest.getVolume().size);
+//			Vector3 normalisedSize = cloudOfInterest.getSelection().getVolume().size.divideBy(cloudOfInterest.getVolume().size);
+//
+//			//--figure out an appropriate brightness given the density of points TODO implement this weverywhere.
+//			float base = 10f;
+//			int axis = cloudOfInterest.getSlitherAxis().ordinal();
+//			float adjusted = cloudOfInterest.getVolume().size.get(axis) * base /(float) cloudOfInterest.getRegions().get(0).getDimensionInPts(axis);
+//			gl.glUniform1f(uniformLowLight, adjusted);
+//
+//			int dimensions = 3;
+//			int[] uniformsMin = {uniformSelectionMinX, uniformSelectionMinY, uniformSelectionMinZ};
+//			int[] uniformsMax = {uniformSelectionMaxX, uniformSelectionMaxY, uniformSelectionMaxZ};
+//			for (int i = 0; i < dimensions; i++) {
+//				float a = normalisedPosition.get(i);
+//				float b = normalisedPosition.get(i) + normalisedSize.get(i);
+//				gl.glUniform1f(uniformsMin[i], Math.min(a,b));
+//				gl.glUniform1f(uniformsMax[i], Math.max(a,b));
+//			}
+//		}
+//		else {
+//			gl.glUniform1i(uniformIsSelecting, GL_FALSE);
+//		}
 		//--figure out if looking back to front
 		float pi = (float)Math.PI;
 
@@ -404,7 +409,7 @@ public class Renderer {
 			}
 			gl.glUniform1f(this.uniformAlphaFudgeHandle, region.intensity.getValue() * cloud.intensity.getValue());
 
-			if (cloud.shouldDisplaySlitherenated() && !selection.isActive()) {
+			if (cloud.shouldDisplaySlitherenated() && !cloud.getSelection().isActive()) {
 				gl.glUniform1i(uniformIsSelecting, GL_TRUE);
 
 				int axis = cloud.getSlitherAxis().ordinal();
@@ -445,6 +450,35 @@ public class Renderer {
 				col.getComponents(colArray);
 				gl.glUniform4f(this.uniformColorHandle, colArray[0], colArray[1], colArray[2], colArray[3]);
 
+
+				if (cloud!=null && cloud.getSelection().isActive()) {
+					gl.glUniform1i(uniformIsSelecting, GL_TRUE);
+
+					//--normalise the origin
+					Vector3 originRelativeToCloud = cloud.getSelection().getVolume().origin.minus(cloud.getVolume().origin);
+					Vector3 normalisedPosition = originRelativeToCloud.divideBy(cloud.getVolume().size);
+					Vector3 normalisedSize = cloud.getSelection().getVolume().size.divideBy(cloud.getVolume().size);
+
+					//--figure out an appropriate brightness given the density of points TODO implement this weverywhere.
+					float base = 10f;
+					int axis = cloud.getSlitherAxis().ordinal();
+					float adjusted = cloud.getVolume().size.get(axis) * base /(float) cloud.getRegions().get(0).getDimensionInPts(axis);
+					gl.glUniform1f(uniformLowLight, adjusted);
+
+					int dimensions = 3;
+					int[] uniformsMin = {uniformSelectionMinX, uniformSelectionMinY, uniformSelectionMinZ};
+					int[] uniformsMax = {uniformSelectionMaxX, uniformSelectionMaxY, uniformSelectionMaxZ};
+					for (int j = 0; j < dimensions; j++) {
+						float a = normalisedPosition.get(j);
+						float b = normalisedPosition.get(j) + normalisedSize.get(j);
+						gl.glUniform1f(uniformsMin[j], Math.min(a,b));
+						gl.glUniform1f(uniformsMax[j], Math.max(a, b));
+					}
+				}
+				else {
+					gl.glUniform1i(uniformIsSelecting, GL_FALSE);
+				}
+
 			}
 			//--if there's a new region then we'd better update the point size
 			if (lastRegion != region) {
@@ -484,30 +518,33 @@ public class Renderer {
 		//--draw outlines
 		for (PointCloud pc : this.pointClouds) {
 			if (pc.shouldDisplaySlitherenated()) {
-				Volume vol = pc.getSlither(false);
-				Vector3 worldOrigin = vol.origin;
-				Vector3 worldSize = vol.size;
+				if (pc == FrameMaster.getActivePointCloud()) {
 
-				renderOutline(baseMatrix, vol, pc.color);
+					Volume vol = pc.getSlither(false);
+					Vector3 worldOrigin = vol.origin;
+					Vector3 worldSize = vol.size;
 
-				//--draw axes for mouse highlighting
-				if (this.mouseWorldPosition != null) {
-					//--ensure on correct plane
-					this.mouseWorldPosition = 	new Vector3(this.mouseWorldPosition.x		, this.mouseWorldPosition.y		, worldOrigin.z);
+					renderOutline(baseMatrix, vol, pc.color);
 
-					Vector3 lm = 				new Vector3(worldOrigin.x					, this.mouseWorldPosition.y		, worldOrigin.z);
-					Vector3 rm = 				new Vector3(worldOrigin.x + worldSize.x 	, this.mouseWorldPosition.y		, worldOrigin.z);
-					Vector3 bm = 				new Vector3(this.mouseWorldPosition.x		, worldOrigin.y					, worldOrigin.z);
-					Vector3 tm = 				new Vector3(this.mouseWorldPosition.x		, worldOrigin.y + worldSize.y	, worldOrigin.z);
-					float[]grey = {0.5f, 0.5f, 0.5f, 1f};
-					Line l2r = makeLine(lm, rm, grey, grey);
-					Line t2b = makeLine(bm, tm, grey, grey);
-					renderLine(l2r, baseMatrix);
-					renderLine(t2b, baseMatrix);
-				}
+					//--draw axes for mouse highlighting
+					if (this.mouseWorldPosition != null) {
+						//--ensure on correct plane
+						this.mouseWorldPosition = 	new Vector3(this.mouseWorldPosition.x		, this.mouseWorldPosition.y		, worldOrigin.z);
 
-				if (this.selection.isActive()) {
-					renderOutline(viewer.getBaseMatrix(), selection.getVolume(), Color.white);
+						Vector3 lm = 				new Vector3(worldOrigin.x					, this.mouseWorldPosition.y		, worldOrigin.z);
+						Vector3 rm = 				new Vector3(worldOrigin.x + worldSize.x 	, this.mouseWorldPosition.y		, worldOrigin.z);
+						Vector3 bm = 				new Vector3(this.mouseWorldPosition.x		, worldOrigin.y					, worldOrigin.z);
+						Vector3 tm = 				new Vector3(this.mouseWorldPosition.x		, worldOrigin.y + worldSize.y	, worldOrigin.z);
+						float[]grey = {0.5f, 0.5f, 0.5f, 1f};
+						Line l2r = makeLine(lm, rm, grey, grey);
+						Line t2b = makeLine(bm, tm, grey, grey);
+						renderLine(l2r, baseMatrix);
+						renderLine(t2b, baseMatrix);
+					}
+
+					if (pc.getSelection().isActive() ) {
+						renderOutline(viewer.getBaseMatrix(), pc.getSelection().getVolume(), Color.white);
+					}
 				}
 			}
 		}
