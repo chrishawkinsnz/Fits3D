@@ -43,7 +43,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	private AttributeProvider selectedAttributeProvider = null;
 	private List<PointCloud> pointClouds = new ArrayList<PointCloud>();
 	private WorldViewer viewer;
-	private Selection selection;
+	private Selection selection = Selection.defaultSelection();;
 	private DefaultTreeModel treeModel;
 
 	//VIEW
@@ -335,10 +335,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		cutItem.addActionListener(e -> this.cutSelection());
 		fileMenu.add(cutItem);
 
-		JCheckBoxMenuItem selectItem = new JCheckBoxMenuItem("Selection Mode");
-		setKeyboardShortcutTo(KeyEvent.VK_H, selectItem);
-		selectItem.addActionListener(e -> this.toggleSelectMode());
-		fileMenu.add(selectItem);
+//		JCheckBoxMenuItem selectItem = new JCheckBoxMenuItem("Selection Mode");
+//		setKeyboardShortcutTo(KeyEvent.VK_H, selectItem);
+//		selectItem.addActionListener(e -> this.toggleSelectMode());
+//		fileMenu.add(selectItem);
 
 
 
@@ -385,29 +385,30 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 
 
-	//==================================================================================================================
-	//  USER ACTIONS
-	//==================================================================================================================
-
-	/**
-	 * User chooses to begin making a selection of a volume
-	 */
-	private void toggleSelectMode() {
-		if (this.selection == null || this.selectionController == null) {
-			this.selection = Selection.defaultSelection();
-			this.selectionController = new KeyboardSelectionController(this.selection);
-		}
-
-		if (this.renderer.selection == null) {
-			this.renderer.selection = this.selection;
-			canvas.addKeyListener(this.selectionController);
-		}
-		else {
-			this.renderer.selection = null;
-			canvas.removeKeyListener(this.selectionController);
-		}
-		FrameMaster.setNeedsDisplay();
-	}
+//	//==================================================================================================================
+//	//  USER ACTIONS
+//	//==================================================================================================================
+//
+//	/**
+//	 * User chooses to begin making a selection of a volume
+//	 */
+//	private void toggleSelectMode() {
+//		if (this.selection == null || this.selectionController == null) {
+//			this.selection = Selection.defaultSelection();
+//			this.selection.setActive(false);
+////			this.selectionController = new KeyboardSelectionController(this.selection);
+//		}
+//
+//		if (this.renderer.selection == null) {
+//			this.renderer.selection = this.selection;
+//			canvas.addKeyListener(this.selectionController);
+//		}
+//		else {
+//			this.renderer.selection = null;
+//			canvas.removeKeyListener(this.selectionController);
+//		}
+//		FrameMaster.setNeedsDisplay();
+//	}
 
 
 	/**
@@ -473,8 +474,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
     @Override
     public void init(GLAutoDrawable drawable) {
-		this.renderer = new Renderer(this.pointClouds, this.viewer, drawable.getGL().getGL3());
+		this.renderer = new Renderer(this.pointClouds, this.viewer, drawable.getGL().getGL3(), this.selection);
 		attachControlsToCanvas();
+
 //		MouseSelectionController mouseSelectionController = new MouseSelectionController(this.renderer);
 //		canvas.addMouseMotionListener(mouseSelectionController);
 //		canvas.addMouseListener(mouseSelectionController);
@@ -494,7 +496,8 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
     @Override
     public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
-		renderer.informOfResolution(width, height);
+		this.renderer.informOfResolution(width, height);
+		this.viewer.informOfResolution(width, height);
     }
 
 
@@ -572,13 +575,11 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	 * Glues together the canvas to the worldViewer
 	 */
 	private void attachControlsToCanvas() {
-		MouseController mouseController = new MouseController(this.viewer, this.renderer);
+		MouseController mouseController = new MouseController(this.viewer, this.canvas, this.renderer, this.pointClouds);
 		canvas.addMouseMotionListener(mouseController);
 		canvas.addMouseListener(mouseController);
 		canvas.addMouseWheelListener(mouseController);
-
-
-	}/**/
+	}
 
 
 	/**

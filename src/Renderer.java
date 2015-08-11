@@ -19,11 +19,7 @@ public class Renderer {
 	private static long lastTime = 0;
 
 
-	//--CONSTANTS
-	public final float orthoHeight = 1.0f;
-	public final float orthoWidth = 1.0f;
-	public final float orthoOrigX = 0.0f;
-	public final float orthoOrigY = 0.0f;
+
 
 	//--SETTINGS
 	public boolean isOrthographic = true;
@@ -104,7 +100,8 @@ public class Renderer {
 
 	private float selectionDepth = 0f;
 
-	public Renderer(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl){
+	public Renderer(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl, Selection selection){
+		this.selection = selection;
 		setupWith(pointClouds, viewer, gl);
 	}
 
@@ -359,8 +356,7 @@ public class Renderer {
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		gl.glUseProgram(this.shaderProgram);
-		if (this.selection != null) {
-			System.out.println(this.selection.getVolume());
+		if (this.selection.isActive()) {
 			gl.glUniform1i(uniformIsSelecting, GL_TRUE);
 
 			PointCloud cloudOfInterest = this.pointClouds.get(0);
@@ -393,8 +389,6 @@ public class Renderer {
 
 		float moddedSpin = this.viewer.getxSpin() % (2f * pi);
 		float spin = moddedSpin < 0f ? (2f * pi) + moddedSpin : moddedSpin;
-
-		System.out.println("spin:" + spin);
 
 		boolean flippityFlop = spin > pi/2f && spin < (3f/2f) * pi  ;
 
@@ -441,15 +435,8 @@ public class Renderer {
 
 
 
-		Matrix4 baseMatrix = new Matrix4();
-		baseMatrix.makeOrtho(orthoOrigX - orthoWidth, orthoOrigX + orthoWidth, orthoOrigY - orthoHeight, orthoOrigY + orthoHeight, -6f, 6f);
-		baseMatrix.rotate(this.viewer.getySpin(), 1f, 0f, 0f);
-		baseMatrix.rotate(this.viewer.getxSpin(), 0f, 1f, 0f);
-		float baseScale = 1.0f / this.viewer.getRadius();
+		Matrix4 baseMatrix = viewer.getBaseMatrix();
 
-		baseMatrix.scale(baseScale, baseScale, baseScale);
-
-		this.lastBaseMatrix = baseMatrix;
 		renderPrimitives(baseMatrix, spin, true);
 
 
@@ -469,7 +456,7 @@ public class Renderer {
 			}
 			gl.glUniform1f(this.uniformAlphaFudgeHandle, cr.intensity.getValue() * cloud.intensity.getValue());
 
-			if (cloud.shouldDisplaySlitherenated() && selection == null) {
+			if (cloud.shouldDisplaySlitherenated() && !selection.isActive()) {
 				gl.glUniform1i(uniformIsSelecting, GL_TRUE);
 
 				int axis = cloud.getSlitherAxis().ordinal();
@@ -478,7 +465,7 @@ public class Renderer {
 				float adjusted = cr.getVolume().size.get(axis) * base /(float) cr.getDimensionInPts(axis);
 
 				gl.glUniform1f(uniformLowLight, adjusted);
-				Volume slither = cloud.getSlither();
+				Volume slither = cloud.getSlither(true);
 				int[] uniformsMin = {uniformSelectionMinX, uniformSelectionMinY, uniformSelectionMinZ};
 				int[] uniformsMax = {uniformSelectionMaxX, uniformSelectionMaxY, uniformSelectionMaxZ};
 				for (int j = 0; j < 3; j++) {
@@ -515,7 +502,7 @@ public class Renderer {
 
     		
 
-    		float pointRadius = this.calculatePointRadiusInPixelsForSlice(slice) * baseScale;
+    		float pointRadius = this.calculatePointRadiusInPixelsForSlice(slice) * 1.0f/this.viewer.getRadius();
 			float ptArea = 0.5f * pointRadius * pointRadius * (float)Math.PI;
     		gl.glPointSize(Math.max(pointRadius, 1f));
 			gl.glUniform1f(this.uniformPointAreaHandle, ptArea);
@@ -549,7 +536,7 @@ public class Renderer {
 		//--draw outlines
 		for (PointCloud pc : this.pointClouds) {
 			if (pc.shouldDisplaySlitherenated()) {
-				Volume vol = getWorldRelativeSlitherForPointCloud(pc);
+				Volume vol = pc.getSlither(false);
 				Vector3 worldOrigin = vol.origin;
 				Vector3 worldSize = vol.size;
 
@@ -557,7 +544,8 @@ public class Renderer {
 
 				if (this.mouseScreenPosition != null) {
 					//find far left of slice
-					this.mouseWorldPosition = worldPositionOfPixelOnPlane(this.mouseScreenPosition, vol, baseMatrix, true);
+					this.mouseWorldPosition = this.viewer.getWorldPositionOfPixelOnPlane(this.mouseScreenPosition, vol, true);
+
 					this.mouseScreenPosition = null;
 
 				}
@@ -597,9 +585,6 @@ public class Renderer {
 
 
 					if (this.selectionDepth != 0f) {
-						if (this.selection == null) {
-							this.selection = Selection.defaultSelection();
-						}
 						this.selection.setVolume(selectSquare.rejiggeredForPositiveSize().clampedToVolume(pc.getVolume()));
 						this.selection.setActive(true);
 						renderOutline(baseMatrix, this.selection.getVolume(), Color.white);
@@ -614,10 +599,6 @@ public class Renderer {
 		}
 
 
-//		if (this.selection != null) {
-//			renderOutline(baseMatrix, this.selection.getVolume(), Color.white);
-//		}
-
     	gl.glEnableVertexAttribArray(0);
     	gl.glDisableVertexAttribArray(1);
     	
@@ -625,107 +606,18 @@ public class Renderer {
 	}
 
 
-	private Vector3 worldPositionOfPixelOnPlane(Vector3 pixelPosition, Volume plane, Matrix4 baseMatrix, boolean clamp) {
-		//find far left of slice
-
-		Vector3 origin = new Vector3(0f, 0f, 0f);
-
-		float[] mat = baseMatrix.getMatrix();
-
-		float[]bl = {plane.origin.x					, plane.origin.y				 , plane.origin.z			  	};
-		float[]br = {plane.origin.x + plane.size.x	, plane.origin.y				 , plane.origin.z};
-		float[]tl = {plane.origin.x					, plane.origin.y + plane.size.y	 , plane.origin.z			  	};
-		float[]tr = {plane.origin.x + plane.size.x	, plane.origin.y + plane.size.y	 , plane.origin.z};
-
-		float[]bls = new float[3];
-		float[]brs = new float[3];
-		float[]tls = new float[3];
-		float[]trs = new float[3];
-		VectorUtil.mulColMat4Vec3(bls, mat, bl);
-		VectorUtil.mulColMat4Vec3(brs, mat, br);
-		VectorUtil.mulColMat4Vec3(tls, mat, tl);
-		VectorUtil.mulColMat4Vec3(trs, mat, tr);
-
-		Matrix4 identity = new Matrix4();
-		identity.loadIdentity();;
-
-		//--factor in the z position of the slice to work out the
-		float orthoMouseX = this.orthoOrigX -(this.orthoWidth)+ 4f * this.orthoWidth * (pixelPosition.x/(float)this.width);
-		float orthoMouseY = this.orthoOrigY +(this.orthoHeight)- 4f * this.orthoHeight * (pixelPosition.y/(float)this.height);
-
-		float proportionX = (orthoMouseX - bls[0]) /(brs[0] - bls[0]);
-
-		if (clamp)
-			proportionX = clamp(proportionX, 0f, 1f);
-
-		if (proportionX < 1f && proportionX > 0f || clamp) {
-
-
-			float[] bm = {bl[0], bl[1], bl[2]};
-			bm[0] += proportionX * plane.size.x;
-
-			float[] tm = {tl[0], tl[1], tl[2]};
-			tm[0] += proportionX * plane.size.x;
-
-			float[] mm = {bm[0], bm[1], bm[2]};
-
-			//--figure out the proportion between these two middle  points
-			float[] bms = {bls[0], bls[1], bls[2]};
-			bms[1] += proportionX * (brs[1] - bls[1]);
-
-			float[] tms = {tls[0], tls[1], tls[2]};
-			tms[1] += proportionX * (trs[1] - tls[1]);
-
-			float proportionY = (orthoMouseY - bms[1]) / (tms[1] - bms[1]);
-
-
-			if (clamp)
-				proportionY = clamp(proportionY, 0f, 1f);
-
-			if (proportionY > 0f && proportionY < 1f || clamp) {
-				//--mm is the world position of the mous cursor on the selection plane
-				mm[1] += proportionY * plane.size.y;
-
-				return new Vector3(mm);
-			}
-		}
-
-		return null;
-
-	}
 	public void informOfResolution(int width, int height) {
 		this.width = width;
 		this.height = height;
 	}
-
-	public Volume getWorldRelativeSlitherForPointCloud(PointCloud pc) {
-		int axis = pc.getSlitherAxis().ordinal();
-		float[] adjustedOriginArray = pc.getSlither().origin.toArray();
-		adjustedOriginArray[axis] = adjustedOriginArray[axis] + pc.getSlither().size.get(axis)/2f;
-		Vector3 normalisedOrigin = new Vector3(adjustedOriginArray);
-		Vector3 worldOrigin = normalisedOrigin.scale(pc.getVolume().size).add(pc.getVolume().origin);
-
-		float[] adjustedSizeArray = pc.getSlither().size.toArray();
-		adjustedSizeArray[axis] = 0f;
-		Vector3 normalisedSize = new Vector3(adjustedSizeArray);
-		Vector3 worldSize = normalisedSize.scale(pc.getVolume().size);
-
-		Volume vol = new Volume(worldOrigin, worldSize);
-
-		return vol;
-	}
-
 	
 	private float calculatePointRadiusInPixelsForSlice(VertexBufferSlice slice) {
 		Region cr = slice.region;
-		//TODO actually consider the z pixel size yo
-		int nPointsX = cr.getWidthInPoints();
-		int nPointsY = cr.getHeightInPoints();
-		int nPointsZ = cr.getDepthInPoints();
-		float pointWidth = (float)this.width* this.orthoWidth* cr.getVolume().wd/ (float)cr.getWidthInPoints();
-//		float pointWidth = (float)this.width* this.orthoWidth* cr.getVolume().dp/ (float)cr.getDepthInPoints();	//THE correct but currently over bright one
-		float pointHeight = (float)this.height* this.orthoHeight* cr.getVolume().ht / (float)cr.getHeightInPoints();
-		float pointsDepth = (float)this.width* this.orthoWidth* cr.getVolume().dp / (float)cr.getDepthInPoints();
+
+		float pointWidth = (float)this.width* WorldViewer.orthoWidth* cr.getVolume().wd/ (float)cr.getWidthInPoints();
+
+		float pointHeight = (float)this.height* WorldViewer.orthoHeight* cr.getVolume().ht / (float)cr.getHeightInPoints();
+		float pointsDepth = (float)this.width* WorldViewer.orthoWidth* cr.getVolume().dp / (float)cr.getDepthInPoints();
 
 		float sz =  pointWidth < pointHeight ? pointWidth : pointHeight;
 		sz = sz < pointsDepth ? sz : pointsDepth;
@@ -754,7 +646,7 @@ public class Renderer {
 			this.selectionDepth = 0f;
 			this.startBoxPos = null;
 			this.endBoxPos = null;
-			this.selection = null;
+			this.selection.setActive(false);
 			this.mouseScreenPosition = null;
 			this.mouseWorldPosition = null;
 	}
@@ -771,25 +663,4 @@ public class Renderer {
 		return this.selectionDepth;
 	}
 
-	public boolean isCurrentlySelectingPlaneInPointClouds(int x, int y) {
-		Vector3 screenPos  = new Vector3(x, y, 3f);
-		boolean found = false;
-		for (PointCloud pc : this.pointClouds) {
-			if (pc.shouldDisplaySlitherenated()) {
-				Volume slither = getWorldRelativeSlitherForPointCloud(pc);
-				Vector3 worldPos = worldPositionOfPixelOnPlane(screenPos, slither, lastBaseMatrix, false);
-				if (worldPos != null) {
-					found = true;
-
-				}
-			}
-
-		}
-
-		return found;
-	}
-
-	private float clamp(float val, float min, float max) {
-		return Math.max(min, Math.min(max, val));
-	}
 }

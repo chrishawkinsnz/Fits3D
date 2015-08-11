@@ -494,7 +494,7 @@ public class PointCloud implements  AttributeProvider {
 	 * Gets the slither volume to display to the user.
 	 * @return
 	 */
-	public Volume getSlither() {
+	public Volume getSlither(boolean normalised) {
 		float []originArray = new float[3];
 		originArray[this.slitherAxis.ordinal()] = this.slitherPositionAttribute.getValue();
 		Vector3 origin = new Vector3(originArray);
@@ -504,7 +504,17 @@ public class PointCloud implements  AttributeProvider {
 		sizeArray[this.slitherAxis.ordinal()] = sliceWidth;
 		Vector3 size = new Vector3(sizeArray);
 
+
+		if (!normalised) {
+			origin = origin.scale(this.volume.size).add(this.volume.origin);
+			size = size.scale(this.volume.size);
+
+		}
+
+//		originArray[slitherAxis.ordinal()] += sizeArray[slitherAxis.ordinal()]/2f;
+
 		Volume vol = new Volume(origin, size);
+
 		return vol;
 	}
 
