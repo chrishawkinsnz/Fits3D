@@ -19,7 +19,7 @@ import nom.tam.util.ArrayDataInput;
  *
  */
 public class RegionRepresentation {
-	public static boolean shouldFudge = false;
+	public static boolean shouldFudge = true;
 	public static boolean fakeFourthDimension = false;
 
 	private int[]buckets;
@@ -35,9 +35,6 @@ public class RegionRepresentation {
 	private float fidelity;
 
 	private List<VertexBufferSlice>slices;
-
-
-
 
 	public enum DataType {
 		FLOAT, DOUBLE, SHORT, INT, LONG,
@@ -214,13 +211,20 @@ public class RegionRepresentation {
 	 * @param volume The unit volume of the fits file to read.
 	 * @return A representation of the asked for region.
 	 */
-	public static RegionRepresentation loadFromDisk(Fits fits, float fidelity, Volume volume) {
+	public static RegionRepresentation loadFromDisk(Fits fits, float fidelity, Volume volume, boolean dummyRun) {
 		RegionRepresentation rr = new RegionRepresentation();
 		rr.setFidelity(fidelity);
 		long t0 = System.currentTimeMillis();
 		try {
 			ImageHDU hdu = (ImageHDU) fits.getHDU(0);
-			MinAndMax minAndMax = minAndMaxBasedOnRoughOnePercentRushThrough(hdu, volume, fits);
+			MinAndMax minAndMax = new MinAndMax();
+			if (!dummyRun) {
+			 	minAndMax = minAndMaxBasedOnRoughOnePercentRushThrough(hdu, volume, fits);
+			}
+			else {
+				minAndMax.min = 999f;
+				minAndMax.max = -999f;
+			}
 			rr.setEstMax(minAndMax.max);
 			rr.setEstMin(minAndMax.min);
 
@@ -349,6 +353,12 @@ public class RegionRepresentation {
 										fudge = 0.0f;
 									}
 
+									if (dummyRun) {
+										if (val < rr.estMin)
+											rr.estMin = val;
+										if (val > rr.estMax)
+											rr.estMax = val;
+									}
 //									for (int i = 1; i < 4; i++)
 									for (int i = 3; i > 0; i--)
 										vertexBuffer.put((short) ((position[i] + fudge * strides[i]) * Short.MAX_VALUE));
@@ -399,7 +409,7 @@ public class RegionRepresentation {
 		}
 
 		long t1 = System.currentTimeMillis();
-		System.out.println("time taken to load file in new fancy way:" + (t1 - t0));
+		System.out.println("time taken to load file in " + rr.numPtsW * rr.numPtsX * rr.numPtsY * rr.numPtsZ +"points:" + (t1 - t0));
 		return rr;
 	}
 
@@ -419,123 +429,13 @@ public class RegionRepresentation {
 	 */
 	private static MinAndMax minAndMaxBasedOnRoughOnePercentRushThrough(ImageHDU hdu, Volume volume, Fits fits) {
 		MinAndMax mam = new MinAndMax();
+		float fidelity = PointCloud.fidelityToGetTargetPixels(fits, 250_000);
+		RegionRepresentation rr = loadFromDisk(fits, fidelity, volume, true);
+		float range = rr.estMax - rr.estMin;
 
-		long t0 = System.currentTimeMillis();
-		float minn = 0.1f;
-		float maxx = -0.1f;
-
-		List<Float>allOfThemFloats =new ArrayList<Float>();
-		try{
-			float shittyFidelity = 0.1f;
-
-			int sourceMaxWidth = hdu.getAxes()[0];
-			int sourceMaxHeight = hdu.getAxes()[1];
-			int sourceMaxDepth = hdu.getAxes().length > 2? hdu.getAxes()[2] : 0;
-
-			//stirde of 1 = full fidelity , stride of 2 = half fidelity
-			int stride = (int)(1.0f/shittyFidelity);
-			System.out.println("stride:"+stride);
-
-
-			int sourceStartX = (int)(volume.x * sourceMaxWidth);
-			int sourceStartY = (int)(volume.y * sourceMaxHeight);
-			int sourceStartZ = (int)(volume.z * sourceMaxDepth);
-
-			int sourceEndX = (int)((volume.x + volume.wd) * sourceMaxWidth);
-			int sourceEndY = (int)((volume.y + volume.ht) * sourceMaxHeight);
-			int sourceEndZ = (int)((volume.z + volume.dp) * sourceMaxDepth);
-
-			int maxWidth = (sourceEndX - sourceStartX)/stride;
-			int maxHeight = (sourceEndY - sourceStartY)/stride;
-			int maxDepth = (sourceEndZ - sourceStartZ)/stride;
-
-			int numPtsX = maxWidth;
-			int numPtsY = maxHeight;
-			int numPtsZ = maxDepth;
-
-			int yRemainder = sourceMaxHeight - stride*(sourceMaxHeight/stride);
-
-			DataType dataType;
-			int bitPix = hdu.getBitPix();
-			int typeSize = Math.abs(bitPix)/8;
-			float[] storagef = null;
-			double[] storaged = null;
-			switch (bitPix) {
-				case -64:
-					dataType = DataType.DOUBLE;
-					storaged = new double[sourceMaxDepth];
-					break;
-				case -32:
-					dataType = DataType.FLOAT;
-					storagef = new float[sourceMaxDepth];
-					break;
-				default:
-					throw new IOException("Whoops, no support forthat file format (BitPix = "+bitPix+") at the moment.  Floats and Doubles only sorry.");
-			}
-
-
-			if (hdu.getData().reset()) {
-
-				ArrayDataInput adi = fits.getStream();
-				int planesToSkip = sourceStartX;
-				adi.skipBytes(sourceMaxDepth * sourceMaxHeight * planesToSkip * typeSize);
-
-				for (int x = 0; x < maxWidth; x ++) {
-					for (int y = 0; y < maxHeight; y ++) {
-						if (dataType == DataType.DOUBLE) {
-							adi.read(storaged, 0, storaged.length);
-							for (int z = 0; z < maxDepth; z++) {
-								float val = (float)storaged[z * stride];
-								if (Double.isNaN(val))
-									continue;
-								if (val < minn) minn = val;
-								if (val > maxx) maxx = val;
-
-								allOfThemFloats.add(val);
-							}
-						}
-						else if (dataType == DataType.FLOAT) {
-							adi.read(storagef, 0, storagef.length);
-							for (int z = 0; z < maxDepth; z++) {
-								float val = (float)storagef[z * stride];
-								if (Float.isNaN(val))
-									continue;
-								if (val < minn) minn = val;
-								if (val > maxx) maxx = val;
-								allOfThemFloats.add(val);
-							}
-						}
-
-						if (y == maxHeight-1 && yRemainder!=0) {
-							//is remainder zone
-							int linesToSkip = yRemainder + stride - 1;
-							adi.skipBytes(sourceMaxDepth * linesToSkip * typeSize );
-						} else {
-							int linesToSkip = stride - 1;
-							adi.skipBytes(sourceMaxDepth * linesToSkip * typeSize);
-						}
-					}
-					adi.skipBytes(sourceMaxDepth * sourceMaxHeight * (stride - 1) * typeSize);
-				}
-			}
-
-			System.out.println("fits file loaded " + maxWidth + " z " + maxHeight + " z " + maxDepth);
-			System.out.println("min" + minn);
-			System.out.println("max" + maxx);
-			allOfThemFloats.sort(new Comparator<Float>() {
-				@Override
-				public int compare(Float o1, Float o2) {
-					return Float.compare(o1.floatValue(), o2.floatValue());
-				}
-			});
-
-
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-		System.out.println("time taken to estimate min and max :" + (System.currentTimeMillis() - t0) + "ms");
-		mam.min = minn;
-		mam.max = maxx;
+		mam.min = rr.estMin - 0.25f * range;
+		mam.max = rr.estMax + 0.25f * range;
+		
 		return mam;
 	}
 
@@ -610,14 +510,6 @@ public class RegionRepresentation {
 
 	public void setNumPtsZ(int numPtsZ) {
 		this.numPtsZ = numPtsZ;
-	}
-
-	public int getValidPts() {
-		return validPts;
-	}
-
-	public void setValidPts(int validPts) {
-		this.validPts = validPts;
 	}
 
 	public float getFidelity() {

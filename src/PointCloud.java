@@ -411,7 +411,7 @@ public class PointCloud implements  AttributeProvider {
 	}
 
 
-	public float fidelityToGetTargetPixels(Fits fits, int targetPixels) {
+	public static float fidelityToGetTargetPixels(Fits fits, int targetPixels) {
 		try {
 			ImageHDU hdu = (ImageHDU) fits.getHDU(0);
 			int totalPixels = hdu.getAxes()[0] * hdu.getAxes()[1] * hdu.getAxes()[2];

@@ -74,13 +74,13 @@ public class Region implements  AttributeProvider{
 		this(volume, initialFidelity);
 		this.fits = fits;
 
-		RegionRepresentation initialRepresentation = RegionRepresentation.loadFromDisk(fits, initialFidelity, this.getVolume());
+		RegionRepresentation initialRepresentation = RegionRepresentation.loadFromDisk(fits, initialFidelity, this.getVolume(), false);
 		this.setRegionRepresentation(initialRepresentation);
 	}
 
 
 	public void loadRepresentationAtFidelity(float fidelity) {
-		RegionRepresentation initialRepresentation = RegionRepresentation.loadFromDisk(fits, fidelity, this.getVolume());
+		RegionRepresentation initialRepresentation = RegionRepresentation.loadFromDisk(fits, fidelity, this.getVolume(), false);
 		this.setRegionRepresentation(initialRepresentation);
 
 		if (this.minusRegions != null) {
@@ -140,7 +140,7 @@ public class Region implements  AttributeProvider{
 
 		//--Otherwise load in a fresh version of the point cloud
 		else {
-			this.setRegionRepresentation(RegionRepresentation.loadFromDisk(this.fits, fidelity, this.getVolume()));
+			this.setRegionRepresentation(RegionRepresentation.loadFromDisk(this.fits, fidelity, this.getVolume(),  false));
 
 			//--make sure to cut out values that belong in the parent
 			if (replaceValues) {

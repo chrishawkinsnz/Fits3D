@@ -432,10 +432,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
     public void init(GLAutoDrawable drawable) {
 		this.renderer = new Renderer(this.pointClouds, this.viewer, drawable.getGL().getGL3(), this.selection);
 		attachControlsToCanvas();
-
-//		MouseSelectionController mouseSelectionController = new MouseSelectionController(this.renderer);
-//		canvas.addMouseMotionListener(mouseSelectionController);
-//		canvas.addMouseListener(mouseSelectionController);
     }
 
 
