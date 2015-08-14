@@ -543,7 +543,7 @@ public class Renderer {
 					}
 
 					if (pc.getSelection().isActive() ) {
-						renderOutline(viewer.getBaseMatrix(), pc.getSelection().getVolume(), Color.white);
+						renderOutline(viewer.getBaseMatrix(), pc.getSelection().getVolume().clampedToVolume(pc.getVolume()), Color.white);
 					}
 				}
 			}

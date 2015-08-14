@@ -76,9 +76,12 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
-		this.getSelection().setActive(false);
-		this.renderer.mouseWorldPosition = null;
-		FrameMaster.setNeedsDisplay();
+		Selection selection = this.getSelection();
+		if (selection != null) {
+			selection.setActive(false);
+			this.renderer.mouseWorldPosition = null;
+			FrameMaster.setNeedsDisplay();
+		}
 	}
 
 	@Override
@@ -113,9 +116,28 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 		if (isCurrentlySelectingPlaneInPointClouds(e.getX(), e.getY())) {
 			float selectionDepthDelta = (float)e.getWheelRotation() * 0.1f;
 
+
 			Vector3 oldOrigin = this.getSelection().getVolume().origin;
 			Vector3 oldSize = this.getSelection().getVolume().size;
 			Vector3 newSize = oldSize.add(Vector3.in.scale(selectionDepthDelta));
+
+			float zLimit = oldOrigin.z + newSize.z;
+
+			//--don't push out past boundaries
+			if (selectionDepthDelta > 0f) {
+				float cloudLimit = FrameMaster.getActivePointCloud().volume.origin.z + FrameMaster.getActivePointCloud().volume.size.z;
+				if (zLimit > cloudLimit) {
+					return;
+				}
+			}
+
+			//--don't push out past boundaries
+			if (selectionDepthDelta < 0f) {
+				float cloudLimit = FrameMaster.getActivePointCloud().volume.origin.z;
+				if (zLimit < cloudLimit) {
+					return;
+				}
+			}
 			Volume newVolume = new Volume(oldOrigin, newSize);
 
 			this.getSelection().setVolume(newVolume);
@@ -179,6 +201,12 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 
 	public Selection getSelection() {
-		return FrameMaster.getActivePointCloud().getSelection();
+		PointCloud pc = FrameMaster.getActivePointCloud();
+		if (pc != null) {
+			return pc.getSelection();
+		}
+		else {
+			return null;
+		}
 	}
 }

@@ -43,7 +43,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	private AttributeProvider selectedAttributeProvider = null;
 	private List<PointCloud> pointClouds = new ArrayList<PointCloud>();
 	private WorldViewer viewer;
-//	private Selection selection = Selection.defaultSelection();;
 	private DefaultTreeModel treeModel;
 
 	//VIEW
@@ -54,9 +53,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	private KeyboardSelectionController selectionController;
 
 	private PointCloud activePointCloud;
-
-
-
+	private JTree tree;
 
 
 	public FrameMaster() {
@@ -229,7 +226,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		TreeNode treeRoot = treeRoot = new DefaultMutableTreeNode("Point Clouds");
 		this.treeModel = new DefaultTreeModel(treeRoot);
 
-		JTree tree = new JTree(treeModel);
+		this.tree = new JTree(treeModel);
 		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 
 		tree.addTreeSelectionListener(new TreeSelectionListener() {
@@ -250,10 +247,11 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 			@Override
 			public void treeNodesInserted(TreeModelEvent e) {
-				System.out.println("tree node added");
 				TreePath parentPath = e.getTreePath();
 				TreePath childPath = parentPath.pathByAddingChild(e.getChildren()[e.getChildren().length - 1]);
-				tree.setSelectionPath(childPath);
+
+				FrameMaster.this.tree.expandPath(e.getTreePath());
+				FrameMaster.this.tree.setSelectionPath(childPath);
 			}
 		});
 

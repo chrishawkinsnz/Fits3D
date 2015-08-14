@@ -72,8 +72,7 @@ public class PointCloud implements  AttributeProvider {
 
 
 	public PointCloud(String pathName) {
-		this.selection = Selection.defaultSelection();
-		this.selection.setActive(false);
+
 
 		this.regions = new ArrayList<Region>();
 		this.volume = new Volume(BOX_ORIGIN_X, BOX_ORIGIN_Y, BOX_ORIGIN_Z, BOX_WIDTH, BOX_HEIGHT, BOX_DEPTH);
@@ -81,6 +80,9 @@ public class PointCloud implements  AttributeProvider {
 		fileName = new Attribute.PathName("Filename", pathName, false);
 		attributes.add(fileName);
 
+		this.selection = Selection.defaultSelection();
+		this.selection.setVolume(this.volume);
+		this.selection.setActive(false);
 
 		Attribute.TextAttribute optionsTitleAttribute = new Attribute.TextAttribute(" ", "Options", false);
 		optionsTitleAttribute.isTitle = true;
