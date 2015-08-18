@@ -289,8 +289,9 @@ public class PointCloud implements  AttributeProvider {
 			}
 
 
-			for (int i = hdu.getAxes().length-1; i >= 0 ; i--) {
-				attributes.add(1,new Attribute.TextAttribute(AXES_NAMES[i] + " pts", "" + hdu.getAxes()[i], false));
+			for (int i = 0; i < hdu.getAxes().length; i ++) {
+				attributes.add(1,new Attribute.TextAttribute(AXES_NAMES[hdu.getAxes().length - 1 - i] + " pts", "" + hdu.getAxes()[i], false));
+
 			}
 
 
