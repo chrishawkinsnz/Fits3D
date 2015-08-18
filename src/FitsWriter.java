@@ -13,6 +13,12 @@ import java.util.function.Consumer;
 public class FitsWriter {
 
     public static void writeFits(PointCloud parent, Region region, File file) {
+        Header oldHeader = null;
+        try {
+            oldHeader = parent.getFits().getHDU(0).getHeader();
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
         System.out.println(parent);
         System.out.println(region);
 
@@ -23,6 +29,9 @@ public class FitsWriter {
         RegionRepresentation.shouldFudge = previousFudgeSetting;
 
         RegionRepresentation writableRegion = RegionRepresentation.loadFromDisk(parent.getFits(), 1.0f, region.getVolume(), false);
+
+        boolean fourdee = headerAlreadyIncludesValueForKey(oldHeader, "NAXIS4");
+
         //--now we iterate over those points and create a float buffer
         //--inneficient I know
         int wl = region.getDimensionInPts(3);
@@ -31,83 +40,102 @@ public class FitsWriter {
         int xl = region.getDimensionInPts(0);
 
         //--clear the data first
-        float[][][][]data = new float[wl][zl][yl][xl];
+        float[][][][]data4 = new float[wl][zl][yl][xl];
+        float[][][]  data3 = new float[zl][yl][xl];
         for (int wi = 0; wi < wl; wi++) {
             for (int zi = 0; zi < zl; zi++) {
                 for (int yi = 0; yi < yl; yi++) {
                     for (int xi = 0; xi < xl; xi++) {
                         float constant = 0.3f;
-                        data[wi][zi][yi][xi] = Float.NaN;
+                        if (fourdee) {
+                            data4[wi][zi][yi][xi] = Float.NaN;
+                        }
+                        else {
+                            data3[zi][yi][xi] = Float.NaN;
+                        }
+
                     }
                 }
             }
         }
 
 
-        float wStep = 1.0f / (float)wl;
-        float zStep = 1.0f / (float)zl;
-        float yStep = 1.0f / (float)yl;
-        float xStep = 1.0f / (float)xl;
+//        float wStep = 1.0f / (float)wl;
+//        float zStep = region.getVolume().size.z / (float)zl;
+//        float yStep = region.getVolume().size.y / (float)yl;
+//        float xStep = region.getVolume().size.x / (float)xl;
 
-        int totalPoints = wl * zl * yl * xl;
         for (VertexBufferSlice slice : region.getRegionRepresentation().getSlices()) {
 
-            float zProportion   = (slice.z) ;/// region.getVolume().size.z;
-            int   zIndex        = (int)(zProportion / zStep);
+            float zProportionCloud   = (slice.z) ;/// region.getVolume().size.z;
+            float zProportion = (zProportionCloud - region.getVolume().origin.z)/ region.getVolume().size.z;
+            int   zIndex        = (int)(zProportion * zl);
             float wProportion   = parent.frame.getValue();
-            int   wIndex        = (int)(wProportion / wStep);
+            int   wIndex        = (int)(wProportion * wl);
             for (int i = 0; i < slice.numberOfPts; i++) {
                 short xs = slice.vertexBuffer.get(i * 3 + 0);
                 short ys = slice.vertexBuffer.get(i * 3 + 1);
 
 
-                float xProportion = (float)xs/(float)Short.MAX_VALUE;
-                float yProportion = (float)ys/(float)Short.MAX_VALUE;
+                float xProportionCloud = (float)xs/(float)Short.MAX_VALUE;
+                float xProportion = (xProportionCloud - region.getVolume().origin.x)/ region.getVolume().size.x;
+                float yProportionCloud = (float)ys/(float)Short.MAX_VALUE;
+                float yProportion = (yProportionCloud - region.getVolume().origin.y)/ region.getVolume().size.y;
 
-                int xIndex = (int)(xProportion / xStep);
-                int yIndex = (int)(yProportion / yStep);
+                int xIndex = (int)(xProportion * xl);
+                int yIndex = (int)(yProportion * yl);
 
-                if (xIndex >= xl) { xIndex = xl-1;}
-                if (yIndex >= yl) { yIndex = yl-1;}
-                if (zIndex >= zl) { zIndex = zl-1;}
-                if (wIndex >= wl) { wIndex = wl-1;}
+                if (xIndex >= xl) {xIndex = xl-1;}
+                if (yIndex >= yl) {yIndex = yl-1;}
+                if (zIndex >= zl) {zIndex = zl-1;}
+                if (wIndex >= wl) {wIndex = wl-1;}
 
                 float value = slice.valueBuffer.get(i);
-                data[wIndex][zIndex][yIndex][xIndex] = value;
+                if (fourdee) {
+                    data4[wIndex][zIndex][yIndex][xIndex] = value;
+                }
+                else {
+                    data3[zIndex][yIndex][xIndex] = value;
+                }
                 //TODO am I shifting everything evers'slightly to one side???
 
             }
         }
 
-
         try {
             Fits f = new Fits();
-            f.addHDU(FitsFactory.HDUFactory(data));
+            if (fourdee) {
+                f.addHDU(FitsFactory.HDUFactory(data4));
+            }
+            else {
+                f.addHDU(FitsFactory.HDUFactory(data3));
+            }
+
             //--copy over the meta data I think we need
-            Header oldHeader = parent.getFits().getHDU(0).getHeader();
             Header newHeader = f.getHDU(0).getHeader();
 
 
 
-            //--okay first up iterate over the old one and copy everything we need to
-            Cursor oldCursor = oldHeader.iterator();
-            while(oldCursor.hasNext()) {
-                Object obj = oldCursor.next();
-                if (obj instanceof  HeaderCard) {
-                    HeaderCard oldHeaderCard = (HeaderCard)obj;
-                    if (headerAlreadyIncludesValueForKey(newHeader, oldHeaderCard.getKey())) {
-                        System.out.println("oh no duplicate!");
-                    }
-                    else {
-                        newHeader.addLine(oldHeaderCard);
-                    }
-                }
-                else {
+//            //--okay first up iterate over the old one and copy everything we need to
+//            Cursor oldCursor = oldHeader.iterator();
+//            while(oldCursor.hasNext()) {
+//                Object obj = oldCursor.next();
+//                if (obj instanceof  HeaderCard) {
+//                    HeaderCard oldHeaderCard = (HeaderCard)obj;
+//                    if (headerAlreadyIncludesValueForKey(newHeader, oldHeaderCard.getKey())) {
+//                        System.out.println("oh no duplicate!");
+//                    }
+//                    else {
+//                        newHeader.addLine(oldHeaderCard);
+//                    }
+//                }
+//                else {
+//
+//                }
+//
+//                System.out.println(obj);
+//            }
 
-                }
-
-                System.out.println(obj);
-            }
 
 
             newHeader.insertHistory("initially extracted from larger fits file '" + parent.fileName.getValue() +"'");
