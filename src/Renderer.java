@@ -580,7 +580,13 @@ public class Renderer {
 
 	public static class RegionOrderer implements Comparator<VertexBufferSlice> {
 		public int compare(VertexBufferSlice a, VertexBufferSlice b) {
-			return a.getOverallZ() > b.getOverallZ() ? 1 : -1;
+			if (a.getOverallZ() == b.getOverallZ()) {
+				return 0;
+			}
+			else {
+				return a.getOverallZ() > b.getOverallZ() ? 1 : -1;
+			}
+
 		}
 	}
 

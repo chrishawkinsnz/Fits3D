@@ -52,7 +52,7 @@ public class FitsWriter {
         int totalPoints = wl * zl * yl * xl;
         for (VertexBufferSlice slice : region.getRegionRepresentation().getSlices()) {
 
-            float zProportion   = (slice.z) / region.getVolume().size.z;
+            float zProportion   = (slice.z) ;/// region.getVolume().size.z;
             int   zIndex        = (int)(zProportion / zStep);
             float wProportion   = parent.frame.getValue();
             int   wIndex        = (int)(wProportion / wStep);
