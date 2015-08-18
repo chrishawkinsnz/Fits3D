@@ -26,8 +26,8 @@ public class FitsWriter {
         //--we have to load up a supped up version of the region first
         boolean previousFudgeSetting = RegionRepresentation.shouldFudge;
         RegionRepresentation.shouldFudge = false;
-        region.loadRepresentationAtFidelity(1.0f);
-        RegionRepresentation.shouldFudge = previousFudgeSetting;
+//        region.loadRepresentationAtFidelity(1.0f);
+
 
         RegionRepresentation writableRegion = RegionRepresentation.loadFromDisk(parent.getFits(), 1.0f, region.getVolume(), false);
 
@@ -73,7 +73,6 @@ public class FitsWriter {
                 short xs = slice.vertexBuffer.get(i * 3 + 0);
                 short ys = slice.vertexBuffer.get(i * 3 + 1);
 
-
                 float xProportionCloud = (float)xs/(float)Short.MAX_VALUE;
                 float xProportion = (xProportionCloud - regionVolume.origin.x)/ regionVolume.size.x;
                 float yProportionCloud = (float)ys/(float)Short.MAX_VALUE;
@@ -116,25 +115,26 @@ public class FitsWriter {
 
 
 
-//            //--okay first up iterate over the old one and copy everything we need to
-//            Cursor oldCursor = oldHeader.iterator();
-//            while(oldCursor.hasNext()) {
-//                Object obj = oldCursor.next();
-//                if (obj instanceof  HeaderCard) {
-//                    HeaderCard oldHeaderCard = (HeaderCard)obj;
-//                    if (headerAlreadyIncludesValueForKey(newHeader, oldHeaderCard.getKey())) {
-//                        System.out.println("oh no duplicate!");
-//                    }
-//                    else {
-//                        newHeader.addLine(oldHeaderCard);
-//                    }
-//                }
-//                else {
-//
-//                }
-//
-//                System.out.println(obj);
-//            }
+            //--okay first up iterate over the old one and copy everything we need to
+            Cursor oldCursor = oldHeader.iterator();
+            while(oldCursor.hasNext()) {
+                Object obj = oldCursor.next();
+                if (obj instanceof  HeaderCard) {
+                    HeaderCard oldHeaderCard = (HeaderCard)obj;
+                    if (headerAlreadyIncludesValueForKey(newHeader, oldHeaderCard.getKey())) {
+                        System.out.println("oh no duplicate!");
+                    }
+                    else {
+                        newHeader.addLine(oldHeaderCard);
+                    }
+
+                }
+                else {
+
+                }
+
+                System.out.println(obj);
+            }
 
 
 
@@ -154,7 +154,7 @@ public class FitsWriter {
             e.printStackTrace();
         }
 
-
+        RegionRepresentation.shouldFudge = previousFudgeSetting;
     }
 
     public static boolean headerAlreadyIncludesValueForKey(Header header, String key) {

@@ -344,14 +344,14 @@ public class RegionRepresentation {
 									rr.getBuckets()[bucketIndex]++;
 
 
-									float fudge;
-									if (shouldFudge) {
-										fudge = r.nextFloat();
-										fudge = fudge - 0.5f;
-									}
-									else {
-										fudge = 0.0f;
-									}
+//									float fudge;
+//									if (shouldFudge) {
+//										fudge = r.nextFloat();
+//										fudge = fudge - 0.5f;
+//									}
+//									else {
+//										fudge = 0.0f;
+//									}
 
 									if (dummyRun) {
 										if (val < rr.estMin)
@@ -360,8 +360,11 @@ public class RegionRepresentation {
 											rr.estMax = val;
 									}
 
-									for (int i = 3; i > 0; i--)
+									for (int i = 3; i > 0; i--) {
+										float fudge =  shouldFudge ? r.nextFloat() - 0.5f : 0.0f;
 										vertexBuffer.put((short) ((position[i] + fudge * strides[i]) * Short.MAX_VALUE));
+									}
+
 
 									valueBuffer.put(val);
 									pts++;
