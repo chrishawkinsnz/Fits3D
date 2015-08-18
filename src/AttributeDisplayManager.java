@@ -32,8 +32,6 @@ public class AttributeDisplayManager {
 			else {
 				tweakable = new Tweakable.ChrisLabel(nAttribute.getValue());
 			}
-
-
     	}
     	else if (attribute instanceof Attribute.SteppedRangeAttribute) {
     		Attribute.SteppedRangeAttribute srAttribute = (Attribute.SteppedRangeAttribute)attribute;

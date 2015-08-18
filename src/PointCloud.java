@@ -273,7 +273,7 @@ public class PointCloud implements  AttributeProvider {
 
 			this.filterSelection.setAxisName(unitAttribute.getValue());
 
-			this.unitTypes = new Attribute.TextAttribute[3];
+			this.unitTypes = new Attribute.TextAttribute[hdu.getAxes().length];
 			for (int i = hdu.getAxes().length-1; i >= 0 ; i--) {
 				unitAttribute = new Attribute.TextAttribute(AXES_NAMES[i] + " Unit", "" + hdu.getHeader().getStringValue("CTYPE"+(i+1)), false);
 				this.unitTypes[i] = unitAttribute;
@@ -284,9 +284,6 @@ public class PointCloud implements  AttributeProvider {
 			for (int i = hdu.getAxes().length-1; i >= 0 ; i--) {
 				attributes.add(1,new Attribute.TextAttribute(AXES_NAMES[i] + " pts", "" + hdu.getAxes()[i], false));
 			}
-
-
-
 
 
 			for (Attribute attr : attributes) {
@@ -320,7 +317,6 @@ public class PointCloud implements  AttributeProvider {
 
 			Volume v = new Volume(0f,0f,0f,1f,1f,1f);
 
-//			this.quality.notifyWithValue(fidelityToGetTargetPixels(fits, STARTING_TARGET_PIX));
 
 			Region region = new Region(fits, v, this.quality.getValue());
 			this.addRegion(region);
@@ -572,5 +568,9 @@ public class PointCloud implements  AttributeProvider {
 
 	public Selection getSelection() {
 		return selection;
+	}
+
+	public Fits getFits() {
+		return fits;
 	}
 }

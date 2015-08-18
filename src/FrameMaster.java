@@ -21,7 +21,9 @@ import javax.swing.event.*;
 import javax.swing.tree.*;
 
 import com.jogamp.opengl.util.FPSAnimator;
+import javafx.stage.FileChooser;
 import net.miginfocom.swing.MigLayout;
+import nom.tam.fits.Fits;
 
 public class FrameMaster extends JFrame implements GLEventListener {
 
@@ -321,6 +323,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		cutItem.addActionListener(e -> this.cutSelection());
 		fileMenu.add(cutItem);
 
+		JMenuItem exportRegionItem = new JMenuItem("Export Region");
+		setKeyboardShortcutTo(KeyEvent.VK_E, exportRegionItem);
+		exportRegionItem.addActionListener(e -> this.exportRegion());
+		fileMenu.add(exportRegionItem);
 		return fileMenu;
 	}
 
@@ -394,7 +400,34 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	 * All purpose hook for testing features
 	 */
 	private void foo() {
+		exportRegion();
+	}
 
+	private void exportRegion() {
+
+		if (this.selectedAttributeProvider instanceof  Region) {
+			Region selectedRegion = (Region) this.selectedAttributeProvider;
+			PointCloud parentCloud = null;
+			for (PointCloud pc : this.pointClouds) {
+				if (pc.getRegions().contains(selectedRegion)) {
+					parentCloud = pc;
+				}
+			}
+
+			if (parentCloud != null) {
+				JFileChooser jfc = new JFileChooser();
+				int result = jfc.showSaveDialog(this);
+				if (result == JFileChooser.APPROVE_OPTION) {
+					File file = jfc.getSelectedFile();
+					System.out.print(file.getName());
+					FitsWriter.writeFits(parentCloud, selectedRegion, file);
+				}
+
+
+
+			}
+
+		}
 	}
 
 
