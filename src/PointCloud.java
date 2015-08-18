@@ -64,6 +64,8 @@ public class PointCloud implements  AttributeProvider {
 	public Attribute.FilterSelectionAttribute filterSelection;
 	public Attribute.MultiChoiceAttribute relativeTo;
 	public Attribute.RangedAttribute frame;
+	public Attribute.RangedAttribute depth;
+
 	private final Attribute.BinaryAttribute cycling;
 
 	public Attribute.TextAttribute[] unitTypes;
@@ -132,7 +134,13 @@ public class PointCloud implements  AttributeProvider {
 		};
 		attributes.add(quality);
 
-
+		depth = new Attribute.RangedAttribute("Depth", 0.1f, 3.0f, BOX_DEPTH, false);
+		depth.callback = (obj) -> {
+			float newDepth = ((Float)obj).floatValue();
+			this.volume = new Volume(this.volume.origin, new Vector3(this.volume.size.x, this.volume.size.y, newDepth));
+			FrameMaster.setNeedsDisplay();
+		};
+		attributes.add(depth);
 
 
 		Attribute.TextAttribute filteringTitleAttribute = new Attribute.TextAttribute(" ", "Filters", false);
