@@ -145,9 +145,12 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	 * Make and return the attributes panel
 	 * @return The created attributes panel
 	 */
-	private JPanel makeAttributePanel() {
+	private Component makeAttributePanel() {
 
 		MigLayout mlLayout = new MigLayout("wrap 2");
+
+
+
 		JPanel attributPanel = new JPanel(mlLayout);
 		attributPanel.setBackground(Color.white);
 		attributPanel.setBorder(new EmptyBorder(0, 8, 8, 8));
@@ -182,10 +185,13 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 		Dimension lilDimension = new Dimension(300, 700);
 		attributPanel.setMinimumSize(lilDimension);
-		attributPanel.setMaximumSize(lilDimension);
-		attributPanel.setPreferredSize(lilDimension);
 
-		return attributPanel;
+		JScrollPane scrollPane = new JScrollPane(attributPanel, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		scrollPane.setMinimumSize(lilDimension);
+		scrollPane.setMaximumSize(lilDimension);
+		scrollPane.setPreferredSize(lilDimension);
+		
+		return scrollPane;
 	}
 
 
@@ -422,9 +428,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
 					System.out.print(file.getName());
 					FitsWriter.writeFits(parentCloud, selectedRegion, file);
 				}
-
-
-
 			}
 
 		}
@@ -580,8 +583,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		if (bl.getLayoutComponent(BorderLayout.EAST)!= null) {
 			this.getContentPane().remove(bl.getLayoutComponent(BorderLayout.EAST));
 		}
+		JScrollPane scrollPane = new JScrollPane();
+		Component attributPanel = makeAttributePanel();
 
-		JPanel attributPanel = makeAttributePanel();
+
 		this.getContentPane().add(attributPanel, BorderLayout.EAST);
 		SwingUtilities.updateComponentTreeUI(this);
 		this.getContentPane().repaint();
