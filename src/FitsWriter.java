@@ -52,7 +52,7 @@ public class FitsWriter {
         int totalPoints = wl * zl * yl * xl;
         for (VertexBufferSlice slice : region.getRegionRepresentation().getSlices()) {
 
-            float zProportion   = (slice.z - region.getVolume().origin.z) / region.getVolume().size.z;
+            float zProportion   = (slice.z) / region.getVolume().size.z;
             int   zIndex        = (int)(zProportion / zStep);
             float wProportion   = parent.frame.getValue();
             int   wIndex        = (int)(wProportion / wStep);
@@ -112,19 +112,12 @@ public class FitsWriter {
 
             newHeader.insertHistory("initially extracted from larger fits file '" + parent.fileName.getValue() +"'");
 
-//            int naxis = parent.getFits().getHDU(0).getAxes().length;
-//            for (int i = 1; naxis <= hdu.getAxes().length; naxis++) {
-//                String fieldNAme = "CRPIX"+i;
-//                Header dupe = new Header(oldHeader.getCard());
-//                newHeader.addValue(fieldNAme, newHeader.get, "totally made up");
-////                pixels[i - 1] = header.getFloatValue("CRPIX"+i)/ (float) hdu.getAxes()[i - 1];
-//
-//                fieldNAme = "CDELT"+i;
-//                sizes[i - 1] = header.getFloatValue("CDELT"+i) * (float) hdu.getAxes()[i - 1];
-//                values[i - 1] = header.getFloatValue("CRVAL"+i);
-//            }
-
-            BufferedFile bf = new BufferedFile(file.getAbsolutePath(), "rw");
+            //--ensure has teh fits suffix
+            String path = file.getAbsolutePath();
+            if (!path.endsWith(".fits")) {
+                path = path + ".fits";
+            }
+            BufferedFile bf = new BufferedFile(path, "rw");
             f.write(bf);
             bf.close();
         } catch (FitsException e) {

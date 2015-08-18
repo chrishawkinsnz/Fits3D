@@ -127,7 +127,8 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 			if (selectionDepthDelta > 0f) {
 				float cloudLimit = FrameMaster.getActivePointCloud().volume.origin.z + FrameMaster.getActivePointCloud().volume.size.z;
 				if (zLimit > cloudLimit) {
-					return;
+					float maxSizeZ = cloudLimit - oldOrigin.z;
+					newSize = new Vector3(newSize.x, newSize.y, maxSizeZ);
 				}
 			}
 
@@ -135,7 +136,8 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 			if (selectionDepthDelta < 0f) {
 				float cloudLimit = FrameMaster.getActivePointCloud().volume.origin.z;
 				if (zLimit < cloudLimit) {
-					return;
+					float maxSizeZ = -(oldOrigin.z - cloudLimit);
+					newSize = new Vector3(newSize.x, newSize.y, maxSizeZ);
 				}
 			}
 			Volume newVolume = new Volume(oldOrigin, newSize);
