@@ -13,6 +13,7 @@ import java.util.function.Consumer;
 public class FitsWriter {
 
     public static void writeFits(PointCloud parent, Region region, File file) {
+        Volume regionVolume = region.getVolume().rejiggeredForPositiveSize();
         Header oldHeader = null;
         try {
             oldHeader = parent.getFits().getHDU(0).getHeader();
@@ -60,15 +61,11 @@ public class FitsWriter {
         }
 
 
-//        float wStep = 1.0f / (float)wl;
-//        float zStep = region.getVolume().size.z / (float)zl;
-//        float yStep = region.getVolume().size.y / (float)yl;
-//        float xStep = region.getVolume().size.x / (float)xl;
-
         for (VertexBufferSlice slice : region.getRegionRepresentation().getSlices()) {
-
-            float zProportionCloud   = (slice.z) ;/// region.getVolume().size.z;
-            float zProportion = (zProportionCloud - region.getVolume().origin.z)/ region.getVolume().size.z;
+            slice.region = region;
+            slice.cloud = parent;
+            float zProportionCloud   = ((slice.getOverallZ()) - parent.getVolume().origin.z)/parent.getVolume().size.z ;/// region.getVolume().size.z;
+            float zProportion = (zProportionCloud - regionVolume.origin.z)/ regionVolume.size.z;
             int   zIndex        = (int)(zProportion * zl);
             float wProportion   = parent.frame.getValue();
             int   wIndex        = (int)(wProportion * wl);
@@ -78,9 +75,9 @@ public class FitsWriter {
 
 
                 float xProportionCloud = (float)xs/(float)Short.MAX_VALUE;
-                float xProportion = (xProportionCloud - region.getVolume().origin.x)/ region.getVolume().size.x;
+                float xProportion = (xProportionCloud - regionVolume.origin.x)/ regionVolume.size.x;
                 float yProportionCloud = (float)ys/(float)Short.MAX_VALUE;
-                float yProportion = (yProportionCloud - region.getVolume().origin.y)/ region.getVolume().size.y;
+                float yProportion = (yProportionCloud - regionVolume.origin.y)/ regionVolume.size.y;
 
                 int xIndex = (int)(xProportion * xl);
                 int yIndex = (int)(yProportion * yl);
@@ -91,11 +88,14 @@ public class FitsWriter {
                 if (wIndex >= wl) {wIndex = wl-1;}
 
                 float value = slice.valueBuffer.get(i);
-                if (fourdee) {
-                    data4[wIndex][zIndex][yIndex][xIndex] = value;
-                }
-                else {
-                    data3[zIndex][yIndex][xIndex] = value;
+                try {
+                    if (fourdee) {
+                        data4[wIndex][zIndex][yIndex][xIndex] = value;
+                    } else {
+                        data3[zIndex][yIndex][xIndex] = value;
+                    }
+                }catch (ArrayIndexOutOfBoundsException e) {
+                    e.printStackTrace();
                 }
                 //TODO am I shifting everything evers'slightly to one side???
 
