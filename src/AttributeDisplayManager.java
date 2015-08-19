@@ -51,6 +51,10 @@ public class AttributeDisplayManager {
 			Attribute.Actchin aa = (Attribute.Actchin)attribute;
 			tweakable = new Tweakable.ChrisButton(aa);
 		}
+		else if (attribute instanceof Attribute.NumberAttribute) {
+			Attribute.NumberAttribute na  = (Attribute.NumberAttribute)attribute;
+			tweakable = new Tweakable.ChrisLabel(""+na.getValue());
+		}
     	else {
     		tweakable = null;
     	}

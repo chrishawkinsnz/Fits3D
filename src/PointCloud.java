@@ -78,6 +78,9 @@ public class PointCloud implements  AttributeProvider {
 	public AttributeGrouping optionsGrouping;
 	public AttributeGrouping filteringGrouping;
 	public AttributeGrouping actionsGrouping;
+	public AttributeGrouping cursorGrouping;
+
+	public Attribute.NumberAttribute[] cursorPosAttributes;
 
 
 	public PointCloud(String pathName) {
@@ -97,9 +100,19 @@ public class PointCloud implements  AttributeProvider {
 		this.optionsGrouping = new AttributeGrouping("Options");
 		this.filteringGrouping = new AttributeGrouping("Filtering");
 		this.actionsGrouping = new AttributeGrouping("");
+		this.cursorGrouping = new AttributeGrouping("Cursor");
 
 
 
+		this.cursorPosAttributes = new Attribute.NumberAttribute[3];
+		for (int i = 0; i < cursorPosAttributes.length; i++) {
+			Attribute.NumberAttribute numAttr = new Attribute.NumberAttribute("Cursor "+ AXES_NAMES[i], false);
+			this.cursorPosAttributes[i] =  numAttr;
+			this.cursorGrouping.addAttribute(numAttr, 5-i);
+			this.cursorPosAttributes[i].callback = o -> {
+				numAttr.updateAttributeDisplayer();
+			};
+		}
 
 
 
@@ -326,6 +339,7 @@ public class PointCloud implements  AttributeProvider {
 			for (int i = hdu.getAxes().length-1; i >= 0 ; i--) {
 				unitAttribute = new Attribute.TextAttribute(AXES_NAMES[i] + " Unit", "" + hdu.getHeader().getStringValue("CTYPE"+(i+1)), false);
 				this.unitTypes[i] = unitAttribute;
+				this.cursorPosAttributes[i].setUnit(this.unitTypes[i].getValue());
 				attributes.add(1, unitAttribute);
 			}
 
@@ -351,7 +365,7 @@ public class PointCloud implements  AttributeProvider {
 			float[] pixels = new float[naxis];
 			float[] values = new float[naxis];
 			float[] sizes = new float[naxis];
-			for (int i = 1; naxis <= hdu.getAxes().length; naxis++) {
+			for (int i = 1; i <= hdu.getAxes().length; i++) {
 				pixels[i - 1] = header.getFloatValue("CRPIX"+i)/ (float) hdu.getAxes()[i - 1];
 				sizes[i - 1] = header.getFloatValue("CDELT"+i) * (float) hdu.getAxes()[i - 1];
 				values[i - 1] = header.getFloatValue("CRVAL"+i);
@@ -437,6 +451,8 @@ public class PointCloud implements  AttributeProvider {
 
 		children.add(this.optionsGrouping);
 		children.add(this.filteringGrouping);
+		children.add(this.cursorGrouping);
+
 
 		if (this.regions.size() > 1) {
 			children.addAll(this.regions);
@@ -635,5 +651,25 @@ public class PointCloud implements  AttributeProvider {
 
 	public Fits getFits() {
 		return fits;
+	}
+
+	public void setCursorAtPosition(Vector3 worldPosition) {
+		if (worldPosition != null) {
+			Vector3 galacticPosition = galacticPositionOfWorldPosition(worldPosition);
+			for (int i = 0; i < 3; i++) {
+				this.cursorPosAttributes[i].notifyWithValue(galacticPosition.get(i), false);
+			}
+			System.out.println(galacticPosition);
+		}
+	}
+
+	public Vector3 normalisedPositionWithinCloudOfWorldPosition(Vector3 position) {
+		return position.minus(this.volume.origin).divideBy(this.volume.size);
+	}
+
+	public Vector3 galacticPositionOfWorldPosition(Vector3 position) {
+		Vector3 normalisedPosition = normalisedPositionWithinCloudOfWorldPosition(position);
+		Vector3 galacticPosition = normalisedPosition.scale(this.galacticVolume.size).add(this.galacticVolume.origin);
+		return galacticPosition;
 	}
 }

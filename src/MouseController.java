@@ -40,9 +40,7 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 	public void mouseDragged(java.awt.event.MouseEvent e) {
 
 		if (this.currentDragType == MouseActionType.Select) {
-
 			this.registerMousePosition(e.getX(), e.getY(), e.getButton());
-
 			FrameMaster.setNeedsDisplay();
 		}
 		else if (this.currentDragType == MouseActionType.Camera){
@@ -160,7 +158,7 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 		Volume slither = FrameMaster.getActivePointCloud().getSlither(false);
 		Vector3 worldPos = this.viewer.getWorldPositionOfPixelOnPlane(screenPos, slither, false);
-
+		FrameMaster.getActivePointCloud().setCursorAtPosition(worldPos);
 		return worldPos != null;
 	}
 

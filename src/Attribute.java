@@ -31,11 +31,11 @@ public abstract class Attribute {
 		}
 	}
 
-	public void notifyWithValue(Object obj, boolean doNotUpdateRenderer) {
+	public void notifyWithValue(Object obj, boolean shouldUpdateRenderer) {
 		boolean defaultValue = this.shouldUpdateRenderer;
-		shouldUpdateRenderer = doNotUpdateRenderer;
+		this.shouldUpdateRenderer = shouldUpdateRenderer;
 		notifyWithValue(obj);
-		shouldUpdateRenderer = defaultValue;
+		this.shouldUpdateRenderer = defaultValue;
 	}
 
 	public Object getValue() {
@@ -61,6 +61,44 @@ public abstract class Attribute {
 		this.listeningAttributeDisplayer.beNotifiedWithValue(this.getValue());
 	}
 
+	public static class NumberAttribute extends Attribute {
+		private float value = 0f;
+		private String unit;
+
+		public NumberAttribute(String displayName, boolean isAggregatable) {
+			super(displayName, isAggregatable);
+		}
+
+		public void setUnit(String unit) {
+			this.unit = unit;
+		}
+
+		@Override
+		public Float getValue() {
+			return this.value;
+		}
+
+		public String displayString() {
+			String numberPart = String.format("%f",this.getValue());
+			if (unit != null) {
+				return numberPart + " " + unit;
+			}
+			else {
+				return numberPart;
+			}
+		}
+		@Override
+		public void notifyWithValue(Object obj) {
+			super.notifyWithValue(obj);
+			Float float1 = (Float)obj;
+			this.value = float1.floatValue();
+		}
+
+		@Override
+		public void updateAttributeDisplayer() {
+			this.listeningAttributeDisplayer.beNotifiedWithValue(this.displayString());
+		}
+	}
 	public static class RangedAttribute extends Attribute {
 		private float value;
 		private float min;
