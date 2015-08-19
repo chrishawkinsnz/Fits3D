@@ -339,7 +339,8 @@ public class PointCloud implements  AttributeProvider {
 			for (int i = hdu.getAxes().length-1; i >= 0 ; i--) {
 				unitAttribute = new Attribute.TextAttribute(AXES_NAMES[i] + " Unit", "" + hdu.getHeader().getStringValue("CTYPE"+(i+1)), false);
 				this.unitTypes[i] = unitAttribute;
-				this.cursorPosAttributes[i].setUnit(this.unitTypes[i].getValue());
+//				this.cursorPosAttributes[i].setUnit(this.unitTypes[i].getValue());
+				this.cursorPosAttributes[i].setDisplayName(AXES_NAMES[i] + " (" + this.unitTypes[i].getValue() + ")");
 				attributes.add(1, unitAttribute);
 			}
 

@@ -73,6 +73,10 @@ public abstract class Attribute {
 			this.unit = unit;
 		}
 
+		public void setDisplayName(String name) {
+			this.displayName = name;
+		}
+
 		@Override
 		public Float getValue() {
 			return this.value;
