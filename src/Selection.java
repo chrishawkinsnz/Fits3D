@@ -10,6 +10,7 @@ public class Selection implements  AttributeProvider{
     private Volume volume;
 
     private List<Attribute>attributes;
+    public PointCloud observingPointCloud;
 
     private Selection() {
         attributes = new ArrayList<>();
@@ -25,14 +26,18 @@ public class Selection implements  AttributeProvider{
     }
 
     public void resetToDefault() {
-        this.volume = DEFAULT_VOLUME;
+        setVolume(DEFAULT_VOLUME);
     }
     public Volume getVolume() {
         return this.volume;
     }
 
     public void setVolume(Volume volume) {
+
         this.volume = volume;
+        if (this.observingPointCloud!=null) {
+            this.observingPointCloud.notifyOfNewSelectionVolume(this.volume);
+        }
     }
 
     public void moveX(float xDelta) {
@@ -51,7 +56,7 @@ public class Selection implements  AttributeProvider{
     }
 
     public void move(Vector3 delta) {
-        this.volume = new Volume(volume.origin.add(delta), volume.size);
+        setVolume(new Volume(volume.origin.add(delta), volume.size));
     }
 
     public void scaleAddX(float scaleDeltaX){
@@ -77,7 +82,7 @@ public class Selection implements  AttributeProvider{
                 return;
             }
         }
-        this.volume = new Volume(volume.origin, volume.size.add(scaleDelta));
+        setVolume(new Volume(volume.origin, volume.size.add(scaleDelta)));
     }
 
     public boolean isActive() {

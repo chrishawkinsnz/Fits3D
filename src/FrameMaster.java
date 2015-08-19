@@ -387,7 +387,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	/**
 	 * User chooses to cut out a subsection
 	 */
-	private void cutSelection() {
+	public static void cutSelection() {
 		PointCloud pc = getActivePointCloud();
 		pc.cutOutSubvolume(pc.getSelection().getVolume().rejiggeredForPositiveSize());
 		for (int i = 0; i < pc.getRegions().size() - 1; i++) {
@@ -400,7 +400,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 		pc.setShouldDisplaySlitherenated(false);
 
-		reloadAttributePanel();
+		singleton.reloadAttributePanel();
 		FrameMaster.setNeedsDisplay();
 	}
 
@@ -616,4 +616,49 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		}
 		return null;
 	}
+
+	public static void showOverlayDialogForPointCloud(PointCloud pc) {
+		JFrame f = new JFrame("Overlay");
+
+		MigLayout mlLayout = new MigLayout("wrap 2", "[grow,fill]");
+		JPanel mainPanel = new JPanel(mlLayout);
+		Dimension lilDimension = new Dimension(500,150);
+
+		f.setPreferredSize(lilDimension);
+		f.setMinimumSize(lilDimension);
+		f.setMaximumSize(lilDimension);
+
+		JLabel title = new JLabel("Which other point cloud would you like to position "+pc.toString()+" to?");
+		mainPanel.add(title, "span 2");
+
+		int pos = 0;
+		PointCloud[]otherPointClouds = new PointCloud[singleton.pointClouds.size()-1];
+		for (PointCloud pc2 : singleton.pointClouds) {
+			if (pc2!=pc) {
+				otherPointClouds[pos++] = pc2;
+			}
+		}
+		JComboBox<PointCloud>pointCloudComboBox = new JComboBox<>(otherPointClouds);
+		mainPanel.add(pointCloudComboBox, "span 2");
+
+		JButton canelButton = new JButton("Cancel");
+		canelButton.addActionListener(e -> f.dispose());
+		mainPanel.add(canelButton);
+
+
+		JButton applyButton = new JButton("OK");
+		applyButton.addActionListener(e -> {
+			pc.setRelativeTo((PointCloud)pointCloudComboBox.getSelectedItem());
+			f.dispose();
+			FrameMaster.setNeedsDisplay();
+		});
+		mainPanel.add(applyButton);
+		applyButton.setFocusPainted(true);
+		applyButton.setFocusable(true);
+
+		f.add(mainPanel);
+		f.setVisible(true);
+	}
+
+
 }

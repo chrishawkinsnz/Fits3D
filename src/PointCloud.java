@@ -24,6 +24,7 @@ public class PointCloud implements  AttributeProvider {
 	}
 
 	private final static String[]   AXES_NAMES          = {"X", "Y", "Z", "W", "Q", "YOU", "DO", "NOT", "NEED", "THIS", "MANY", "AXES"};
+	private final static String[]   AXES_LENGTH_NAMES	= {"wd", "ht", "dp", "W", "Q", "YOU", "DO", "NOT", "NEED", "THIS", "MANY", "AXES"};
 	private final static Color[] 	DEFAULT_COLORS 		= {Color.GREEN, Color.RED, Color.BLUE, Color.ORANGE, Color.PINK};
 	private final static float 		STARTING_FIDELITY 	= 0.075f;
 	private final static int 		STARTING_TARGET_PIX	= 1_000_000;
@@ -79,9 +80,12 @@ public class PointCloud implements  AttributeProvider {
 	public AttributeGrouping filteringGrouping;
 	public AttributeGrouping actionsGrouping;
 	public AttributeGrouping cursorGrouping;
+	public AttributeGrouping selectionGrouping;
 
 	public Attribute.NumberAttribute[] cursorPosAttributes;
 
+	public Attribute.NumberAttribute[] selectionOriginAttributes;
+	public Attribute.NumberAttribute[] selectionLengthAttributes;
 
 	public PointCloud(String pathName) {
 
@@ -95,24 +99,50 @@ public class PointCloud implements  AttributeProvider {
 		this.selection = Selection.defaultSelection();
 		this.selection.setVolume(this.volume);
 		this.selection.setActive(false);
+		this.selection.observingPointCloud = this;
 
 
 		this.optionsGrouping = new AttributeGrouping("Options");
 		this.filteringGrouping = new AttributeGrouping("Filtering");
 		this.actionsGrouping = new AttributeGrouping("");
 		this.cursorGrouping = new AttributeGrouping("Cursor");
+		this.selectionGrouping = new AttributeGrouping("Selection");
 
 
 
 		this.cursorPosAttributes = new Attribute.NumberAttribute[3];
+		this.selectionLengthAttributes = new Attribute.NumberAttribute[3];
+		this.selectionOriginAttributes = new Attribute.NumberAttribute[3];
+
 		for (int i = 0; i < cursorPosAttributes.length; i++) {
 			Attribute.NumberAttribute numAttr = new Attribute.NumberAttribute("Cursor "+ AXES_NAMES[i], false);
 			this.cursorPosAttributes[i] =  numAttr;
-			this.cursorGrouping.addAttribute(numAttr, 5-i);
+			this.cursorGrouping.addAttribute(numAttr, 6-i);
 			this.cursorPosAttributes[i].callback = o -> {
 				numAttr.updateAttributeDisplayer();
 			};
+
+			Attribute.NumberAttribute origAttr = new Attribute.NumberAttribute("orig "+ AXES_NAMES[i], false);
+			this.selectionOriginAttributes[i] =  origAttr;
+			this.selectionGrouping.addAttribute(origAttr, 6-i);
+			this.selectionOriginAttributes[i].callback = o -> {
+				origAttr.updateAttributeDisplayer();
+			};
+
+			Attribute.NumberAttribute lenAttr = new Attribute.NumberAttribute("length "+ AXES_NAMES[i], false);
+			this.selectionLengthAttributes[i] =  lenAttr;
+			this.selectionGrouping.addAttribute(lenAttr, 3-i);
+			this.selectionLengthAttributes[i].callback = o -> {
+				lenAttr.updateAttributeDisplayer();
+			};
 		}
+
+
+		Attribute.Actchin cutAction = new Attribute.Actchin("Cut Selection", false);
+		cutAction.callback = obj -> {
+			FrameMaster.cutSelection();
+		};
+		this.selectionGrouping.addAttribute(cutAction, 0);
 
 
 
@@ -311,7 +341,7 @@ public class PointCloud implements  AttributeProvider {
 		Attribute.Actchin actchin = new Attribute.Actchin("Overlay...", false);
 		this.optionsGrouping.addAttribute(actchin, 2);
 		actchin.callback = (obj) -> {
-			System.out.println(":");
+			FrameMaster.showOverlayDialogForPointCloud(this);
 		};
 
 		this.color = DEFAULT_COLORS[clouds++ % DEFAULT_COLORS.length];
@@ -338,10 +368,12 @@ public class PointCloud implements  AttributeProvider {
 			this.unitTypes = new Attribute.TextAttribute[hdu.getAxes().length];
 			for (int i = hdu.getAxes().length-1; i >= 0 ; i--) {
 				unitAttribute = new Attribute.TextAttribute(AXES_NAMES[i] + " Unit", "" + hdu.getHeader().getStringValue("CTYPE"+(i+1)), false);
-				this.unitTypes[i] = unitAttribute;
-//				this.cursorPosAttributes[i].setUnit(this.unitTypes[i].getValue());
-				this.cursorPosAttributes[i].setDisplayName(AXES_NAMES[i] + " (" + this.unitTypes[i].getValue() + ")");
 				attributes.add(1, unitAttribute);
+				this.unitTypes[i] = unitAttribute;
+
+				this.cursorPosAttributes[i].setDisplayName(AXES_NAMES[i] + " (" + this.unitTypes[i].getValue() + ")");
+				this.selectionOriginAttributes[i].setDisplayName(AXES_NAMES[i] + " (" + this.unitTypes[i].getValue() + ")");
+				this.selectionLengthAttributes[i].setDisplayName(AXES_LENGTH_NAMES[i] + " (" + this.unitTypes[i].getValue() + ")");
 			}
 
 
@@ -453,7 +485,7 @@ public class PointCloud implements  AttributeProvider {
 		children.add(this.optionsGrouping);
 		children.add(this.filteringGrouping);
 		children.add(this.cursorGrouping);
-
+		children.add(this.selectionGrouping);
 
 		if (this.regions.size() > 1) {
 			children.addAll(this.regions);
@@ -664,6 +696,8 @@ public class PointCloud implements  AttributeProvider {
 		}
 	}
 
+
+
 	public Vector3 normalisedPositionWithinCloudOfWorldPosition(Vector3 position) {
 		return position.minus(this.volume.origin).divideBy(this.volume.size);
 	}
@@ -673,4 +707,25 @@ public class PointCloud implements  AttributeProvider {
 		Vector3 galacticPosition = normalisedPosition.scale(this.galacticVolume.size).add(this.galacticVolume.origin);
 		return galacticPosition;
 	}
+
+	public void notifyOfNewSelectionVolume(Volume volume) {
+		Vector3 galacticPosition = galacticPositionOfWorldPosition(volume.origin);
+		for (int i = 0; i < 3; i++) {
+			this.selectionOriginAttributes[i].notifyWithValue(galacticPosition.get(i), false);
+		}
+
+		Vector3 normalisedSize = volume.size.divideBy(this.volume.size);
+		Vector3 galacticSize = normalisedSize.scale(this.galacticVolume.size);
+
+		for (int i = 0; i < 3; i++) {
+			this.selectionLengthAttributes[i].notifyWithValue(galacticSize.get(i), false);
+		}
+	}
+
+
+	public void setRelativeTo(PointCloud parentPointCloud) {
+		this.setVolume(this.volumeNormalisedToParent(parentPointCloud));
+	}
+
+
 }
