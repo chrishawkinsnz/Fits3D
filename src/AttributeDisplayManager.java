@@ -1,3 +1,4 @@
+import com.sun.tools.doclint.HtmlTag;
 
 public class AttributeDisplayManager {
 	public static AttributeDisplayManager defaultDisplayManager = new AttributeDisplayManager();
@@ -39,12 +40,16 @@ public class AttributeDisplayManager {
     	}
     	else if (attribute instanceof Attribute.FilterSelectionAttribute) {
     		Attribute.FilterSelectionAttribute fsAttribute = (Attribute.FilterSelectionAttribute)attribute;
-			PointCloud pc = (PointCloud)attributeDisplayer;
+			PointCloud pc = fsAttribute.getPointCloud();
     		tweakable = new Tweakable.ChristogramTweakable(pc.getHistBuckets(), fsAttribute, pc.getHistMin(), pc.getHistMax(), fsAttribute.getAxisName());
     	}
 		else if (attribute instanceof Attribute.MultiChoiceAttribute) {
 			Attribute.MultiChoiceAttribute mcAttribute = (Attribute.MultiChoiceAttribute)attribute;
 			tweakable = new Tweakable.DropDown(mcAttribute, mcAttribute.choices, mcAttribute.choice);
+		}
+		else if (attribute instanceof Attribute.Actchin) {
+			Attribute.Actchin aa = (Attribute.Actchin)attribute;
+			tweakable = new Tweakable.ChrisButton(aa);
 		}
     	else {
     		tweakable = null;

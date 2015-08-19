@@ -1,4 +1,5 @@
 import nom.tam.fits.Fits;
+import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
 import nom.tam.fits.ImageHDU;
 
@@ -7,6 +8,7 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +35,7 @@ public class PointCloud implements  AttributeProvider {
 	private final static float		BOX_ORIGIN_X 		= -0.5f * BOX_WIDTH;
 	private final static float 		BOX_ORIGIN_Y 		= -0.5f * BOX_HEIGHT;
 	private final static float 		BOX_ORIGIN_Z 		= -0.5f * BOX_DEPTH;
-	private final Timer timerCycle;
+	private final Timer waxisTimer;
 
 
 	private Timer slitherCycleTimer;
@@ -66,11 +68,16 @@ public class PointCloud implements  AttributeProvider {
 	public Attribute.RangedAttribute frame;
 	public Attribute.RangedAttribute depth;
 
-	private final Attribute.BinaryAttribute cycling;
+	private final Attribute.BinaryAttribute waxisCycling;
 
 	public Attribute.TextAttribute[] unitTypes;
 	//--static attributes
 	public Attribute.TextAttribute fileName;
+
+
+	public AttributeGrouping optionsGrouping;
+	public AttributeGrouping filteringGrouping;
+	public AttributeGrouping actionsGrouping;
 
 
 	public PointCloud(String pathName) {
@@ -86,16 +93,28 @@ public class PointCloud implements  AttributeProvider {
 		this.selection.setVolume(this.volume);
 		this.selection.setActive(false);
 
+
+		this.optionsGrouping = new AttributeGrouping("Options");
+		this.filteringGrouping = new AttributeGrouping("Filtering");
+		this.actionsGrouping = new AttributeGrouping("");
+
+
+
+
+
+
+
+
+
 		Attribute.TextAttribute optionsTitleAttribute = new Attribute.TextAttribute(" ", "Options", false);
 		optionsTitleAttribute.isTitle = true;
-		attributes.add(optionsTitleAttribute);
+
 
 		isVisible = new Attribute.BinaryAttribute("Visible", true, true);
-		attributes.add(isVisible);
-
+		optionsGrouping.addAttribute(isVisible, 9);
 
 		intensity = new Attribute.RangedAttribute("Brightness", 0.001f, 1f, 0.5f, false);
-		attributes.add(intensity);
+		optionsGrouping.addAttribute(intensity, 20);
 
 		float fidelity = STARTING_FIDELITY;
 		try {
@@ -132,7 +151,10 @@ public class PointCloud implements  AttributeProvider {
 			};
 			new Thread(r).start();
 		};
-		attributes.add(quality);
+
+		optionsGrouping.addAttribute(quality, 15);
+
+
 
 		depth = new Attribute.RangedAttribute("Depth", 0.1f, 3.0f, BOX_DEPTH, false);
 		depth.callback = (obj) -> {
@@ -140,12 +162,8 @@ public class PointCloud implements  AttributeProvider {
 			this.volume = new Volume(this.volume.origin, new Vector3(this.volume.size.x, this.volume.size.y, newDepth));
 			FrameMaster.setNeedsDisplay();
 		};
-		attributes.add(depth);
+		this.optionsGrouping.addAttribute(depth, 14);
 
-
-		Attribute.TextAttribute filteringTitleAttribute = new Attribute.TextAttribute(" ", "Filters", false);
-		filteringTitleAttribute.isTitle = true;
-		attributes.add(filteringTitleAttribute);
 
 
 
@@ -155,45 +173,60 @@ public class PointCloud implements  AttributeProvider {
 
 		Christogram.Filter data = new Christogram.Filter(0f, 1f, 0f, 1f, false);
 		filterSelection = new Attribute.FilterSelectionAttribute("Value Filter", false, data);
+		filterSelection.setPointCloud(this);
 
-		attributes.add(filterSelection);
+		this.filteringGrouping.addAttribute(filterSelection, 100);
+		int naxis = 3;
+		try {
+			naxis = this.getFits().getHDU(0).getAxes().length;
+		} catch (FitsException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
-		this.frame = new Attribute.RangedAttribute("Waxis", 0f, 1f, 0f, false);
-		attributes.add(this.frame);
+			this.frame = new Attribute.RangedAttribute("Waxis", 0f, 1f, 0f, false);
+
+			this.waxisTimer = new Timer(16, new ActionListener() {
+				private boolean forward = true;
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					float delta = forward ? 0.01f : -0.01f;
+					float newValue = PointCloud.this.frame.getValue() + delta;
+					if (newValue >= PointCloud.this.frame.getMax()) {
+						forward = false;
+						PointCloud.this.frame.notifyWithValue(PointCloud.this.frame.getMax());
+					} else if (newValue <= PointCloud.this.frame.getMin()){
+						forward = true;
+						PointCloud.this.frame.notifyWithValue(PointCloud.this.frame.getMin());
+					} else {
+						PointCloud.this.frame.notifyWithValue(newValue);
+					}
+					PointCloud.this.frame.updateAttributeDisplayer();
 
 
-		this.timerCycle = new Timer(16, new ActionListener() {
-			private boolean forward = true;
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				float delta = forward ? 0.01f : -0.01f;
-				float newValue = PointCloud.this.frame.getValue() + delta;
-				if (newValue >= PointCloud.this.frame.getMax()) {
-					forward = false;
-					PointCloud.this.frame.notifyWithValue(PointCloud.this.frame.getMax());
-				} else if (newValue <= PointCloud.this.frame.getMin()){
-					forward = true;
-					PointCloud.this.frame.notifyWithValue(PointCloud.this.frame.getMin());
-				} else {
-					PointCloud.this.frame.notifyWithValue(newValue);
 				}
-				PointCloud.this.frame.updateAttributeDisplayer();
+			});
+
+			this.waxisCycling = new Attribute.BinaryAttribute("Cyle", false, false);
+			this.waxisCycling.callback = (obj) -> {
+				boolean on = ((Boolean)obj).booleanValue();
+				if (on) {
+					PointCloud.this.waxisTimer.start();
+				}
+				else {
+					PointCloud.this.waxisTimer.stop();
+				}
+			};
+
+		//--only add 4d stuff if actually 4d yo
+		if(naxis > 3) {
+			this.filteringGrouping.addAttribute(this.frame, 50);
+			this.filteringGrouping.addAttribute(this.waxisCycling, 4);
+		}
 
 
-			}
-		});
 
-		this.cycling = new Attribute.BinaryAttribute("Cyle", false, false);
-		this.cycling.callback = (obj) -> {
-			boolean on = ((Boolean)obj).booleanValue();
-			if (on) {
-				PointCloud.this.timerCycle.start();
-			}
-			else {
-				PointCloud.this.timerCycle.stop();
-			}
-		};
-		attributes.add(this.cycling);
 
 		this.slitherPositionAttribute = new Attribute.RangedAttribute("Slither Pos", 0f, 1f, 0f, false);
 		this.slitherPositionAttribute.callback = (obj) -> {
@@ -210,10 +243,10 @@ public class PointCloud implements  AttributeProvider {
 			this.selection.setVolume(volume);
 		};
 
-		this.attributes.add(this.slitherPositionAttribute);
+		this.filteringGrouping.addAttribute(this.slitherPositionAttribute, 20);
 
-		this.displaySlitherenated = new Attribute.BinaryAttribute("Slitherise", false, false);
-		this.attributes.add(displaySlitherenated);
+		this.displaySlitherenated = new Attribute.BinaryAttribute("Select Slice", false, false);
+		this.filteringGrouping.addAttribute(displaySlitherenated, 19);
 
 		this.slitherCycleTimer = new Timer(16, new ActionListener() {
 			private boolean forward = true;
@@ -234,8 +267,8 @@ public class PointCloud implements  AttributeProvider {
 			}
 		});
 
-		this.cyclingSlitherAttribute = new Attribute.BinaryAttribute("Cycle", false, false);
-		this.attributes.add(this.cyclingSlitherAttribute);
+		this.cyclingSlitherAttribute = new Attribute.BinaryAttribute("Cycle Slice", false, false);
+		this.filteringGrouping.addAttribute(this.cyclingSlitherAttribute, 17);
 
 		this.cyclingSlitherAttribute.callback = (obj) -> {
 			boolean on = ((Boolean)obj).booleanValue();
@@ -260,6 +293,14 @@ public class PointCloud implements  AttributeProvider {
 		};
 
 		attributes.add(relativeTo);
+
+		//--dummy
+		Attribute.Actchin actchin = new Attribute.Actchin("Overlay...", false);
+		this.optionsGrouping.addAttribute(actchin, 2);
+		actchin.callback = (obj) -> {
+			System.out.println(":");
+		};
+
 		this.color = DEFAULT_COLORS[clouds++ % DEFAULT_COLORS.length];
 	}
 
@@ -392,8 +433,21 @@ public class PointCloud implements  AttributeProvider {
 	 * @return The list of all children that provide attributes
 	 */
 	public List<AttributeProvider> getChildProviders() {
-		List<AttributeProvider>attributeProviders = new ArrayList<>(this.regions);
-		return attributeProviders;
+		List<AttributeProvider> children = new ArrayList<>();
+
+		children.add(this.optionsGrouping);
+		children.add(this.filteringGrouping);
+
+		if (this.regions.size() > 1) {
+			children.addAll(this.regions);
+		}
+
+		return children;
+	}
+
+	@Override
+	public String getName() {
+		return this.fileName.getValue();
 	}
 
 

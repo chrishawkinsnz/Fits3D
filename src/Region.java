@@ -67,6 +67,11 @@ public class Region implements  AttributeProvider{
 		};
 		attributes.add(quality);
 
+		Attribute.Actchin exportAction = new Attribute.Actchin("Export to Fits", false);
+		exportAction.callback = (obj) -> {
+			FrameMaster.exportRegion(this);
+		};
+		attributes.add(exportAction);
 
 	}
 
@@ -169,9 +174,10 @@ public class Region implements  AttributeProvider{
 		return new ArrayList<>();
 	}
 
-
-
-
+	@Override
+	public String getName() {
+		return this.nameAttribute.getValue();
+	}
 
 
 	//==================================================================================================================

@@ -7,6 +7,7 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.plaf.basic.BasicOptionPaneUI;
 
 import com.sun.org.apache.bcel.internal.generic.NEW;
 import com.sun.xml.internal.ws.api.Component;
@@ -32,7 +33,8 @@ public abstract class Tweakable implements  AttributeDisplayer{
 			attribute.notifyWithValue(this.getValue());
 		}
 	}
-		
+
+
 	protected abstract Object getValue();
 
         
@@ -64,10 +66,10 @@ public abstract class Tweakable implements  AttributeDisplayer{
 		}
 
 		@Override
-		public void stateChanged(ChangeEvent e) {		
+		public void stateChanged(ChangeEvent e) {
 			notifyAttributes();
-		}		
-		
+		}
+
 		@Override
 		public JComponent getComponent() {
 			return this.checkBox;
@@ -288,6 +290,47 @@ public abstract class Tweakable implements  AttributeDisplayer{
 		protected Object getValue() {
 			return christogram.getCurrentFilter();
 		}
+	}
+
+	public static class ChrisButton extends Tweakable implements AttributeDisplayer {
+		private String name;
+		private JButton button;
+		public ChrisButton(Attribute.Actchin attribute) {
+			super(attribute);
+			name = attribute.displayName;
+			button = new JButton();
+			button.setText(name);
+			button.addActionListener(e -> notifyAttributes());
+
+		}
+
+		@Override
+		protected Object getValue() {
+			return null;
+		}
+
+		@Override
+		public void setValue(Object value) {
+
+		}
+
+		@Override
+		public JComponent getComponent() {
+			return button;
+		}
+
+		@Override
+		public boolean isDoubleLiner() {
+			return true;
+		}
+
+		@Override
+		public boolean shouldShowDisplayName() {
+			return false;
+		}
+
+
+
 	}
 	
 }

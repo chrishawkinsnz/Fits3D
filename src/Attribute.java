@@ -174,6 +174,7 @@ public abstract class Attribute {
 	public static class FilterSelectionAttribute extends Attribute {
 		private Christogram.Filter filter;
 		private String axisName;
+		private PointCloud pointCloud;
 
 		public FilterSelectionAttribute(String displayName, boolean shouldAggregate, Christogram.Filter filter) {
 			super(displayName, shouldAggregate);
@@ -193,6 +194,14 @@ public abstract class Attribute {
 			super.notifyWithValue(obj);
 			Christogram.Filter filter = (Christogram.Filter)obj;
 			this.filter = filter;
+		}
+
+		public void setPointCloud(PointCloud pointCloud) {
+			this.pointCloud = pointCloud;
+		}
+
+		public PointCloud getPointCloud() {
+			return this.pointCloud;
 		}
 
 		@Override
@@ -225,6 +234,15 @@ public abstract class Attribute {
 		public Object getValue() {
 			return this.choice;
 		}
+
+	}
+
+	public static class Actchin extends Attribute {
+
+		public Actchin(String displayName, boolean isAggregatable) {
+			super(displayName, isAggregatable);
+		}
+
 
 	}
 

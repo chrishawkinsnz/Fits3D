@@ -147,7 +147,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	 */
 	private Component makeAttributePanel() {
 
-		MigLayout mlLayout = new MigLayout("wrap 2");
+		MigLayout mlLayout = new MigLayout("wrap 2", "[grow,fill]");
 
 
 
@@ -166,13 +166,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 			//--now look for child providers
 			List<AttributeProvider> childProviders = selectedAttributeProvider.getChildProviders();
-			int minimumChildrenToDisplay = 2;
-			if (childProviders.size() >= minimumChildrenToDisplay) {
-				JLabel subsectionsTitle = new JLabel("Subsections");
-				subsectionsTitle.setFont(new Font("Dialog", Font.BOLD, 24));
-				attributPanel.add(subsectionsTitle, "span 2");
-				for (AttributeProvider childProvider : childProviders) {
 
+				for (AttributeProvider childProvider : childProviders) {
+					AttributeDisplayer titleTweakable = new Tweakable.ChrisTitle(childProvider.getName());
+					attributPanel.add(titleTweakable.getComponent(), "span 2");
 					for (Attribute attribute : childProvider.getAttributes()) {
 						AttributeDisplayer attributeDisplayer = AttributeDisplayManager.defaultDisplayManager.tweakableForAttribute(attribute, childProvider);
 						addTweakableToAttributePanel(attributeDisplayer, attribute, attributPanel);
@@ -180,7 +177,11 @@ public class FrameMaster extends JFrame implements GLEventListener {
 					//-space them out
 					attributPanel.add(new JLabel(" "), "span 2");
 				}
-			}
+
+
+				//--buttons
+
+
 		}
 
 		Dimension lilDimension = new Dimension(300, 700);
@@ -190,7 +191,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		scrollPane.setMinimumSize(lilDimension);
 		scrollPane.setMaximumSize(lilDimension);
 		scrollPane.setPreferredSize(lilDimension);
-		
+
 		return scrollPane;
 	}
 
@@ -216,7 +217,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 		JLabel label = new JLabel(attribute.displayName);
 		label.setFont(new Font("Dialog", Font.BOLD, 12));
-		attributPanel.add(label, formatString);
+		if (attributeDisplayer.shouldShowDisplayName()) {
+			attributPanel.add(label, formatString);
+		}
 
 
 		formatString = attributeDisplayer.isDoubleLiner() ? "width ::250, span 2" : "gapleft 16, width ::150";
@@ -413,23 +416,28 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 		if (this.selectedAttributeProvider instanceof  Region) {
 			Region selectedRegion = (Region) this.selectedAttributeProvider;
-			PointCloud parentCloud = null;
-			for (PointCloud pc : this.pointClouds) {
-				if (pc.getRegions().contains(selectedRegion)) {
-					parentCloud = pc;
-				}
-			}
+			exportRegion(selectedRegion);
 
-			if (parentCloud != null) {
-				JFileChooser jfc = new JFileChooser();
-				int result = jfc.showSaveDialog(this);
-				if (result == JFileChooser.APPROVE_OPTION) {
-					File file = jfc.getSelectedFile();
-					System.out.print(file.getName());
-					FitsWriter.writeFits(parentCloud, selectedRegion, file);
-				}
-			}
 
+		}
+	}
+
+	public static void exportRegion(Region region) {
+		PointCloud parentCloud = null;
+		for (PointCloud pc : singleton.pointClouds) {
+			if (pc.getRegions().contains(region)) {
+				parentCloud = pc;
+			}
+		}
+
+		if (parentCloud != null) {
+			JFileChooser jfc = new JFileChooser();
+			int result = jfc.showSaveDialog(singleton);
+			if (result == JFileChooser.APPROVE_OPTION) {
+				File file = jfc.getSelectedFile();
+				System.out.print(file.getName());
+				FitsWriter.writeFits(parentCloud, region, file);
+			}
 		}
 	}
 

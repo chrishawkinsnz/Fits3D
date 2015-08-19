@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
  */
 public interface AttributeProvider {
 
+
     default List<Attribute> aggregatableAttributes() {
         return getAttributes().stream().filter(u -> u.isAggregatable).collect(Collectors.toList());
     }
@@ -17,5 +18,7 @@ public interface AttributeProvider {
     public List<Attribute> getAttributes();
 
     public List<AttributeProvider> getChildProviders();
+
+    public String getName();
 
 }

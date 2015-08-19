@@ -97,4 +97,9 @@ public class Selection implements  AttributeProvider{
     public List<AttributeProvider> getChildProviders() {
         return new ArrayList<>();
     }
+
+    @Override
+    public String getName() {
+        return "Selection";
+    }
 }
