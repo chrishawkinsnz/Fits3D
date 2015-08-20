@@ -7,13 +7,6 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.plaf.basic.BasicOptionPaneUI;
-
-import com.sun.org.apache.bcel.internal.generic.NEW;
-import com.sun.xml.internal.ws.api.Component;
-import com.sun.xml.internal.ws.org.objectweb.asm.Label;
-
-import sun.security.x509.DeltaCRLIndicatorExtension;
 
 /**
  * Container for some tweakable UIElement
@@ -288,7 +281,7 @@ public abstract class Tweakable implements  AttributeDisplayer{
 
 		@Override
 		protected Object getValue() {
-			return christogram.getCurrentFilter();
+			return christogram.getSelection();
 		}
 	}
 

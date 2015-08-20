@@ -1,9 +1,4 @@
-import com.sun.tools.doclint.HtmlTag;
-
-import javax.smartcardio.ATR;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 public abstract class Attribute {
@@ -214,13 +209,13 @@ public abstract class Attribute {
 	}
 	
 	public static class FilterSelectionAttribute extends Attribute {
-		private Christogram.Filter filter;
+		private Christogram.ChristogramSelection christogramSelection;
 		private String axisName;
 		private PointCloud pointCloud;
 
-		public FilterSelectionAttribute(String displayName, boolean shouldAggregate, Christogram.Filter filter) {
+		public FilterSelectionAttribute(String displayName, boolean shouldAggregate, Christogram.ChristogramSelection christogramSelection) {
 			super(displayName, shouldAggregate);
-			this.filter = filter;
+			this.christogramSelection = christogramSelection;
 		}
 
 		public void setAxisName(String axisName) {
@@ -234,8 +229,8 @@ public abstract class Attribute {
 		@Override
 		public void notifyWithValue(Object obj) {
 			super.notifyWithValue(obj);
-			Christogram.Filter filter = (Christogram.Filter)obj;
-			this.filter = filter;
+			Christogram.ChristogramSelection christogramSelection = (Christogram.ChristogramSelection)obj;
+			this.christogramSelection = christogramSelection;
 		}
 
 		public void setPointCloud(PointCloud pointCloud) {
@@ -247,8 +242,8 @@ public abstract class Attribute {
 		}
 
 		@Override
-		public Christogram.Filter getValue() {
-			return this.filter;
+		public Christogram.ChristogramSelection getValue() {
+			return this.christogramSelection;
 		}
 	}
 

@@ -218,8 +218,8 @@ public class PointCloud implements  AttributeProvider {
 
 
 
-		Christogram.Filter data = new Christogram.Filter(0f, 1f, 0f, 1f, false);
-		filterSelection = new Attribute.FilterSelectionAttribute("Value Filter", false, data);
+		Christogram.ChristogramSelection data = new Christogram.ChristogramSelection(0f, 1f, 0f, 1f, false);
+		filterSelection = new Attribute.FilterSelectionAttribute("Value ChristogramSelection", false, data);
 		filterSelection.setPointCloud(this);
 
 		this.filteringGrouping.addAttribute(filterSelection, 100);
@@ -583,7 +583,7 @@ public class PointCloud implements  AttributeProvider {
 	}
 
 
-	public Christogram.Filter getFilter() {
+	public Christogram.ChristogramSelection getFilter() {
 		return this.filterSelection.getValue();
 	}
 

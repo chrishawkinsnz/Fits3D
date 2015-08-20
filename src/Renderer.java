@@ -430,12 +430,12 @@ public class Renderer {
 			//--if there's a new cloud then update the filtering uniforms
 			if(lastCloud != cloud) {
 
-				Christogram.Filter filter = cloud.getFilter();
-				gl.glUniform1f(this.uniformFilterMinX, filter.minX);
-				gl.glUniform1f(this.uniformFilterMaxX, filter.maxX);
+				Christogram.ChristogramSelection christogramSelection = cloud.getFilter();
+				gl.glUniform1f(this.uniformFilterMinX, christogramSelection.minX);
+				gl.glUniform1f(this.uniformFilterMaxX, christogramSelection.maxX);
 
-				float gradient = (filter.maxY - filter.minY) / (filter.maxX - filter.minX);
-				float constant = filter.minY - gradient * filter.minX;
+				float gradient = (christogramSelection.maxY - christogramSelection.minY) / (christogramSelection.maxX - christogramSelection.minX);
+				float constant = christogramSelection.minY - gradient * christogramSelection.minX;
 
 				gl.glUniform1f(this.uniformFilterGradient, gradient);
 				gl.glUniform1f(this.uniformFilterConstant, constant);

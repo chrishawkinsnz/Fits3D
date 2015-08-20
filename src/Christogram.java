@@ -1,60 +1,76 @@
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.AffineTransform;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.swing.JComponent;
-import javax.swing.JPanel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import org.omg.CORBA.PRIVATE_MEMBER;
-
 public class Christogram extends JComponent implements MouseMotionListener, MouseListener{
-	private static final int ticks = 5;
-//	private float[] values;
-	
+	private static final Color SELECTION_COLOR_BACKGROUND = new Color(1.0f, 0.5f, 0.5f, 0.5f);
+	private static final Color SELECTION_COLOR_OUTLINE = new Color(1.0f, 0.0f, 0.0f, 1.0f);
+	private static final int TICKS_TO_DISPLAY = 5;
+
+	private static final int LEFT_INSET = 0;
+	private static final int RIGHT_INSET = 0;
+	private static final int TOP_INSET = 0;
+	private static final int BOT_INSET = 70;
+
 	private float[] buckets;
 	private float maxBucket;
-	
 	private int nBuckets;
-
 	private String xAxisTitle;
 	
 	private float min = 0.0f;
 	private float max = 0.0f;
 
-	private int leftInset = 0;
-	private int rightInset = 0;
-	private int topInset = 0;
-	private int botInset = 70;
 
-	private float selectionBegin = 0f;
-	private float selectionCurrent = 0f;
-	private Filter currentFilter;
-	
-	public Christogram(float[] values, float min, float max, int buckets) {
-		this.min = min;
-		this.max = max;
-		this.nBuckets = buckets;
-		this.bucketise(values);
+
+	private float mouseSelectionBeginX = 0f;
+	private float mouseSelectionEndX = 0f;
+
+	private ChristogramSelection selection;
+
+	/**
+	 * Constructs a christogram with the given values.  This will automatically find the min and max and split the values into the supplied buckets.
+	 *
+	 * WARNING:This method is extremely slow and requires iterating over all of the supplied values twice.
+	 *
+	 * @param values The values to display
+	 * @param nBuckets The number of buckets to divide the values into
+	 */
+	public Christogram(float[] values, int nBuckets) {
+		this.nBuckets = nBuckets;
+
+		//--find the minimum and maximum values;
+		this.min = Float.MAX_VALUE;
+		this.max = Float.MIN_VALUE;
+		for (float f : values) {
+			if (f < min) { min = f;}
+			if (f > max) { max= f;}
+		}
+
+		this.bucketise(values, nBuckets);
 		this.addMouseMotionListener(this);
 		this.addMouseListener(this);
-		
-		this.currentFilter = Filter.distributionWithLinearIncrease(0f, 1f);
-		this.currentFilter.minX = this.min;
-		this.currentFilter.maxX = this.max;
+
+		this.selection = ChristogramSelection.distributionWithLinearIncrease(0f, 1f);
+		this.selection.minX = this.min;
+		this.selection.maxX = this.max;
 	}
-	
+
+	/**
+	 * Constructs a Christogram with the supplied counts.  The counts are the frequency of values within each bucket.
+	 * The buckets are assumed to be evenly distributed between min and max with the first element of counts corresponding to the lowest bucket.
+	 * @param counts The array of counts for each bucket.
+	 * @param min The minimum a value can be.  Represents the lower bound of the first bucket
+	 * @param max The maximum a value can be.  Represents the upper bound of the last bucket
+	 */
 	public Christogram(int[]counts, float min, float max) {
 		this.min = min;
 		this.max = max;
@@ -63,8 +79,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 
 		this.addMouseMotionListener(this);
 		this.addMouseListener(this);
-		this.currentFilter = Filter.distributionWithLinearIncrease(0f, 1f);
-
+		this.selection = ChristogramSelection.distributionWithLinearIncrease(0f, 1f);
 	}
 	
 	
@@ -105,8 +120,8 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		//--draw selection
 		
 		//--figure out which one is on the left and which is on the right
-		float minSelection = this.currentFilter.minX;//selectionBegin < selectionCurrent ? selectionBegin : selectionCurrent;
-		float maxSelection = this.currentFilter.maxX;//selectionBegin < selectionCurrent ? selectionCurrent : selectionBegin;
+		float minSelection = this.selection.minX;//mouseSelectionBeginX < mouseSelectionEndX ? mouseSelectionBeginX : mouseSelectionEndX;
+		float maxSelection = this.selection.maxX;//mouseSelectionBeginX < mouseSelectionEndX ? mouseSelectionEndX : mouseSelectionBeginX;
 		
 		//--find the proportion along the chart each is
 		float startProportion = (minSelection - min)/(max - min);
@@ -116,42 +131,42 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		int y1 = chartTop();
 		int width = (int)(chartWidth() * (endProportion - startProportion));
 		int height = chartHeight();
-		g.setColor(new Color(1.0f, 0.5f, 0.5f, 0.5f));
+		g.setColor(SELECTION_COLOR_BACKGROUND);
 		g.fillRect(x1, y1, width, height);
 		
-		g.setColor(new Color(1.0f, 0f, 0f, 1f));
+		g.setColor(SELECTION_COLOR_OUTLINE);
 		
 		g.drawLine(x1, chartBot(), x1, chartTop());
 		g.drawLine(x1 + width, chartBot(), x1 + width, chartTop());
 		
 		//--draw distribution line within selection
-		g.setColor(new Color(1.0f, 0f, 0f, 1f));
+		g.setColor(SELECTION_COLOR_OUTLINE);
 		
-		if (this.currentFilter.isExponential) {
-			height = (int) (this.currentFilter.maxY * chartHeight()) - (int)(this.currentFilter.minY * chartHeight());
+		if (this.selection.isExponential) {
+			height = (int) (this.selection.maxY * chartHeight()) - (int)(this.selection.minY * chartHeight());
 			x1 = x1 - width;
-			y1 = (int) (chartBot() - this.currentFilter.minY * chartHeight()) - height * 2;
+			y1 = (int) (chartBot() - this.selection.minY * chartHeight()) - height * 2;
 			g.drawArc(x1, y1, width * 2, height * 2, 270, 90);
 		}
 		else {
 			int x2 = x1 + width;
-			y1 = (int) (chartBot() - this.currentFilter.minY * chartHeight());
-			int y2 = (int) (chartBot() - this.currentFilter.maxY * chartHeight());
+			y1 = (int) (chartBot() - this.selection.minY * chartHeight());
+			int y2 = (int) (chartBot() - this.selection.maxY * chartHeight());
 			g.drawLine(x1, y1, x2, y2);	
 		}
 		
-		//--draw the ticks
+		//--draw the TICKS_TO_DISPLAY
 		Graphics2D g2d = (Graphics2D)g;
 		g2d.setColor(Color.black);
-		float stepSize = (float)chartWidth() / (float)(ticks - 1);
-		for (int tick = 0; tick < ticks; tick++) {
+		float stepSize = (float)chartWidth() / (float)(TICKS_TO_DISPLAY - 1);
+		for (int tick = 0; tick < TICKS_TO_DISPLAY; tick++) {
 			int tickX = chartLeft() - (int)(stepSize * tick);
 
 			//--fudge the tick position so the start and end labels aren't offscreen
-			if (tick > 0 && tick < (ticks - 1)) {
+			if (tick > 0 && tick < (TICKS_TO_DISPLAY - 1)) {
 				tickX += 10/2;
 			}
-			else if (tick == (ticks - 1)) {
+			else if (tick == (TICKS_TO_DISPLAY - 1)) {
 				tickX += 10;
 			}
 			
@@ -162,7 +177,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 			g2d.drawLine(chartLeft() + (int)(stepSize * tick), chartBot(), chartLeft() + (int)(stepSize * tick), chartBot() + 4);
 			g2d.rotate(Math.PI/2);
 			
-			float value = tick * (max - min)/((float)(ticks-1)) + min;
+			float value = tick * (max - min)/((float)(TICKS_TO_DISPLAY -1)) + min;
 			String valueString = "" + value;
 			
 			//--cut the string down if necessarry (making sure not to leave a '.' on the end
@@ -182,7 +197,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		}
 	}
 	
-	private void bucketise(float[]values) {
+	private void bucketise(float[]values, int nBuckets) {
 		int []counts = new int[nBuckets];
 		float stepSize = (max - min) / (float)nBuckets; 
 		for (float val : values) {
@@ -213,19 +228,19 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	}
 	
 	private int chartTop() {
-		return topInset;
+		return TOP_INSET;
 	}
 	
 	private int chartBot() {
-		return getSize().height - botInset;
+		return getSize().height - BOT_INSET;
 	}
 	
 	private int chartLeft() {
-		return leftInset;
+		return LEFT_INSET;
 	}
 	
 	private int chartRight() {
-		return getSize().width - rightInset;
+		return getSize().width - RIGHT_INSET;
 	}
 	
 	private int chartWidth() {
@@ -235,46 +250,13 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	private int chartHeight() {
 		return chartBot() - chartTop();
 	}
-	
-	
-	public int getLeftInset() {
-		return leftInset;
-	}
-
-	public void setLeftInset(int leftInset) {
-		this.leftInset = leftInset;
-	}
-
-	public int getRightInset() {
-		return rightInset;
-	}
-
-	public void setRightInset(int rightInset) {
-		this.rightInset = rightInset;
-	}
-
-	public int getTopInset() {
-		return topInset;
-	}
-
-	public void setTopInset(int topInset) {
-		this.topInset = topInset;
-	}
-
-	public int getBotInset() {
-		return botInset;
-	}
-
-	public void setBotInset(int botInset) {
-		this.botInset = botInset;
-	}
 
 	@Override
 	public void mouseDragged(MouseEvent e) {
 		if (this.tentativeSelectionBegin!=Float.MIN_VALUE) 
-			this.selectionBegin = tentativeSelectionBegin;
-		this.selectionCurrent =  proportionAtPixelX(e.getX());
-		this.currentFilter.updateWithXBounds(this.selectionBegin, this.selectionCurrent);
+			this.mouseSelectionBeginX = tentativeSelectionBegin;
+		this.mouseSelectionEndX =  proportionAtPixelX(e.getX());
+		this.selection.updateWithXBounds(this.mouseSelectionBeginX, this.mouseSelectionEndX);
 		this.changeListener.stateChanged(new ChangeEvent(this));
 		this.repaint();
 	}
@@ -295,7 +277,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	public void mouseReleased(MouseEvent e) {
 		float tentativeSelectionEnd = proportionAtPixelX(e.getX());
 		if (tentativeSelectionEnd == tentativeSelectionBegin) {
-			this.currentFilter.nextDefaultDistribution();
+			this.selection.cycleToNextDistributionType();
 			this.changeListener.stateChanged(new ChangeEvent(this));
 			this.repaint();
 		}
@@ -317,28 +299,32 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	}
 
 	
-	public static class Filter{
+	public static class ChristogramSelection {
+		private int currentDefault = 0;
+
 		public float minX;
 		public float maxX;
 		public float minY = 0f;
 		public float maxY = 1f;
 		public boolean isExponential;
 		
-		public Filter(float minX, float maxX, float minY, float maxY, boolean isExponential) {
+		public ChristogramSelection(float minX, float maxX, float minY, float maxY, boolean isExponential) {
 			this.minX = minX;
 			this.maxX = maxX;
 			this.minY = minY;
 			this.maxY = maxY;
 			this.isExponential = isExponential;
 		}
-		
-		public void updateWithXBounds(float selectionBegin,
-				float selectionCurrent) {
+
+		public void updateWithXBounds(float selectionBegin, float selectionCurrent) {
 			this.minX = selectionBegin < selectionCurrent ? selectionBegin : selectionCurrent;
 			this.maxX = selectionBegin > selectionCurrent ? selectionBegin : selectionCurrent;
 		}
 
-		public void nextDefaultDistribution() {
+		/**
+		 * Cycles between the linear-flat, linear-increasing and exponential distributions
+		 */
+		public void cycleToNextDistributionType() {
 			currentDefault = ++currentDefault % 3;
 			switch (currentDefault) {
 			case 0:
@@ -359,44 +345,36 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 			}
 		}
 
-		private Filter(float start, float end, boolean isExponential) {
+		private ChristogramSelection(float start, float end) {
 			this.minX = start;
 			this.maxX = end;
-			this.isExponential = isExponential;
+			this.isExponential = false;
 		}
 		
-		public static Filter distributionWithLinearIncrease(float startValue, float endValue) {
-			return new Filter(startValue, endValue, false);
+		public static ChristogramSelection distributionWithLinearIncrease(float startValueX, float endValueX) {
+			ChristogramSelection selection = new ChristogramSelection(startValueX, endValueX);
+			return selection;
 		}
 		
-		public static Filter distributionWithStaticValue(float value) {
-			return new Filter(value, value, false);
+		public static ChristogramSelection distributionWithStaticValue(float startValueX, float endValueX) {
+			ChristogramSelection selection = new ChristogramSelection(startValueX, endValueX);
+			selection.cycleToNextDistributionType();
+			return selection;
 		}
 		
-		public static Filter distributionWithExponentialIncrease(float startValue, float endValue) {
-			return new Filter(startValue, endValue, true);
+		public static ChristogramSelection distributionWithExponentialIncrease(float startValueX, float endValueX) {
+			ChristogramSelection selection = new ChristogramSelection(startValueX, endValueX);
+			selection.cycleToNextDistributionType();
+			selection.cycleToNextDistributionType();
+			return selection;
 		}
 
 		
-		private static int currentDefault = 0;
-//		public static Filter nextDefault() {
-//			currentDefault = ++currentDefault % 3;
-//			switch (currentDefault) {
-//			case 0:
-//				return Filter.distributionWithLinearIncrease(0f, 1f);
-//			case 1:
-//				return Filter.distributionWithStaticValue(1f);
-//			case 2:
-//				return Filter.distributionWithExponentialIncrease(0f, 1f);
-//			default:
-//				return null;
-//			}
-//		}
-		
+
 	}
 	
-	public Filter getCurrentFilter() {
-		return this.currentFilter;
+	public ChristogramSelection getSelection() {
+		return this.selection;
 	}
 	
 	public void addChangeListener(ChangeListener changeListener) {
