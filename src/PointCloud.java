@@ -1,3 +1,4 @@
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
@@ -10,6 +11,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -40,6 +42,7 @@ public class PointCloud implements  AttributeProvider {
 
 
 	public List<PointCloud>pointCloudsPositionedRelativeToThisone = new ArrayList<>();
+	public PointCloud pointCloudPositionedRelativeTo;
 
 	private Timer slitherCycleTimer;
 
@@ -88,6 +91,8 @@ public class PointCloud implements  AttributeProvider {
 	public Attribute.NumberAttribute[] selectionOriginAttributes;
 	public Attribute.NumberAttribute[] selectionLengthAttributes;
 
+
+	public HashMap<AttributeProvider, Boolean> shouldDisplayAttributeProvider;
 	public PointCloud(String pathName) {
 
 
@@ -108,8 +113,6 @@ public class PointCloud implements  AttributeProvider {
 		this.actionsGrouping = new AttributeGrouping("");
 		this.cursorGrouping = new AttributeGrouping("Cursor");
 		this.selectionGrouping = new AttributeGrouping("Selection");
-
-
 
 		this.cursorPosAttributes = new Attribute.NumberAttribute[3];
 		this.selectionLengthAttributes = new Attribute.NumberAttribute[3];
@@ -364,10 +367,11 @@ public class PointCloud implements  AttributeProvider {
 				unitAttribute = new Attribute.TextAttribute(AXES_NAMES[i] + " Unit", "" + hdu.getHeader().getStringValue("CTYPE"+(i+1)), false);
 				attributes.add(1, unitAttribute);
 				this.unitTypes[i] = unitAttribute;
-
-				this.cursorPosAttributes[i].setDisplayName(AXES_NAMES[i] + " (" + this.unitTypes[i].getValue() + ")");
-				this.selectionOriginAttributes[i].setDisplayName(AXES_NAMES[i] + " (" + this.unitTypes[i].getValue() + ")");
-				this.selectionLengthAttributes[i].setDisplayName(AXES_LENGTH_NAMES[i] + " (" + this.unitTypes[i].getValue() + ")");
+				if (i < 3) {
+					this.cursorPosAttributes[i].setDisplayName(AXES_NAMES[i] + " (" + this.unitTypes[i].getValue() + ")");
+					this.selectionOriginAttributes[i].setDisplayName(AXES_NAMES[i] + " (" + this.unitTypes[i].getValue() + ")");
+					this.selectionLengthAttributes[i].setDisplayName(AXES_LENGTH_NAMES[i] + " (" + this.unitTypes[i].getValue() + ")");
+				}
 			}
 
 
@@ -724,23 +728,27 @@ public class PointCloud implements  AttributeProvider {
 
 
 	public void setRelativeTo(PointCloud ppc) {
-		//--clear out of other ones if there
-		for (PointCloud otherPointCloud : FrameMaster.singleton.pointClouds) {
-			if (otherPointCloud.pointCloudsPositionedRelativeToThisone.contains(this)) {
-				otherPointCloud.pointCloudsPositionedRelativeToThisone.remove(this);
-			}
+		if (this.pointCloudPositionedRelativeTo != null) {
+			this.pointCloudPositionedRelativeTo.pointCloudsPositionedRelativeToThisone.remove(this);
 		}
-		ppc.pointCloudsPositionedRelativeToThisone.add(this);
+		if (ppc == null) {
+			Volume startingVolume = new Volume(BOX_ORIGIN_X, BOX_ORIGIN_Y, BOX_ORIGIN_Z, BOX_WIDTH, BOX_HEIGHT, BOX_DEPTH);
+			this.pointCloudPositionedRelativeTo = null;
+			this.setVolume(startingVolume);
+		}
+		else {
+			ppc.pointCloudsPositionedRelativeToThisone.add(this);
+			this.pointCloudPositionedRelativeTo = ppc;
 
-		Vector3 proportionalOriginOffset = (this.galacticVolume.origin.minus(ppc.galacticVolume.origin)).divideBy(ppc.galacticVolume.size);
-		Vector3 proportionalSize = this.galacticVolume.size.divideBy(ppc.galacticVolume.size);
+			Vector3 proportionalOriginOffset = (this.galacticVolume.origin.minus(ppc.galacticVolume.origin)).divideBy(ppc.galacticVolume.size);
+			Vector3 proportionalSize = this.galacticVolume.size.divideBy(ppc.galacticVolume.size);
 
-		Vector3 displayOrigin = ppc.volume.origin.add(proportionalOriginOffset.scale(ppc.volume.size));
-		Vector3 displaySize = proportionalSize.scale(ppc.volume.size);
+			Vector3 displayOrigin = ppc.volume.origin.add(proportionalOriginOffset.scale(ppc.volume.size));
+			Vector3 displaySize = proportionalSize.scale(ppc.volume.size);
 
-		Volume newVolume = new Volume(displayOrigin, displaySize);
-		this.setVolume(newVolume);
-//		this.setVolume(this.volumeNormalisedToParent(ppc));
+			Volume newVolume = new Volume(displayOrigin, displaySize);
+			this.setVolume(newVolume);
+		}
 	}
 
 

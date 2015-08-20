@@ -372,6 +372,11 @@ public class Renderer {
 
 		for (PointCloud cloud : this.pointClouds){
 			if (cloud.isVisible.getValue() == false) {continue;}
+			boolean isTheCurrentPointCloud = FrameMaster.getActivePointCloud() == cloud;
+			boolean isPositionedRelativeToTheCurrentPointCloud = FrameMaster.getActivePointCloud().pointCloudsPositionedRelativeToThisone.contains(cloud);
+			boolean theCurrentCloudIsPositionedRelativeToTheCloud = FrameMaster.getActivePointCloud().pointCloudPositionedRelativeTo == cloud;
+			if (!isPositionedRelativeToTheCurrentPointCloud && !isTheCurrentPointCloud && !theCurrentCloudIsPositionedRelativeToTheCloud) {continue;}
+
 			for (Region cr: cloud.getRegions()) {
 				if (cr.isVisible.getValue() == false) {continue;}
 				for (VertexBufferSlice slice: cr.getSlices()) {

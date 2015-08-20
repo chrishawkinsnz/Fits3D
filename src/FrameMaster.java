@@ -621,13 +621,15 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		mainPanel.add(title, "span 2");
 
 		int pos = 0;
-		PointCloud[]otherPointClouds = new PointCloud[singleton.pointClouds.size()-1];
+		Object[]otherPointClouds = new Object[singleton.pointClouds.size()];
+		otherPointClouds[pos++] = "-";
 		for (PointCloud pc2 : singleton.pointClouds) {
 			if (pc2!=pc) {
 				otherPointClouds[pos++] = pc2;
 			}
 		}
-		JComboBox<PointCloud>pointCloudComboBox = new JComboBox<>(otherPointClouds);
+		JComboBox<Object>pointCloudComboBox = new JComboBox<>(otherPointClouds);
+
 		mainPanel.add(pointCloudComboBox, "span 2");
 
 		JButton canelButton = new JButton("Cancel");
@@ -637,7 +639,12 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 		JButton applyButton = new JButton("OK");
 		applyButton.addActionListener(e -> {
-			pc.setRelativeTo((PointCloud)pointCloudComboBox.getSelectedItem());
+			Object obj = pointCloudComboBox.getSelectedItem();
+			PointCloud selectedCloud = null;
+			if (obj instanceof  PointCloud) {
+				selectedCloud = (PointCloud)obj;
+			}
+			pc.setRelativeTo(selectedCloud);
 			f.dispose();
 			FrameMaster.setNeedsDisplay();
 		});
