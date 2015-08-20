@@ -29,16 +29,18 @@ public class FitsWriter {
 //        region.loadRepresentationAtFidelity(1.0f);
 
 
-        RegionRepresentation writableRegion = RegionRepresentation.loadFromDisk(parent.getFits(), 1.0f, region.getVolume(), false);
+        RegionRepresentation writableRegionRepresentation = RegionRepresentation.loadFromDisk(parent.getFits(), 1.0f, region.getVolume(), false);
 
         boolean fourdee = headerAlreadyIncludesValueForKey(oldHeader, "NAXIS4");
 
         //--now we iterate over those points and create a float buffer
         //--inneficient I know
-        int wl = region.getDimensionInPts(3);
-        int zl = region.getDimensionInPts(2);
-        int yl = region.getDimensionInPts(1);
-        int xl = region.getDimensionInPts(0);
+
+
+        int wl = writableRegionRepresentation.getDimensionInPts(3);
+        int zl = writableRegionRepresentation.getDimensionInPts(2);
+        int yl = writableRegionRepresentation.getDimensionInPts(1);
+        int xl = writableRegionRepresentation.getDimensionInPts(0);
 
         //--clear the data first
         float[][][][]data4 = new float[wl][zl][yl][xl];
@@ -61,7 +63,7 @@ public class FitsWriter {
         }
 
 
-        for (VertexBufferSlice slice : region.getRegionRepresentation().getSlices()) {
+        for (VertexBufferSlice slice : writableRegionRepresentation.getSlices()) {
             slice.region = region;
             slice.cloud = parent;
             float zProportionCloud   = ((slice.getOverallZ()) - parent.getVolume().origin.z)/parent.getVolume().size.z ;/// region.getVolume().size.z;
@@ -122,7 +124,7 @@ public class FitsWriter {
                 if (obj instanceof  HeaderCard) {
                     HeaderCard oldHeaderCard = (HeaderCard)obj;
                     if (headerAlreadyIncludesValueForKey(newHeader, oldHeaderCard.getKey())) {
-                        System.out.println("oh no duplicate!");
+                        System.out.println("duplicate header entry: " + oldHeaderCard.getKey());
                     }
                     else {
                         newHeader.addLine(oldHeaderCard);
@@ -130,12 +132,27 @@ public class FitsWriter {
 
                 }
                 else {
-
+                    System.out.println("not a header cards");
                 }
 
                 System.out.println(obj);
             }
 
+
+            //--so the main thing we will need to do is change the reference pixel to be
+
+            //--first get the old reference pixel
+            int naxis = fourdee? 4 : 3;
+            for (int i = 0; i < naxis; i++) {
+                float oldPixel = oldHeader.getFloatValue("CRPIX" + (i+1));
+                float length = oldHeader.getFloatValue("NAXIS" + (i+1));
+                float offset = region.getVolume().origin.get(i) * length;
+                int newPixel = (int) (oldPixel - offset);
+                newHeader.addValue("CRPIX" + (i+1),newPixel,"ummmm");
+            }
+
+
+            Vector3 proportionalOffset = region.getVolume().origin;
 
 
             newHeader.insertHistory("initially extracted from larger fits file '" + parent.fileName.getValue() +"'");

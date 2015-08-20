@@ -395,23 +395,29 @@ public class PointCloud implements  AttributeProvider {
 
 			Header header = hdu.getHeader();
 			int naxis = hdu.getAxes().length;
-			float[] pixels = new float[naxis];
-			float[] values = new float[naxis];
-			float[] sizes = new float[naxis];
+			float[] refPixels = new float[naxis];
+			float[] refPositions = new float[naxis];
+			float[] pixelSizes = new float[naxis];
+			float[] cubeLengths = new float[naxis];
 			for (int i = 1; i <= hdu.getAxes().length; i++) {
-				pixels[i - 1] = header.getFloatValue("CRPIX"+i)/ (float) hdu.getAxes()[i - 1];
-				sizes[i - 1] = header.getFloatValue("CDELT"+i) * (float) hdu.getAxes()[i - 1];
-				values[i - 1] = header.getFloatValue("CRVAL"+i);
+				refPixels[i - 1] = header.getFloatValue("CRPIX"+i);
+				pixelSizes[i - 1] = header.getFloatValue("CDELT"+i);
+				refPositions[i - 1] = header.getFloatValue("CRVAL"+i);
+				cubeLengths[i - 1] = header.getFloatValue("NAXIS"+i);
 			}
 
-			Vector3 refPixel = new Vector3(pixels);
-			Vector3 refCoordinate = new Vector3(values);
-			Vector3 size = new Vector3(sizes);
+			Vector3 refPixel = new Vector3(refPixels);
+			Vector3 refCoordinate = new Vector3(refPositions);
+			Vector3 pixelSize = new Vector3(pixelSizes);
+			Vector3 cubeSizePixels = new Vector3(cubeLengths);
 
-			Vector3 realOrigin = refCoordinate.minus(refPixel.scale(size));
+			Vector3 pixelDelta = Vector3.zeros.minus(refPixel);
+			Vector3 realDistance = pixelDelta.scale(pixelSize);
+			Vector3 realOrigin = refCoordinate.add(realDistance);
+			Vector3 realSize = cubeSizePixels.scale(pixelSize);
 
-			this.galacticVolume = new Volume(realOrigin, size);
-
+			this.galacticVolume = new Volume(realOrigin, realSize);
+			System.out.println(this.galacticVolume);
 			Volume v = new Volume(0f,0f,0f,1f,1f,1f);
 
 
@@ -723,8 +729,16 @@ public class PointCloud implements  AttributeProvider {
 	}
 
 
-	public void setRelativeTo(PointCloud parentPointCloud) {
-		this.setVolume(this.volumeNormalisedToParent(parentPointCloud));
+	public void setRelativeTo(PointCloud ppc) {
+		Vector3 proportionalOriginOffset = (this.galacticVolume.origin.minus(ppc.galacticVolume.origin)).divideBy(ppc.galacticVolume.size);
+		Vector3 proportionalSize = this.galacticVolume.size.divideBy(ppc.galacticVolume.size);
+
+		Vector3 displayOrigin = ppc.volume.origin.add(proportionalOriginOffset.scale(ppc.volume.size));
+		Vector3 displaySize = proportionalSize.scale(ppc.volume.size);
+
+		Volume newVolume = new Volume(displayOrigin, displaySize);
+		this.setVolume(newVolume);
+//		this.setVolume(this.volumeNormalisedToParent(ppc));
 	}
 
 

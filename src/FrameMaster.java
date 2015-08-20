@@ -628,7 +628,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		f.setMinimumSize(lilDimension);
 		f.setMaximumSize(lilDimension);
 
-		JLabel title = new JLabel("Which other point cloud would you like to position "+pc.toString()+" to?");
+		JLabel title = new JLabel("Which other point cloud would you like to overlay "+pc.toString()+" onto?");
 		mainPanel.add(title, "span 2");
 
 		int pos = 0;
