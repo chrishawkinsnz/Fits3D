@@ -39,11 +39,11 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	static boolean rendererNeedsFreshPointClouds = false;
 
 	//ACCESSOR
-    private static FrameMaster singleton;
+    public static FrameMaster singleton;
 
 	//MODEL
 	private AttributeProvider selectedAttributeProvider = null;
-	private List<PointCloud> pointClouds = new ArrayList<PointCloud>();
+	public List<PointCloud> pointClouds = new ArrayList<PointCloud>();
 	private WorldViewer viewer;
 	private DefaultTreeModel treeModel;
 
@@ -112,17 +112,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
     	PointCloud pc = new PointCloud(fileName);
     	this.pointClouds.add(pc);
 
-		for (PointCloud p: this.pointClouds) {
-			List<Object>choicesForRelativeToDropDown = new ArrayList<>();
-			choicesForRelativeToDropDown.add("-");
-			for (PointCloud pp: this.pointClouds) {
-				if (pp != p) {
-					choicesForRelativeToDropDown.add(pp);
-				}
-			}
-			p.relativeTo.choices = choicesForRelativeToDropDown;
-			p.relativeTo.notifyWithValue(p.relativeTo.choice);
-		}
 
     	pc.readFits();
 		MutableTreeNode newNode = new DefaultMutableTreeNode(pc);

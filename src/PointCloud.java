@@ -39,6 +39,8 @@ public class PointCloud implements  AttributeProvider {
 	private final Timer waxisTimer;
 
 
+	public List<PointCloud>pointCloudsPositionedRelativeToThisone = new ArrayList<>();
+
 	private Timer slitherCycleTimer;
 
 
@@ -65,7 +67,6 @@ public class PointCloud implements  AttributeProvider {
 	public Attribute.BinaryAttribute isVisible;
 	public Attribute.SteppedRangeAttribute quality;
 	public Attribute.FilterSelectionAttribute filterSelection;
-	public Attribute.MultiChoiceAttribute relativeTo;
 	public Attribute.RangedAttribute frame;
 	public Attribute.RangedAttribute depth;
 
@@ -203,6 +204,9 @@ public class PointCloud implements  AttributeProvider {
 		depth.callback = (obj) -> {
 			float newDepth = ((Float)obj).floatValue();
 			this.volume = new Volume(this.volume.origin, new Vector3(this.volume.size.x, this.volume.size.y, newDepth));
+			for (PointCloud pc: this.pointCloudsPositionedRelativeToThisone) {
+				pc.setRelativeTo(this);
+			}
 			FrameMaster.setNeedsDisplay();
 		};
 		this.optionsGrouping.addAttribute(depth, 14);
@@ -325,17 +329,7 @@ public class PointCloud implements  AttributeProvider {
 
 		List<Object> possiblePairings = new ArrayList<>();
 		possiblePairings.add("-");
-		relativeTo = new Attribute.MultiChoiceAttribute("Relative to", possiblePairings, possiblePairings.get(0));
-		relativeTo.callback = (obj) -> {
-			if (obj instanceof PointCloud) {
-				PointCloud parent = (PointCloud) obj;
-				this.setVolume(this.volumeNormalisedToParent(parent));
-			} else {
-				this.setVolume(this.backupVolume);
-			}
-		};
 
-		attributes.add(relativeTo);
 
 		//--dummy
 		Attribute.Actchin actchin = new Attribute.Actchin("Overlay...", false);
@@ -730,6 +724,14 @@ public class PointCloud implements  AttributeProvider {
 
 
 	public void setRelativeTo(PointCloud ppc) {
+		//--clear out of other ones if there
+		for (PointCloud otherPointCloud : FrameMaster.singleton.pointClouds) {
+			if (otherPointCloud.pointCloudsPositionedRelativeToThisone.contains(this)) {
+				otherPointCloud.pointCloudsPositionedRelativeToThisone.remove(this);
+			}
+		}
+		ppc.pointCloudsPositionedRelativeToThisone.add(this);
+
 		Vector3 proportionalOriginOffset = (this.galacticVolume.origin.minus(ppc.galacticVolume.origin)).divideBy(ppc.galacticVolume.size);
 		Vector3 proportionalSize = this.galacticVolume.size.divideBy(ppc.galacticVolume.size);
 
