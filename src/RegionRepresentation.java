@@ -133,7 +133,7 @@ public class RegionRepresentation {
 		for (VertexBufferSlice ss : this.slices) {
 
 			//guard against whole slice being outisde bounds
-			if(ss.z < volume.origin.z) { continue;}
+			if(ss.z < volume.origin.z) { continue;}/**/
 			if(ss.z >= volume.origin.z + volume.dp) { continue;}
 
 			//--TODO currently assuming nothing about the order of the vertices so not skipping or anything
@@ -216,7 +216,22 @@ public class RegionRepresentation {
 		rr.setFidelity(fidelity);
 		long t0 = System.currentTimeMillis();
 		try {
+
 			ImageHDU hdu = (ImageHDU) fits.getHDU(0);
+
+
+			boolean inverseFrequencyCellScaling = false;
+			String cellscal = hdu.getHeader().getStringValue("CELLSCAL");
+			float scalingFactor = -0.5f;
+
+			float baseFrequency = volume.origin.z;
+			if (cellscal != null && cellscal.contains("1/F")) {
+				inverseFrequencyCellScaling = true;
+			}
+
+
+
+
 			MinAndMax minAndMax = new MinAndMax();
 			if (!dummyRun) {
 			 	minAndMax = minAndMaxBasedOnRoughOnePercentRushThrough(hdu, volume, fits);
@@ -235,6 +250,8 @@ public class RegionRepresentation {
 			int[]sourceStarts	 = new int[4];
 			int[]sourceEnds		 = new int[4];
 			int[]repLengths		 = new int[4];
+			int[]crpix			 = new int[4];
+			float[]centerPos 	 = new float[4];
 			float[]strides		 = new float[4];
 			int shortOnAxes = 4 - hdu.getAxes().length;
 
@@ -245,6 +262,8 @@ public class RegionRepresentation {
 				sourceEnds[i] 	 = 1;
 				repLengths[i] 	 = 1;
 				strides[i] 		 = 1;
+				crpix[i] 		 = 0;
+				centerPos[i]	 = 0f;
 				rr.setNumPts(3-i, repLengths[i]);
 			}
 			//--then load the remaining genuine values
@@ -259,8 +278,13 @@ public class RegionRepresentation {
 				repLengths[i]	 = (sourceEnds[i] - sourceStarts[i])/stride;
 				strides[i]		 = 1.0f/(float)repLengths[i];
 
+				String crpixKey  = "CRPIX"+ (4-i);
+				crpix[i]		 = (int)hdu.getHeader().getFloatValue(crpixKey);
+				centerPos[i]	 = volume.origin.get(3-i) + (((float)(crpix[i] - sourceStarts[i]) / (float)sourceLengths[i]) * volume.size.get(3-i));
+
 				rr.setNumPts(3-i , repLengths[i]);
 			}
+
 
 
 
@@ -324,6 +348,15 @@ public class RegionRepresentation {
 							proportion = (float) indices[2] / (float) repLengths[2];
 							position[2] = volume.y + volume.ht * proportion;
 
+							//--cellscall buuuuulllllshit
+							if (inverseFrequencyCellScaling) {
+								float zdiff = position[1] - baseFrequency;
+								float proportionalCellSizeIncrease = zdiff * scalingFactor;
+								float xyPlaneDiff = position[2] - centerPos[2];
+								position[2] += proportionalCellSizeIncrease * xyPlaneDiff;
+
+							}
+
 							if (dataType == DataType.DOUBLE)
 								adi.read(storaged, 0, storaged.length);
 							else if (dataType == DataType.FLOAT)
@@ -334,6 +367,16 @@ public class RegionRepresentation {
 								position[3] = volume.x + volume.wd * proportion;
 
 								float val;
+
+								//--cellscall buuuuulllllshit
+								if (inverseFrequencyCellScaling) {
+									float zdiff = position[1] - baseFrequency;
+									float proportionalCellSizeIncrease = zdiff * scalingFactor;
+									float xyPlaneDiff = position[3] - centerPos[3];
+									position[3] += proportionalCellSizeIncrease * xyPlaneDiff;
+
+								}
+
 								if (dataType == DataType.DOUBLE) {
 									val = (float) storaged[sourceStarts[3] + indices[3] * stride];
 								} else {
@@ -362,6 +405,9 @@ public class RegionRepresentation {
 
 									for (int i = 3; i > 0; i--) {
 										float fudge =  shouldFudge ? r.nextFloat() - 0.5f : 0.0f;
+										if (inverseFrequencyCellScaling) {
+
+										}
 										vertexBuffer.put((short) ((position[i] + fudge * strides[i]) * Short.MAX_VALUE));
 									}
 

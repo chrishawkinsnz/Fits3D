@@ -126,6 +126,9 @@ public class FitsWriter {
                     if (headerAlreadyIncludesValueForKey(newHeader, oldHeaderCard.getKey())) {
                         System.out.println("duplicate header entry: " + oldHeaderCard.getKey());
                     }
+                    else if (oldHeaderCard.getKey().contains("CELLSCAL")) {
+                        continue;
+                    }
                     else {
                         newHeader.addLine(oldHeaderCard);
                     }

@@ -10,7 +10,7 @@ import java.util.List;
 public class MouseController implements MouseMotionListener, MouseListener, MouseWheelListener {
 
 	public static float spinSpeed = 0.01f;
-
+	public static boolean doubleSpeed = false;
 	private WorldViewer viewer;
 	private Renderer renderer;
 
@@ -80,6 +80,10 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 			this.renderer.mouseWorldPosition = null;
 			FrameMaster.setNeedsDisplay();
 		}
+		if (e.getButton() == 3) {
+			this.doubleSpeed = !this.doubleSpeed;
+		}
+
 	}
 
 	@Override
@@ -150,7 +154,12 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 	public boolean isCurrentlySelectingPlaneInPointClouds(int x, int y) {
 
-		Vector3 screenPos  = new Vector3(x, y, 3f);
+		Vector3 screenPos;
+		if (this.doubleSpeed) {
+			screenPos = new Vector3(x / 2, y / 2, 3f);
+		} else {
+			screenPos = new Vector3(x, y, 3f);
+		}
 		boolean found = false;
 
 		if (FrameMaster.getActivePointCloud() == null)									{return false;}
@@ -167,7 +176,14 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 		if (pc == null)									{return;}
 		if (pc.shouldDisplaySlitherenated() == false) 	{return;}
 
-		this.renderer.mouseWorldPosition = this.viewer.getWorldPositionOfPixelOnPlane(new Vector3(x, y, 3f), pc.getSlither(false), true);
+		Vector3 screenPos;
+		if (this.doubleSpeed) {
+			screenPos = new Vector3(x / 2, y / 2, 3f);
+		} else {
+			screenPos = new Vector3(x, y, 3f);
+		}
+
+		this.renderer.mouseWorldPosition = this.viewer.getWorldPositionOfPixelOnPlane(screenPos, pc.getSlither(false), true);
 
 		//--if this is some continuation of a drag
 		if (button == selectButton && this.getSelection().isActive()) {
@@ -185,11 +201,18 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 	}
 
 	public void registerStartDrag(int x, int y, int button) {
+		Vector3 screenPos;
+		if (this.doubleSpeed) {
+			screenPos = new Vector3(x / 2, y / 2, 3f);
+		} else {
+			screenPos = new Vector3(x, y, 3f);
+		}
+
 		PointCloud pc = FrameMaster.getActivePointCloud();
 		if (pc == null)									{return;}
 		if (pc.shouldDisplaySlitherenated() == false) 	{return;}
 
-		this.renderer.mouseWorldPosition = this.viewer.getWorldPositionOfPixelOnPlane(new Vector3(x, y, 3f), pc.getSlither(false), true);
+		this.renderer.mouseWorldPosition = this.viewer.getWorldPositionOfPixelOnPlane(screenPos, pc.getSlither(false), true);
 		float depth = this.getSelection()!=null ? this.getSelection().getVolume().size.get(pc.getSlitherAxis().ordinal()) : 0f;
 		float[] sizeArr = new float[3];
 		sizeArr[pc.getSlitherAxis().ordinal()] = depth;
