@@ -179,21 +179,7 @@ public class PointCloud implements  AttributeProvider {
 			Runnable r = new Runnable() {
 				public void run() {
 					//--TODO don't hack this maybe
-					Region primaryRegion = PointCloud.this.regions.get(0);
-					List<Region> children = primaryRegion.getMinusRegions();
-					primaryRegion.setMinusRegions(new ArrayList<>());
-					primaryRegion.loadRepresentationAtFidelity(newQuality);
-					for (Region child : children) {
-						child.populateAsSubregion(primaryRegion, newQuality, true);
-					}
-
-					for (Region region : PointCloud.this.regions) {
-						region.quality.notifyWithValue(newQuality, false);
-					}
-
-					primaryRegion.setMinusRegions(children);
-					FrameMaster.setNeedsNewRenderer();
-					FrameMaster.setNeedsDisplay();
+					refreshSelfWithQuality(newQuality);
 				}
 			};
 			new Thread(r).start();
@@ -222,7 +208,7 @@ public class PointCloud implements  AttributeProvider {
 
 
 		Christogram.ChristogramSelection data = new Christogram.ChristogramSelection(0f, 1f, 0f, 1f, false);
-		filterSelection = new Attribute.FilterSelectionAttribute("Value ChristogramSelection", false, data);
+		filterSelection = new Attribute.FilterSelectionAttribute("Value Filter (drag to change)", false, data);
 		filterSelection.setPointCloud(this);
 
 		this.filteringGrouping.addAttribute(filterSelection, 100);
@@ -235,7 +221,7 @@ public class PointCloud implements  AttributeProvider {
 			e.printStackTrace();
 		}
 
-			this.frame = new Attribute.RangedAttribute("Waxis", 0f, 1f, 0f, false);
+			this.frame = new Attribute.RangedAttribute("Polarisation", 0f, 1f, 0f, false);
 
 			this.waxisTimer = new Timer(16, new ActionListener() {
 				private boolean forward = true;
@@ -342,6 +328,24 @@ public class PointCloud implements  AttributeProvider {
 		};
 
 		this.color = DEFAULT_COLORS[clouds++ % DEFAULT_COLORS.length];
+	}
+
+	public void refreshSelfWithQuality(float newQuality) {
+		Region primaryRegion = PointCloud.this.regions.get(0);
+		List<Region> children = primaryRegion.getMinusRegions();
+		primaryRegion.setMinusRegions(new ArrayList<>());
+		primaryRegion.loadRepresentationAtFidelity(newQuality);
+		for (Region child : children) {
+			child.populateAsSubregion(primaryRegion, newQuality, true);
+		}
+
+		for (Region region : PointCloud.this.regions) {
+			region.quality.notifyWithValue(newQuality, false);
+		}
+
+		primaryRegion.setMinusRegions(children);
+		FrameMaster.setNeedsNewRenderer();
+		FrameMaster.setNeedsDisplay();
 	}
 
 	public void readFits() {

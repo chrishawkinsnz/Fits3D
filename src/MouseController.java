@@ -16,6 +16,7 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 	private MouseActionType lastMouseMotionType;
 
+	private boolean mouseFix = false;
 	private int lastX = 0;
 	private int lastY = 0;
 
@@ -58,6 +59,7 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 	@Override
 	public void mouseMoved(java.awt.event.MouseEvent e) {
+		System.out.println(e.getX() + ", "+ e.getY());
 		this.registerMousePosition(e.getX(), e.getY(), 0);
 		if (isCurrentlySelectingPlaneInPointClouds(e.getX(), e.getY())) {
 			FrameMaster.setNeedsDisplay();
