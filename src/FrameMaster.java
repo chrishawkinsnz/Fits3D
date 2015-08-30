@@ -132,39 +132,50 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	 */
 	private Component makeAttributePanel() {
 
-		MigLayout mlLayout = new MigLayout("wrap 2", "[grow,fill]");
-
+		MigLayout mlLayout = new MigLayout("wrap 1, insets 10 0 0 10", "[grow,fill]");
+//		MigLayout mlLayout = new MigLayout("insets 0", "[grow,fill]");
+//		mlLayout.
 
 
 		JPanel attributPanel = new JPanel(mlLayout);
 		attributPanel.setBackground(Color.white);
 		attributPanel.setBorder(new EmptyBorder(0, 8, 8, 8));
 
-		JLabel title = new JLabel("Attributes");
-		title.setFont(new Font("Dialog", Font.BOLD, 24));
-		attributPanel.add(title, "span 2");
+//		JLabel title = new JLabel("Attributes");
+//		title.setFont(new Font("Dialog", Font.BOLD, 24));
+//		attributPanel.add(title, "span 2");
 		if (selectedAttributeProvider != null) {
+			JPanel attrAttrPanel = new JPanel(new MigLayout("wrap 2, insets 4", "[40:40:40][grow,fill]"));
 			for (Attribute attribute : selectedAttributeProvider.getAttributes()) {
+
+
 				AttributeDisplayer attributeDisplayer = AttributeDisplayManager.defaultDisplayManager.tweakableForAttribute(attribute, selectedAttributeProvider);
-				addTweakableToAttributePanel(attributeDisplayer, attribute, attributPanel);
+				addTweakableToAttributePanel(attributeDisplayer, attribute, attrAttrPanel);
 			}
+			attributPanel.add(attrAttrPanel);
+			attrAttrPanel.setBorder(BorderFactory.createTitledBorder("Attributes"));
+			attrAttrPanel.setBackground(Color.white);
 
 			//--now look for child providers
 			List<AttributeProvider> childProviders = selectedAttributeProvider.getChildProviders();
 
 				for (AttributeProvider childProvider : childProviders) {
-					AttributeDisplayer titleTweakable = new Tweakable.ChrisTitle(childProvider.getName());
-					attributPanel.add(titleTweakable.getComponent(), "span 2");
+					JPanel subAttrPanel = new JPanel(new MigLayout("wrap 2, insets 4", "[grow,fill]"));
+//					AttributeDisplayer titleTweakable = new Tweakable.ChrisTitle(childProvider.getName());
+//					attributPanel.add(titleTweakable.getComponent(), "span 2");
 					for (Attribute attribute : childProvider.getAttributes()) {
 						AttributeDisplayer attributeDisplayer = AttributeDisplayManager.defaultDisplayManager.tweakableForAttribute(attribute, childProvider);
-						addTweakableToAttributePanel(attributeDisplayer, attribute, attributPanel);
+						addTweakableToAttributePanel(attributeDisplayer, attribute, subAttrPanel);
 					}
 					//-space them out
-					attributPanel.add(new JLabel(" "), "span 2");
+//					attributPanel.add(new JLabel(" "), "span 2");
+					attributPanel.add(subAttrPanel);
+					subAttrPanel.setBorder(BorderFactory.createTitledBorder(childProvider.getName()));
+					subAttrPanel.setBackground(Color.white);
 				}
 		}
 
-		Dimension lilDimension = new Dimension(300, 700);
+		Dimension lilDimension = new Dimension(310, 700);
 		attributPanel.setMinimumSize(lilDimension);
 
 		JScrollPane scrollPane = new JScrollPane(attributPanel, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
@@ -212,7 +223,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	 * @return The created file panel
 	 */
 	private JPanel makeFilePanel() {
-		JPanel filePanel = new JPanel(new MigLayout("flowy"));
+		JPanel filePanel = new JPanel(new MigLayout("flowy, insets 10 10 10 10"));
 
 		TreeNode treeRoot = treeRoot = new DefaultMutableTreeNode("Point Clouds");
 		this.treeModel = new DefaultTreeModel(treeRoot);

@@ -189,7 +189,7 @@ public class PointCloud implements  AttributeProvider {
 
 
 
-		depth = new Attribute.RangedAttribute("Depth", 0.1f, 3.0f, BOX_DEPTH, false);
+		depth = new Attribute.RangedAttribute("Z Size", 0.1f, 3.0f, BOX_DEPTH, false);
 		depth.callback = (obj) -> {
 			float newDepth = ((Float)obj).floatValue();
 			this.volume = new Volume(this.volume.origin, new Vector3(this.volume.size.x, this.volume.size.y, newDepth));
@@ -244,7 +244,7 @@ public class PointCloud implements  AttributeProvider {
 				}
 			});
 
-			this.waxisCycling = new Attribute.BinaryAttribute("Cyle", false, false);
+			this.waxisCycling = new Attribute.BinaryAttribute("Cycle Polarisation", false, false);
 			this.waxisCycling.callback = (obj) -> {
 				boolean on = ((Boolean)obj).booleanValue();
 				if (on) {
@@ -258,13 +258,13 @@ public class PointCloud implements  AttributeProvider {
 		//--only add 4d stuff if actually 4d yo
 		if(naxis > 3) {
 			this.filteringGrouping.addAttribute(this.frame, 50);
-			this.filteringGrouping.addAttribute(this.waxisCycling, 4);
+			this.filteringGrouping.addAttribute(this.waxisCycling, 49);
 		}
 
 
 
 
-		this.slitherPositionAttribute = new Attribute.RangedAttribute("Slither Pos", 0f, 1f, 0f, false);
+		this.slitherPositionAttribute = new Attribute.RangedAttribute("Slice Depth", 0f, 1f, 0f, false);
 		this.slitherPositionAttribute.callback = (obj) -> {
 			Vector3 oldOrigin = this.selection.getVolume().origin;
 			Vector3 oldSize = this.selection.getVolume().size;
@@ -279,10 +279,12 @@ public class PointCloud implements  AttributeProvider {
 			this.selection.setVolume(volume);
 		};
 
-		this.filteringGrouping.addAttribute(this.slitherPositionAttribute, 20);
+		this.filteringGrouping.addAttribute(this.slitherPositionAttribute, 21);
 
-		this.displaySlitherenated = new Attribute.BinaryAttribute("Select Slice", false, false);
-		this.filteringGrouping.addAttribute(displaySlitherenated, 19);
+		this.displaySlitherenated = new Attribute.BinaryAttribute("Highlight Slice", false, false);
+		this.displaySlitherenated.callback = (obj) -> {
+		};
+		this.filteringGrouping.addAttribute(displaySlitherenated, 20);
 
 		this.slitherCycleTimer = new Timer(16, new ActionListener() {
 			private boolean forward = true;
