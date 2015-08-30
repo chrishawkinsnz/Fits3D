@@ -17,7 +17,7 @@ import java.util.List;
 
 public class PointCloud implements  AttributeProvider {
 
-	private final Attribute.BinaryAttribute displaySlitherenated;
+	public final Attribute.BinaryAttribute displaySlitherenated;
 	private Attribute.BinaryAttribute cyclingSlitherAttribute;
 	private Attribute.RangedAttribute slitherPositionAttribute;
 
@@ -281,9 +281,9 @@ public class PointCloud implements  AttributeProvider {
 
 		this.filteringGrouping.addAttribute(this.slitherPositionAttribute, 21);
 
-		this.displaySlitherenated = new Attribute.BinaryAttribute("Highlight Slice", false, false);
-		this.displaySlitherenated.callback = (obj) -> {
-		};
+		this.displaySlitherenated = new Attribute.BinaryAttribute("Select Slice", false, false);
+
+
 		this.filteringGrouping.addAttribute(displaySlitherenated, 20);
 
 		this.slitherCycleTimer = new Timer(16, new ActionListener() {

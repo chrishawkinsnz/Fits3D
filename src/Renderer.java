@@ -41,7 +41,7 @@ public class Renderer {
 	private WorldViewer viewer;
 //	public Selection selection;
 
-	private List<PointCloud> pointClouds;
+	public List<PointCloud> pointClouds;
 	public boolean isTrippy;
 
 	private int uniformFilterMinX;
