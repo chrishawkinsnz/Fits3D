@@ -175,14 +175,16 @@ public class PointCloud implements  AttributeProvider {
 		quality.callback = (obj) -> {
 			float newQuality = ((Float) obj).floatValue();
 			System.out.println("quality is now :" + newQuality);
-
-			Runnable r = new Runnable() {
-				public void run() {
-					//--TODO don't hack this maybe
-					refreshSelfWithQuality(newQuality);
-				}
-			};
-			new Thread(r).start();
+			//--disable the slider from going again
+			if (!RegionRepresentation.currentlyLoading) {
+				Runnable r = new Runnable() {
+					public void run() {
+						//--TODO don't hack this maybe
+						refreshSelfWithQuality(newQuality);
+					}
+				};
+				new Thread(r).start();
+			}
 		};
 
 		optionsGrouping.addAttribute(quality, 15);

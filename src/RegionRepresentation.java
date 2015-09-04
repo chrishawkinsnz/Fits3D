@@ -202,7 +202,8 @@ public class RegionRepresentation {
 		return rr;
 	}
 
-
+	public static int numLoading = 0;
+	public static boolean currentlyLoading = false;
 	/**
 	 *
 	 *
@@ -212,6 +213,10 @@ public class RegionRepresentation {
 	 * @return A representation of the asked for region.
 	 */
 	public static RegionRepresentation loadFromDisk(Fits fits, float fidelity, Volume volume, boolean dummyRun) {
+		if (!dummyRun) {
+			currentlyLoading = true;
+			numLoading++;
+		}
 		RegionRepresentation rr = new RegionRepresentation();
 		rr.setFidelity(fidelity);
 		long t0 = System.currentTimeMillis();
@@ -407,12 +412,21 @@ public class RegionRepresentation {
 			System.out.println("fits file loaded " + repLengths[0] + " z " + repLengths[1] + " z " + repLengths[2] + " z " + repLengths[3]);
 
 		}catch (Exception e) {
+
 			JOptionPane.showMessageDialog(null, e.getClass().getName()+": " + e.getMessage(), "Error!", JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();
+		}
+		finally {
+
+			if (!dummyRun) {
+				currentlyLoading = false;
+				numLoading--;
+			}
 		}
 
 		long t1 = System.currentTimeMillis();
 		System.out.println("time taken to load file in " + rr.numPtsW * rr.numPtsX * rr.numPtsY * rr.numPtsZ +"points:" + (t1 - t0));
+
 		return rr;
 	}
 
