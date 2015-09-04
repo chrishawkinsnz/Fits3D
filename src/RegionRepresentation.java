@@ -6,7 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
-import javax.swing.JOptionPane;
+import javax.swing.*;
 
 
 import nom.tam.fits.Fits;
@@ -33,6 +33,8 @@ public class RegionRepresentation {
 
 	private int validPts;
 	private float fidelity;
+
+	public static JSlider sliderToEnable = null;
 
 	private List<VertexBufferSlice>slices;
 
