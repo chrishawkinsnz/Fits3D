@@ -244,6 +244,7 @@ public class RegionRepresentation {
 			int[]repLengths		 = new int[4];
 			float[]strides		 = new float[4];
 			int shortOnAxes = 4 - hdu.getAxes().length;
+			float[]fudges = new float[4];
 
 			//--first load uninitialised dimensions with defaults
 			for (int i = 0; i < shortOnAxes; i++) {
@@ -265,6 +266,7 @@ public class RegionRepresentation {
 				sourceEnds[i] 	 = (int)(proportionalEnd * sourceLengths[i]);
 				repLengths[i]	 = (sourceEnds[i] - sourceStarts[i])/stride;
 				strides[i]		 = 1.0f/(float)repLengths[i];
+				fudges[i]		 = volume.size.get(3-i)/(float)repLengths[i];
 
 				rr.setNumPts(3-i , repLengths[i]);
 			}
@@ -299,6 +301,7 @@ public class RegionRepresentation {
 			float min = minAndMax.min;
 			float max = minAndMax.max;
 			float stepSize = (max - min) / (float)nBuckets;
+
 
 			rr.slices = new ArrayList<>();
 
@@ -369,7 +372,7 @@ public class RegionRepresentation {
 
 									for (int i = 3; i > 0; i--) {
 										float fudge =  shouldFudge ? r.nextFloat() - 0.5f : 0.0f;
-										vertexBuffer.put((short) ((position[i] + fudge * strides[i]) * Short.MAX_VALUE));
+										vertexBuffer.put((short) ((position[i] + fudge * fudges[i]) * Short.MAX_VALUE));
 									}
 
 
