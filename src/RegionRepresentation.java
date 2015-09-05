@@ -354,15 +354,6 @@ public class RegionRepresentation {
 									rr.getBuckets()[bucketIndex]++;
 
 
-//									float fudge;
-//									if (shouldFudge) {
-//										fudge = r.nextFloat();
-//										fudge = fudge - 0.5f;
-//									}
-//									else {
-//										fudge = 0.0f;
-//									}
-
 									if (dummyRun) {
 										if (val < rr.estMin)
 											rr.estMin = val;
