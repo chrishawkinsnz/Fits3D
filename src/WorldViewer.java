@@ -5,6 +5,8 @@ import java.awt.*;
 
 public class WorldViewer {
 
+	public static boolean retinaFix = true;
+
 	//--CONSTANTS
 	public final static float orthoHeight = 1.0f;
 	public final static float orthoWidth = 1.0f;
@@ -99,8 +101,12 @@ public class WorldViewer {
 		VectorUtil.mulColMat4Vec3(trs, mat, tr);
 
 		//--factor in the z position of the slice to work out the
-		float orthoMouseX = WorldViewer.orthoOrigX -(WorldViewer.orthoWidth)+ 4f * WorldViewer.orthoWidth * ((pixelPosition.x)/(float)this.width);
-		float orthoMouseY = WorldViewer.orthoOrigY +(WorldViewer.orthoHeight)- 4f * WorldViewer.orthoHeight * (pixelPosition.y/(float)this.height);
+
+		float factor = retinaFix? 4f : 2f;
+
+		float orthoMouseX = WorldViewer.orthoOrigX -(WorldViewer.orthoWidth)+ factor * WorldViewer.orthoWidth * ((pixelPosition.x)/(float)this.width);
+		float orthoMouseY = WorldViewer.orthoOrigY +(WorldViewer.orthoHeight)- factor * WorldViewer.orthoHeight * (pixelPosition.y/(float)this.height);
+
 
 		float proportionX = (orthoMouseX - bls[0]) /(brs[0] - bls[0]);
 
@@ -142,9 +148,22 @@ public class WorldViewer {
 		return Math.max(min, Math.min(max, val));
 	}
 
+
 	public void informOfResolution(int width, int height) {
+		//--if exactly doubled then flick the retina switch
+		if (width == this.width*2) {
+			retinaFix = true;
+			System.out.println("moved to retina screen enabling fix");
+			FrameMaster.setMouseFixOn(retinaFix);
+		}
+		else if (width * 2 == this.width) {
+			retinaFix = false;
+			System.out.println("moved to non retina screen enabling fix");
+			FrameMaster.setMouseFixOn(retinaFix);
+		}
 		this.width = width;
 		this.height = height;
+		System.out.println("new gl size:" + width+", "+height);
 	}
 
 }

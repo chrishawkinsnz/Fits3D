@@ -50,20 +50,22 @@ public class Region implements  AttributeProvider{
 		quality = new Attribute.SteppedRangeAttribute("Quality", 0.1f, 1.0f, initialFidelity, 10, true);
 		quality.callback = (obj) -> {
 			float newQuality = ((Float)obj).floatValue();
+			if (!RegionRepresentation.currentlyLoading) {
 
-			Runnable r = new Runnable() {
-				public void run() {
-					if (newQuality == Region.this.getRegionRepresentation().getFidelity()) {
-						return;
+				Runnable r = new Runnable() {
+					public void run() {
+						if (newQuality == Region.this.getRegionRepresentation().getFidelity()) {
+							return;
+						}
+
+						Region.this.loadRepresentationAtFidelity(newQuality);
+						FrameMaster.setNeedsNewRenderer();
+						FrameMaster.setNeedsDisplay();
+						System.gc();
 					}
-
-					Region.this.loadRepresentationAtFidelity(newQuality);
-					FrameMaster.setNeedsNewRenderer();
-					FrameMaster.setNeedsDisplay();
-					System.gc();
-				}
-			};
-			new Thread(r).start();
+				};
+				new Thread(r).start();
+			}
 		};
 		attributes.add(quality);
 

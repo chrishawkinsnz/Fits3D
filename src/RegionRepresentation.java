@@ -6,7 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
-import javax.swing.JOptionPane;
+import javax.swing.*;
 
 
 import nom.tam.fits.Fits;
@@ -33,6 +33,8 @@ public class RegionRepresentation {
 
 	private int validPts;
 	private float fidelity;
+
+	public static JSlider sliderToEnable = null;
 
 	private List<VertexBufferSlice>slices;
 
@@ -202,7 +204,8 @@ public class RegionRepresentation {
 		return rr;
 	}
 
-
+	public static int numLoading = 0;
+	public static boolean currentlyLoading = false;
 	/**
 	 *
 	 *
@@ -212,6 +215,10 @@ public class RegionRepresentation {
 	 * @return A representation of the asked for region.
 	 */
 	public static RegionRepresentation loadFromDisk(Fits fits, float fidelity, Volume volume, boolean dummyRun) {
+		if (!dummyRun) {
+			currentlyLoading = true;
+			numLoading++;
+		}
 		RegionRepresentation rr = new RegionRepresentation();
 		rr.setFidelity(fidelity);
 		long t0 = System.currentTimeMillis();
@@ -254,6 +261,7 @@ public class RegionRepresentation {
 			float[]centerPos 	 = new float[4];
 			float[]strides		 = new float[4];
 			int shortOnAxes = 4 - hdu.getAxes().length;
+			float[]fudges = new float[4];
 
 			//--first load uninitialised dimensions with defaults
 			for (int i = 0; i < shortOnAxes; i++) {
@@ -277,6 +285,7 @@ public class RegionRepresentation {
 				sourceEnds[i] 	 = (int)(proportionalEnd * sourceLengths[i]);
 				repLengths[i]	 = (sourceEnds[i] - sourceStarts[i])/stride;
 				strides[i]		 = 1.0f/(float)repLengths[i];
+				fudges[i]		 = volume.size.get(3-i)/(float)repLengths[i];
 
 				String crpixKey  = "CRPIX"+ (4-i);
 				crpix[i]		 = (int)hdu.getHeader().getFloatValue(crpixKey);
@@ -316,6 +325,7 @@ public class RegionRepresentation {
 			float min = minAndMax.min;
 			float max = minAndMax.max;
 			float stepSize = (max - min) / (float)nBuckets;
+
 
 			rr.slices = new ArrayList<>();
 
@@ -387,15 +397,6 @@ public class RegionRepresentation {
 									rr.getBuckets()[bucketIndex]++;
 
 
-//									float fudge;
-//									if (shouldFudge) {
-//										fudge = r.nextFloat();
-//										fudge = fudge - 0.5f;
-//									}
-//									else {
-//										fudge = 0.0f;
-//									}
-
 									if (dummyRun) {
 										if (val < rr.estMin)
 											rr.estMin = val;
@@ -405,10 +406,7 @@ public class RegionRepresentation {
 
 									for (int i = 3; i > 0; i--) {
 										float fudge =  shouldFudge ? r.nextFloat() - 0.5f : 0.0f;
-										if (inverseFrequencyCellScaling) {
-
-										}
-										vertexBuffer.put((short) ((position[i] + fudge * strides[i]) * Short.MAX_VALUE));
+										vertexBuffer.put((short) ((position[i] + fudge * fudges[i]) * Short.MAX_VALUE));
 									}
 
 
@@ -453,12 +451,21 @@ public class RegionRepresentation {
 			System.out.println("fits file loaded " + repLengths[0] + " z " + repLengths[1] + " z " + repLengths[2] + " z " + repLengths[3]);
 
 		}catch (Exception e) {
+
 			JOptionPane.showMessageDialog(null, e.getClass().getName()+": " + e.getMessage(), "Error!", JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();
+		}
+		finally {
+
+			if (!dummyRun) {
+				currentlyLoading = false;
+				numLoading--;
+			}
 		}
 
 		long t1 = System.currentTimeMillis();
 		System.out.println("time taken to load file in " + rr.numPtsW * rr.numPtsX * rr.numPtsY * rr.numPtsZ +"points:" + (t1 - t0));
+
 		return rr;
 	}
 

@@ -6,7 +6,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.TimerTask;
 
 import com.jogamp.opengl.GLAutoDrawable;/**/
 import com.jogamp.opengl.GLCapabilities;
@@ -15,15 +14,12 @@ import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLCanvas;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.*;
 import javax.swing.tree.*;
 
 import com.jogamp.opengl.util.FPSAnimator;
-import javafx.stage.FileChooser;
 import net.miginfocom.swing.MigLayout;
-import nom.tam.fits.Fits;
 
 public class FrameMaster extends JFrame implements GLEventListener {
 
@@ -56,6 +52,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 	private PointCloud activePointCloud;
 	private JTree tree;
+	public JCheckBoxMenuItem mouseFix;
 
 
 	public FrameMaster() {
@@ -80,7 +77,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		this.getContentPane().add(canvas, BorderLayout.CENTER);
 		this.getContentPane().add(makeFilePanel(), BorderLayout.WEST);
 		this.getContentPane().add(makeAttributePanel(), BorderLayout.EAST);
-//		this.getContentPane().add(makeSelectionPanel(), BorderLayout.SOUTH);
 
 		bl.getLayoutComponent(BorderLayout.WEST).setBackground(Color.WHITE);
 
@@ -136,44 +132,50 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	 */
 	private Component makeAttributePanel() {
 
-		MigLayout mlLayout = new MigLayout("wrap 2", "[grow,fill]");
-
+		MigLayout mlLayout = new MigLayout("wrap 1, insets 10 0 0 10", "[grow,fill]");
+//		MigLayout mlLayout = new MigLayout("insets 0", "[grow,fill]");
+//		mlLayout.
 
 
 		JPanel attributPanel = new JPanel(mlLayout);
 		attributPanel.setBackground(Color.white);
 		attributPanel.setBorder(new EmptyBorder(0, 8, 8, 8));
 
-		JLabel title = new JLabel("Attributes");
-		title.setFont(new Font("Dialog", Font.BOLD, 24));
-		attributPanel.add(title, "span 2");
+//		JLabel title = new JLabel("Attributes");
+//		title.setFont(new Font("Dialog", Font.BOLD, 24));
+//		attributPanel.add(title, "span 2");
 		if (selectedAttributeProvider != null) {
+			JPanel attrAttrPanel = new JPanel(new MigLayout("wrap 2, insets 4", "[40:40:40][grow,fill]"));
 			for (Attribute attribute : selectedAttributeProvider.getAttributes()) {
+
+
 				AttributeDisplayer attributeDisplayer = AttributeDisplayManager.defaultDisplayManager.tweakableForAttribute(attribute, selectedAttributeProvider);
-				addTweakableToAttributePanel(attributeDisplayer, attribute, attributPanel);
+				addTweakableToAttributePanel(attributeDisplayer, attribute, attrAttrPanel);
 			}
+			attributPanel.add(attrAttrPanel);
+			attrAttrPanel.setBorder(BorderFactory.createTitledBorder("Attributes"));
+			attrAttrPanel.setBackground(Color.white);
 
 			//--now look for child providers
 			List<AttributeProvider> childProviders = selectedAttributeProvider.getChildProviders();
 
 				for (AttributeProvider childProvider : childProviders) {
-					AttributeDisplayer titleTweakable = new Tweakable.ChrisTitle(childProvider.getName());
-					attributPanel.add(titleTweakable.getComponent(), "span 2");
+					JPanel subAttrPanel = new JPanel(new MigLayout("wrap 2, insets 4", "[grow,fill]"));
+//					AttributeDisplayer titleTweakable = new Tweakable.ChrisTitle(childProvider.getName());
+//					attributPanel.add(titleTweakable.getComponent(), "span 2");
 					for (Attribute attribute : childProvider.getAttributes()) {
 						AttributeDisplayer attributeDisplayer = AttributeDisplayManager.defaultDisplayManager.tweakableForAttribute(attribute, childProvider);
-						addTweakableToAttributePanel(attributeDisplayer, attribute, attributPanel);
+						addTweakableToAttributePanel(attributeDisplayer, attribute, subAttrPanel);
 					}
 					//-space them out
-					attributPanel.add(new JLabel(" "), "span 2");
+//					attributPanel.add(new JLabel(" "), "span 2");
+					attributPanel.add(subAttrPanel);
+					subAttrPanel.setBorder(BorderFactory.createTitledBorder(childProvider.getName()));
+					subAttrPanel.setBackground(Color.white);
 				}
-
-
-				//--buttons
-
-
 		}
 
-		Dimension lilDimension = new Dimension(300, 700);
+		Dimension lilDimension = new Dimension(310, 700);
 		attributPanel.setMinimumSize(lilDimension);
 
 		JScrollPane scrollPane = new JScrollPane(attributPanel, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
@@ -221,7 +223,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	 * @return The created file panel
 	 */
 	private JPanel makeFilePanel() {
-		JPanel filePanel = new JPanel(new MigLayout("flowy"));
+		JPanel filePanel = new JPanel(new MigLayout("flowy, insets 10 10 10 10"));
 
 		TreeNode treeRoot = treeRoot = new DefaultMutableTreeNode("Point Clouds");
 		this.treeModel = new DefaultTreeModel(treeRoot);
@@ -296,9 +298,11 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	private JMenuBar makeMenuBar() {
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(makFileMenu());
+		menuBar.add(makeAdvancedMenu());
 		if (debug) {
 			menuBar.add(makeDebugMenu());
 		}
+
 
 		return menuBar;
 	}
@@ -329,6 +333,26 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	}
 
 
+	private JMenu makeAdvancedMenu() {
+		JMenu advancedMenu = new JMenu("Advanced");
+
+		JCheckBoxMenuItem fudge = new JCheckBoxMenuItem("De-jitter images");
+		fudge.setSelected(RegionRepresentation.shouldFudge);
+		fudge.addActionListener(e -> this.fudge());
+		fudge.setToolTipText("This will display the cube with some slight noise to avoid distracting moire patterns");
+		advancedMenu.add(fudge);
+
+		this.mouseFix = new JCheckBoxMenuItem("Retina Mouse Fix");
+		mouseFix.setSelected(WorldViewer.retinaFix);
+		mouseFix.addActionListener(e -> {
+			WorldViewer.retinaFix ^= true;
+		});
+		mouseFix.setToolTipText("This may fix issues with mouse selection being off by a factor of two on some high dpi screens");
+		advancedMenu.add(mouseFix);
+
+
+		return advancedMenu;
+	}
 	/**
 	 * Creates and returns the debug menu
 	 * @return The created debug menu
@@ -339,10 +363,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		JCheckBoxMenuItem rainbow = new JCheckBoxMenuItem("rainbow");
 		debugMenu.add(rainbow);
 
-		JMenuItem test = new JMenuItem("foo");
-		test.addActionListener(e -> this.foo());
-		debugMenu.add(test);
-
 		rainbow.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -351,13 +371,6 @@ public class FrameMaster extends JFrame implements GLEventListener {
 			}
 		});
 
-		JCheckBoxMenuItem fudge = new JCheckBoxMenuItem("fudge");
-		fudge.addActionListener(e -> this.fudge());
-		debugMenu.add(fudge);
-
-		JCheckBoxMenuItem fakeFourthDimensionItem = new JCheckBoxMenuItem("fake fourth dimension");
-		fakeFourthDimensionItem.addActionListener(e -> this.fakeFourthDimension());
-		debugMenu.add(fakeFourthDimensionItem);
 
 		return debugMenu;
 	}
@@ -393,21 +406,13 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		FrameMaster.setNeedsDisplay();
 	}
 
-
-	/**
-	 * All purpose hook for testing features
-	 */
-	private void foo() {
-		exportRegion();
-	}
-
 	private void exportRegion() {
 
 		if (this.selectedAttributeProvider instanceof  Region) {
 			Region selectedRegion = (Region) this.selectedAttributeProvider;
 			exportRegion(selectedRegion);
-
-
+		} else {
+			JOptionPane.showMessageDialog(null,"Error: Must select a region in the Fits files navigator to export a region.", "Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
@@ -437,17 +442,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 	private void fudge() {
 		RegionRepresentation.shouldFudge = !RegionRepresentation.shouldFudge;
-		if (RegionRepresentation.shouldFudge) {
-			System.out.println("fudging enabled");
+		for (PointCloud pc: this.pointClouds) {
+			pc.refreshSelfWithQuality(pc.quality.getValue());
 		}
-		else {
-			System.out.println("fudging disabled");
-		}
-	}
-
-
-	private void fakeFourthDimension() {
-		RegionRepresentation.fakeFourthDimension = !RegionRepresentation.fakeFourthDimension;
 	}
 
 
@@ -657,4 +654,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	}
 
 
+	public static void setMouseFixOn(boolean isOn) {
+		singleton.mouseFix.setSelected(isOn);
+	}
 }

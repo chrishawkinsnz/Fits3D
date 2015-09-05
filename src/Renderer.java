@@ -41,7 +41,7 @@ public class Renderer {
 	private WorldViewer viewer;
 //	public Selection selection;
 
-	private List<PointCloud> pointClouds;
+	public List<PointCloud> pointClouds;
 	public boolean isTrippy;
 
 	private int uniformFilterMinX;
@@ -197,16 +197,16 @@ public class Renderer {
 			back.addAll(backLines);
 		}
 		if (spin < pi) {
-			front.addAll(rightLines);
-			back.addAll(leftLines);
+			front.addAll(leftLines);
+			back.addAll(rightLines);
 		}
 		if (spin > halfPi && spin < piAndAHalf) {
 			front.addAll(backLines);
 			back.addAll(frontLines);
 		}
 		if (spin > pi) {
-			front.addAll(leftLines);
-			back.addAll(rightLines);
+			front.addAll(rightLines);
+			back.addAll(leftLines);
 		}
 
 		if (firstPass) {

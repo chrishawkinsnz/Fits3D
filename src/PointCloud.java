@@ -17,7 +17,7 @@ import java.util.List;
 
 public class PointCloud implements  AttributeProvider {
 
-	private final Attribute.BinaryAttribute displaySlitherenated;
+	public final Attribute.BinaryAttribute displaySlitherenated;
 	private Attribute.BinaryAttribute cyclingSlitherAttribute;
 	private Attribute.RangedAttribute slitherPositionAttribute;
 
@@ -175,35 +175,23 @@ public class PointCloud implements  AttributeProvider {
 		quality.callback = (obj) -> {
 			float newQuality = ((Float) obj).floatValue();
 			System.out.println("quality is now :" + newQuality);
-
-			Runnable r = new Runnable() {
-				public void run() {
-					//--TODO don't hack this maybe
-					Region primaryRegion = PointCloud.this.regions.get(0);
-					List<Region> children = primaryRegion.getMinusRegions();
-					primaryRegion.setMinusRegions(new ArrayList<>());
-					primaryRegion.loadRepresentationAtFidelity(newQuality);
-					for (Region child : children) {
-						child.populateAsSubregion(primaryRegion, newQuality, true);
+			//--disable the slider from going again
+			if (!RegionRepresentation.currentlyLoading) {
+				Runnable r = new Runnable() {
+					public void run() {
+						//--TODO don't hack this maybe
+						refreshSelfWithQuality(newQuality);
 					}
-
-					for (Region region : PointCloud.this.regions) {
-						region.quality.notifyWithValue(newQuality, false);
-					}
-
-					primaryRegion.setMinusRegions(children);
-					FrameMaster.setNeedsNewRenderer();
-					FrameMaster.setNeedsDisplay();
-				}
-			};
-			new Thread(r).start();
+				};
+				new Thread(r).start();
+			}
 		};
 
 		optionsGrouping.addAttribute(quality, 15);
 
 
 
-		depth = new Attribute.RangedAttribute("Depth", 0.1f, 3.0f, BOX_DEPTH, false);
+		depth = new Attribute.RangedAttribute("Z Size", 0.1f, 3.0f, BOX_DEPTH, false);
 		depth.callback = (obj) -> {
 			float newDepth = ((Float)obj).floatValue();
 			this.volume = new Volume(this.volume.origin, new Vector3(this.volume.size.x, this.volume.size.y, newDepth));
@@ -222,7 +210,7 @@ public class PointCloud implements  AttributeProvider {
 
 
 		Christogram.ChristogramSelection data = new Christogram.ChristogramSelection(0f, 1f, 0f, 1f, false);
-		filterSelection = new Attribute.FilterSelectionAttribute("Value ChristogramSelection", false, data);
+		filterSelection = new Attribute.FilterSelectionAttribute("Value Filter (drag to change)", false, data);
 		filterSelection.setPointCloud(this);
 
 		this.filteringGrouping.addAttribute(filterSelection, 100);
@@ -235,7 +223,7 @@ public class PointCloud implements  AttributeProvider {
 			e.printStackTrace();
 		}
 
-			this.frame = new Attribute.RangedAttribute("Waxis", 0f, 1f, 0f, false);
+			this.frame = new Attribute.RangedAttribute("Polarisation", 0f, 1f, 0f, false);
 
 			this.waxisTimer = new Timer(16, new ActionListener() {
 				private boolean forward = true;
@@ -258,7 +246,7 @@ public class PointCloud implements  AttributeProvider {
 				}
 			});
 
-			this.waxisCycling = new Attribute.BinaryAttribute("Cyle", false, false);
+			this.waxisCycling = new Attribute.BinaryAttribute("Cycle Polarisation", false, false);
 			this.waxisCycling.callback = (obj) -> {
 				boolean on = ((Boolean)obj).booleanValue();
 				if (on) {
@@ -272,13 +260,13 @@ public class PointCloud implements  AttributeProvider {
 		//--only add 4d stuff if actually 4d yo
 		if(naxis > 3) {
 			this.filteringGrouping.addAttribute(this.frame, 50);
-			this.filteringGrouping.addAttribute(this.waxisCycling, 4);
+			this.filteringGrouping.addAttribute(this.waxisCycling, 49);
 		}
 
 
 
 
-		this.slitherPositionAttribute = new Attribute.RangedAttribute("Slither Pos", 0f, 1f, 0f, false);
+		this.slitherPositionAttribute = new Attribute.RangedAttribute("Slice Depth", 0f, 1f, 0f, false);
 		this.slitherPositionAttribute.callback = (obj) -> {
 			Vector3 oldOrigin = this.selection.getVolume().origin;
 			Vector3 oldSize = this.selection.getVolume().size;
@@ -293,10 +281,12 @@ public class PointCloud implements  AttributeProvider {
 			this.selection.setVolume(volume);
 		};
 
-		this.filteringGrouping.addAttribute(this.slitherPositionAttribute, 20);
+		this.filteringGrouping.addAttribute(this.slitherPositionAttribute, 21);
 
 		this.displaySlitherenated = new Attribute.BinaryAttribute("Select Slice", false, false);
-		this.filteringGrouping.addAttribute(displaySlitherenated, 19);
+
+
+		this.filteringGrouping.addAttribute(displaySlitherenated, 20);
 
 		this.slitherCycleTimer = new Timer(16, new ActionListener() {
 			private boolean forward = true;
@@ -342,6 +332,24 @@ public class PointCloud implements  AttributeProvider {
 		};
 
 		this.color = DEFAULT_COLORS[clouds++ % DEFAULT_COLORS.length];
+	}
+
+	public void refreshSelfWithQuality(float newQuality) {
+		Region primaryRegion = PointCloud.this.regions.get(0);
+		List<Region> children = primaryRegion.getMinusRegions();
+		primaryRegion.setMinusRegions(new ArrayList<>());
+		primaryRegion.loadRepresentationAtFidelity(newQuality);
+		for (Region child : children) {
+			child.populateAsSubregion(primaryRegion, newQuality, true);
+		}
+
+		for (Region region : PointCloud.this.regions) {
+			region.quality.notifyWithValue(newQuality, false);
+		}
+
+		primaryRegion.setMinusRegions(children);
+		FrameMaster.setNeedsNewRenderer();
+		FrameMaster.setNeedsDisplay();
 	}
 
 	public void readFits() {

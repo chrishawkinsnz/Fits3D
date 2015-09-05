@@ -16,6 +16,7 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 	private MouseActionType lastMouseMotionType;
 
+	private boolean mouseFix = false;
 	private int lastX = 0;
 	private int lastY = 0;
 
@@ -58,6 +59,7 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 	@Override
 	public void mouseMoved(java.awt.event.MouseEvent e) {
+		System.out.println(e.getX() + ", "+ e.getY());
 		this.registerMousePosition(e.getX(), e.getY(), 0);
 		if (isCurrentlySelectingPlaneInPointClouds(e.getX(), e.getY())) {
 			FrameMaster.setNeedsDisplay();
@@ -76,9 +78,18 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 	public void mouseClicked(MouseEvent e) {
 		Selection selection = this.getSelection();
 		if (selection != null) {
-			selection.setActive(false);
-			this.renderer.mouseWorldPosition = null;
-			FrameMaster.setNeedsDisplay();
+			if (selection.isActive()) {
+				selection.setActive(false);
+				this.renderer.mouseWorldPosition = null;
+				FrameMaster.setNeedsDisplay();
+			}
+			else if (!isCurrentlySelectingPlaneInPointClouds(e.getX(), e.getY())) {
+				for (PointCloud pc: this.renderer.pointClouds) {
+					pc.setShouldDisplaySlitherenated(false);
+					FrameMaster.setNeedsDisplay();
+					pc.displaySlitherenated.updateAttributeDisplayer();
+				}
+			}
 		}
 		if (e.getButton() == 3) {
 			this.doubleSpeed = !this.doubleSpeed;
