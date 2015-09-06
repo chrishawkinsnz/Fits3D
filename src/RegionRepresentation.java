@@ -36,6 +36,8 @@ public class RegionRepresentation {
 	private int validPts;
 	private float fidelity;
 
+	private  boolean isLiableToOverflow = false;
+
 	public static JSlider sliderToEnable = null;
 
 	private List<VertexBufferSlice>slices;
@@ -312,6 +314,7 @@ public class RegionRepresentation {
 			//--if the frequency decreases with z then the baseFrequency is actually the other end of the cube
 			if (cellscal != null && cellscal.contains("1/F")) {
 				inverseFrequencyCellScaling = true;
+				rr.isLiableToOverflow = true;
 			}
 
 
@@ -631,5 +634,11 @@ public class RegionRepresentation {
 			return this.getNumPtsW();
 		}
 		return 0;
+	}
+
+
+
+	public boolean isLiableToOverflow() {
+		return this.isLiableToOverflow;
 	}
 }

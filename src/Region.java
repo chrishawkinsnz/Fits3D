@@ -233,4 +233,8 @@ public class Region implements  AttributeProvider{
 	public List<VertexBufferSlice>getSlices() {
 		return this.getRegionRepresentation().getSlices();
 	}
+
+	public boolean isLiableToOverflow() {
+		return this.regionRepresentation.isLiableToOverflow();
+	}
 }

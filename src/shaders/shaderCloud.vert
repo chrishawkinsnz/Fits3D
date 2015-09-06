@@ -19,14 +19,17 @@ uniform float selectionMaxZ;
 uniform float lowLight;
 
 uniform int isSelecting;
+uniform int watchOutForOverflow;
 
 void main() {
 	vec4 v = vec4(vertexPosition_modelspace, 1);
-	if (v.x < -0.5) {
-	    v.x += 2.0;
-	}
-	if (v.y < -0.5) {
-	    v.y += 2.0;
+	if (watchOutForOverflow == 1) {
+	    if (v.x < -0.5) {
+    	    v.x += 2.0;
+    	}
+    	if (v.y < -0.5) {
+    	    v.y += 2.0;
+    	}
 	}
 
     gl_Position = mvp * v;

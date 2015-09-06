@@ -77,6 +77,7 @@ public class Renderer {
 	//--DEBUG FLAGS
 	public	boolean gay = false;
 	private int uniformIsSelecting;
+	private int uniformWatchOutForOverflow;
 
 	public Vector3 mouseWorldPosition;
 
@@ -140,6 +141,7 @@ public class Renderer {
 		this.uniformSelectionMaxZ 	= gl.glGetUniformLocation(this.shaderProgram, "selectionMaxZ");
 
 		this.uniformIsSelecting 	= gl.glGetUniformLocation(this.shaderProgram, "isSelecting");
+		this.uniformWatchOutForOverflow = gl.glGetUniformLocation(this.shaderProgram, "watchOutForOverflow");
 
 		this.uniformLowLight 		= gl.glGetUniformLocation(this.shaderProgram, "lowLight");
 		gl.glEnable(GL_BLEND);
@@ -432,6 +434,14 @@ public class Renderer {
 				}
 			}
 
+			if (lastRegion == null || lastRegion.isLiableToOverflow() != region.isLiableToOverflow()) {
+				if (region.isLiableToOverflow()) {
+					gl.glUniform1i(uniformWatchOutForOverflow, GL_TRUE);
+				}
+				else {
+					gl.glUniform1i(uniformWatchOutForOverflow, GL_FALSE);
+				}
+			}
 			//--if there's a new cloud then update the filtering uniforms
 			if(lastCloud != cloud) {
 
