@@ -20,7 +20,9 @@ import nom.tam.util.ArrayDataInput;
  */
 public class RegionRepresentation {
 	public static boolean shouldFudge = true;
+	public static boolean shouldScaleCells = true;
 	public static boolean fakeFourthDimension = false;
+	public static boolean exaggerateCellScaling = false;
 
 	private int[]buckets;
 	private float estMin;
@@ -227,18 +229,6 @@ public class RegionRepresentation {
 			ImageHDU hdu = (ImageHDU) fits.getHDU(0);
 
 
-			boolean inverseFrequencyCellScaling = false;
-			String cellscal = hdu.getHeader().getStringValue("CELLSCAL");
-			float scalingFactor = -0.5f;
-
-			float baseFrequency = volume.origin.z;
-			if (cellscal != null && cellscal.contains("1/F")) {
-				inverseFrequencyCellScaling = true;
-			}
-
-
-
-
 			MinAndMax minAndMax = new MinAndMax();
 			if (!dummyRun) {
 			 	minAndMax = minAndMaxBasedOnRoughOnePercentRushThrough(hdu, volume, fits);
@@ -297,6 +287,37 @@ public class RegionRepresentation {
 
 
 
+			boolean inverseFrequencyCellScaling = false;
+			String cellscal = hdu.getHeader().getStringValue("CELLSCAL");
+			float scalingFactor = -0.5f;
+
+			if (exaggerateCellScaling) {
+				scalingFactor *= 100f;
+			}
+
+			float baseFrequency = volume.origin.z;
+
+			int zDim = shortOnAxes > 0 ? 0 : 1;
+			float baseProportion = ((float)crpix[zDim]) / ((float)sourceLengths[zDim]);
+			float baseZPosition = baseProportion * volume.dp + volume.z;
+
+			int zPixels = sourceLengths[zDim];
+			float zBaseFreq = hdu.getHeader().getFloatValue("CRVAL3");
+			float zCDELT = hdu.getHeader().getFloatValue("CDELT3");
+			float zBasePix = hdu.getHeader().getFloatValue("CRPIX3");
+
+
+
+
+			//--if the frequency decreases with z then the baseFrequency is actually the other end of the cube
+			if (cellscal != null && cellscal.contains("1/F")) {
+				inverseFrequencyCellScaling = true;
+			}
+
+
+
+
+
 			if (fakeFourthDimension) {
 				rr.setNumPts(3, repLengths[1]);
 			}
@@ -345,6 +366,16 @@ public class RegionRepresentation {
 					for (indices[1] = 0; indices[1] < repLengths[1]; indices[1]++) {
 						proportion = (float) indices[1] / (float) repLengths[1];
 						position[1] = volume.z + volume.dp * proportion;
+						//--figure out the frequency at this position (only appropriate if cell scaling)
+						float pixelDiff = (position[1] * (float)zPixels) - zBasePix;
+						float currFreq = zBaseFreq + pixelDiff * zCDELT;
+						System.out.println("PixelDiff:"+pixelDiff);
+						float proportionalCellSizeIncrease = (1/currFreq ) / (1/zBaseFreq);
+						proportionalCellSizeIncrease -= 1.0f;
+						if (exaggerateCellScaling) {
+							proportionalCellSizeIncrease *= 10f;
+						}
+
 						int pts = 0;
 						int maxPts = repLengths[2] * repLengths[3];
 
@@ -360,8 +391,6 @@ public class RegionRepresentation {
 
 							//--cellscall buuuuulllllshit
 							if (inverseFrequencyCellScaling) {
-								float zdiff = position[1] - baseFrequency;
-								float proportionalCellSizeIncrease = zdiff * scalingFactor;
 								float xyPlaneDiff = position[2] - centerPos[2];
 								position[2] += proportionalCellSizeIncrease * xyPlaneDiff;
 
@@ -380,11 +409,8 @@ public class RegionRepresentation {
 
 								//--cellscall buuuuulllllshit
 								if (inverseFrequencyCellScaling) {
-									float zdiff = position[1] - baseFrequency;
-									float proportionalCellSizeIncrease = zdiff * scalingFactor;
 									float xyPlaneDiff = position[3] - centerPos[3];
 									position[3] += proportionalCellSizeIncrease * xyPlaneDiff;
-
 								}
 
 								if (dataType == DataType.DOUBLE) {

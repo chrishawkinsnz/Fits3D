@@ -350,6 +350,11 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		mouseFix.setToolTipText("This may fix issues with mouse selection being off by a factor of two on some high dpi screens");
 		advancedMenu.add(mouseFix);
 
+		JCheckBoxMenuItem cellScale = new JCheckBoxMenuItem("Adjust for Chromatic Abberation");
+		cellScale.setSelected(RegionRepresentation.shouldScaleCells);
+		cellScale.addActionListener(e -> RegionRepresentation.shouldScaleCells ^= true);
+		cellScale.setToolTipText("This will adjust the sizes of the cells/pixels according to the CELLSCAL value in the header.  This accounts for the efffect of chromatic abberation");
+		advancedMenu.add(cellScale);
 
 		return advancedMenu;
 	}
@@ -370,6 +375,11 @@ public class FrameMaster extends JFrame implements GLEventListener {
 				setNeedsDisplay();
 			}
 		});
+
+		JCheckBoxMenuItem exaggerateCellScale = new JCheckBoxMenuItem("Exaggerate chromatic abberation");
+		exaggerateCellScale.setSelected(RegionRepresentation.exaggerateCellScaling);
+		exaggerateCellScale.addActionListener(e -> RegionRepresentation.exaggerateCellScaling ^= true);
+		debugMenu.add(exaggerateCellScale);
 
 
 		return debugMenu;
