@@ -325,40 +325,7 @@ public class Renderer {
 
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl.glUseProgram(this.shaderProgram);
-		//TODO assuming first point cloud here as well you monster
-		//TODO assuming first point cloud here as well you monster
-		//TODO assuming first point cloud here as well you monster
-		//TODO assuming first point cloud here as well you monster
-		//TODO assuming first point cloud here as well you monster
 
-//		PointCloud cloudOfInterest = FrameMaster.getActivePointCloud();
-//		if (cloudOfInterest!=null && cloudOfInterest.getSelection().isActive()) {
-//			gl.glUniform1i(uniformIsSelecting, GL_TRUE);
-//
-//			//--normalise the origin
-//			Vector3 originRelativeToCloud = cloudOfInterest.getSelection().getVolume().origin.minus(cloudOfInterest.getVolume().origin);
-//			Vector3 normalisedPosition = originRelativeToCloud.divideBy(cloudOfInterest.getVolume().size);
-//			Vector3 normalisedSize = cloudOfInterest.getSelection().getVolume().size.divideBy(cloudOfInterest.getVolume().size);
-//
-//			//--figure out an appropriate brightness given the density of points TODO implement this weverywhere.
-//			float base = 10f;
-//			int axis = cloudOfInterest.getSlitherAxis().ordinal();
-//			float adjusted = cloudOfInterest.getVolume().size.get(axis) * base /(float) cloudOfInterest.getRegions().get(0).getDimensionInPts(axis);
-//			gl.glUniform1f(uniformLowLight, adjusted);
-//
-//			int dimensions = 3;
-//			int[] uniformsMin = {uniformSelectionMinX, uniformSelectionMinY, uniformSelectionMinZ};
-//			int[] uniformsMax = {uniformSelectionMaxX, uniformSelectionMaxY, uniformSelectionMaxZ};
-//			for (int i = 0; i < dimensions; i++) {
-//				float a = normalisedPosition.get(i);
-//				float b = normalisedPosition.get(i) + normalisedSize.get(i);
-//				gl.glUniform1f(uniformsMin[i], Math.min(a,b));
-//				gl.glUniform1f(uniformsMax[i], Math.max(a,b));
-//			}
-//		}
-//		else {
-//			gl.glUniform1i(uniformIsSelecting, GL_FALSE);
-//		}
 		//--figure out if looking back to front
 		float pi = (float)Math.PI;
 

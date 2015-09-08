@@ -27,6 +27,7 @@ public class PointCloud implements  AttributeProvider {
 
 	private final static String[]   AXES_NAMES          = {"X", "Y", "Z", "W", "Q", "YOU", "DO", "NOT", "NEED", "THIS", "MANY", "AXES"};
 	private final static String[]   AXES_LENGTH_NAMES	= {"wd", "ht", "dp", "W", "Q", "YOU", "DO", "NOT", "NEED", "THIS", "MANY", "AXES"};
+	private final static String[]   AXES_COLOR_NAMES = {"red", "green", "blue", "W", "Q", "YOU", "DO", "NOT", "NEED", "THIS", "MANY", "AXES"};
 	private final static Color[] 	DEFAULT_COLORS 		= {Color.GREEN, Color.RED, Color.BLUE, Color.ORANGE, Color.PINK};
 	private final static float 		STARTING_FIDELITY 	= 0.075f;
 	private final static int 		STARTING_TARGET_PIX	= 1_000_000;
@@ -119,6 +120,7 @@ public class PointCloud implements  AttributeProvider {
 		this.selectionOriginAttributes = new Attribute.NumberAttribute[3];
 
 		for (int i = 0; i < cursorPosAttributes.length; i++) {
+			String htmlString = "<html><font color='"+AXES_COLOR_NAMES[i]+"'>"+AXES_NAMES[i]+"</font> pts</html>";
 			Attribute.NumberAttribute numAttr = new Attribute.NumberAttribute("Cursor "+ AXES_NAMES[i], false);
 			this.cursorPosAttributes[i] =  numAttr;
 			this.cursorGrouping.addAttribute(numAttr, 6-i);
@@ -190,8 +192,8 @@ public class PointCloud implements  AttributeProvider {
 		optionsGrouping.addAttribute(quality, 15);
 
 
-
-		depth = new Attribute.RangedAttribute("Z Size", 0.1f, 3.0f, BOX_DEPTH, false);
+		String htmlString = "<html><font color='"+AXES_COLOR_NAMES[2]+"'>"+AXES_NAMES[2]+"</font> Size</html>";
+		depth = new Attribute.RangedAttribute(htmlString, 0.1f, 3.0f, BOX_DEPTH, false);
 		depth.callback = (obj) -> {
 			float newDepth = ((Float)obj).floatValue();
 			this.volume = new Volume(this.volume.origin, new Vector3(this.volume.size.x, this.volume.size.y, newDepth));
@@ -372,19 +374,25 @@ public class PointCloud implements  AttributeProvider {
 
 			this.unitTypes = new Attribute.TextAttribute[hdu.getAxes().length];
 			for (int i = hdu.getAxes().length-1; i >= 0 ; i--) {
-				unitAttribute = new Attribute.TextAttribute(AXES_NAMES[i] + " Unit", "" + hdu.getHeader().getStringValue("CTYPE"+(i+1)), false);
+				String htmlStringUnit = "<html><font color='"+AXES_COLOR_NAMES[i]+"'>"+AXES_NAMES[i]+"</font> Unit</html>";
+
+				unitAttribute = new Attribute.TextAttribute(htmlStringUnit, "" + hdu.getHeader().getStringValue("CTYPE"+(i+1)), false);
 				attributes.add(1, unitAttribute);
 				this.unitTypes[i] = unitAttribute;
 				if (i < 3) {
-					this.cursorPosAttributes[i].setDisplayName(AXES_NAMES[i] + " (" + this.unitTypes[i].getValue() + ")");
-					this.selectionOriginAttributes[i].setDisplayName(AXES_NAMES[i] + " (" + this.unitTypes[i].getValue() + ")");
-					this.selectionLengthAttributes[i].setDisplayName(AXES_LENGTH_NAMES[i] + " (" + this.unitTypes[i].getValue() + ")");
+					String htmlStringPos = "<html><font color='"+AXES_COLOR_NAMES[i]+"'>"+AXES_NAMES[i]+"</font>(" + this.unitTypes[i].getValue() + ")</html>";
+					this.cursorPosAttributes[i].setDisplayName(htmlStringPos);
+					this.selectionOriginAttributes[i].setDisplayName(htmlStringPos);
+
+					String htmlStringLength = "<html><font color='"+AXES_COLOR_NAMES[i]+"'>"+AXES_LENGTH_NAMES[i]+"</font>(" + this.unitTypes[i].getValue() + ")</html>";
+					this.selectionLengthAttributes[i].setDisplayName(htmlStringLength);
 				}
 			}
 
 
 			for (int i = 0; i < hdu.getAxes().length; i ++) {
-				attributes.add(1,new Attribute.TextAttribute(AXES_NAMES[hdu.getAxes().length - 1 - i] + " pts", "" + hdu.getAxes()[i], false));
+				String htmlString = "<html><font color='"+AXES_COLOR_NAMES[hdu.getAxes().length - 1 -i]+"'>"+AXES_NAMES[hdu.getAxes().length - 1 - i]+"</font> pts</html>";
+				attributes.add(1,new Attribute.TextAttribute(htmlString, "" + hdu.getAxes()[i], false));
 
 			}
 
