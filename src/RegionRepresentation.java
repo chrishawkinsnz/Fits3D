@@ -317,7 +317,7 @@ public class RegionRepresentation {
 				rr.isLiableToOverflow = true;
 			}
 
-
+			int pointCount = 0;
 
 
 
@@ -372,7 +372,6 @@ public class RegionRepresentation {
 						//--figure out the frequency at this position (only appropriate if cell scaling)
 						float pixelDiff = (position[1] * (float)zPixels) - zBasePix;
 						float currFreq = zBaseFreq + pixelDiff * zCDELT;
-						System.out.println("PixelDiff:"+pixelDiff);
 						float proportionalCellSizeIncrease = (1/currFreq ) / (1/zBaseFreq);
 						proportionalCellSizeIncrease -= 1.0f;
 						if (exaggerateCellScaling) {
@@ -425,7 +424,7 @@ public class RegionRepresentation {
 								if (bucketIndex >= 0 && bucketIndex < nBuckets && !Double.isNaN(val)) {    //--TODO should the buckets really be stopping points from being added ???
 									rr.getBuckets()[bucketIndex]++;
 
-
+									pointCount ++;
 									if (dummyRun) {
 										if (val < rr.estMin)
 											rr.estMin = val;
@@ -478,7 +477,7 @@ public class RegionRepresentation {
 				}
 			}
 			System.out.println("fits file loaded " + repLengths[0] + " z " + repLengths[1] + " z " + repLengths[2] + " z " + repLengths[3]);
-
+			System.out.println("total non NaN points:" + pointCount);
 		}catch (Exception e) {
 
 			JOptionPane.showMessageDialog(null, e.getClass().getName()+": " + e.getMessage(), "Error!", JOptionPane.ERROR_MESSAGE);

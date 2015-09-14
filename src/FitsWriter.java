@@ -26,16 +26,10 @@ public class FitsWriter {
         //--we have to load up a supped up version of the region first
         boolean previousFudgeSetting = RegionRepresentation.shouldFudge;
         RegionRepresentation.shouldFudge = false;
-//        region.loadRepresentationAtFidelity(1.0f);
-
 
         RegionRepresentation writableRegionRepresentation = RegionRepresentation.loadFromDisk(parent.getFits(), 1.0f, region.getVolume(), false);
 
         boolean fourdee = headerAlreadyIncludesValueForKey(oldHeader, "NAXIS4");
-
-        //--now we iterate over those points and create a float buffer
-        //--inneficient I know
-
 
         int wl = writableRegionRepresentation.getDimensionInPts(3);
         int zl = writableRegionRepresentation.getDimensionInPts(2);
@@ -62,13 +56,9 @@ public class FitsWriter {
             }
         }
 
-
+        int lastZindex = 0;
+        int zIndex= 0;
         for (VertexBufferSlice slice : writableRegionRepresentation.getSlices()) {
-            slice.region = region;
-            slice.cloud = parent;
-            float zProportionCloud   = ((slice.getOverallZ()) - parent.getVolume().origin.z)/parent.getVolume().size.z ;/// region.getVolume().size.z;
-            float zProportion = (zProportionCloud - regionVolume.origin.z)/ regionVolume.size.z;
-            int   zIndex        = (int)(zProportion * zl);
             float wProportion   = parent.frame.getValue();
             int   wIndex        = (int)(wProportion * wl);
             for (int i = 0; i < slice.numberOfPts; i++) {
@@ -99,8 +89,8 @@ public class FitsWriter {
                     e.printStackTrace();
                 }
                 //TODO am I shifting everything evers'slightly to one side???
-
             }
+            zIndex++;
         }
 
         try {
@@ -126,9 +116,6 @@ public class FitsWriter {
                     if (headerAlreadyIncludesValueForKey(newHeader, oldHeaderCard.getKey())) {
                         System.out.println("duplicate header entry: " + oldHeaderCard.getKey());
                     }
-//                    else if (oldHeaderCard.getKey().contains("CELLSCAL")) {
-//                        continue;
-//                    }
                     else {
                         newHeader.addLine(oldHeaderCard);
                     }
