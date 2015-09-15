@@ -121,11 +121,8 @@ public class FitsWriter {
                     }
 
                 }
-                else {
-                    System.out.println("not a header cards");
-                }
 
-                System.out.println(obj);
+
             }
 
 
@@ -174,9 +171,7 @@ public class FitsWriter {
                     return true;
                 }
             }
-            else {
-                System.out.println("catch");
-            }
+
 
         }
         return false;

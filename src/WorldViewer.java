@@ -163,7 +163,7 @@ public class WorldViewer {
 		}
 		this.width = width;
 		this.height = height;
-		System.out.println("new gl size:" + width+", "+height);
+		System.out.println("new graphics window  size:" + width+", "+height);
 	}
 
 }

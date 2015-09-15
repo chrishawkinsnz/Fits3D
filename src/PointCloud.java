@@ -154,7 +154,6 @@ public class PointCloud implements  AttributeProvider {
 		this.selectionDepthAttribute.callback = (obj) -> {
 			Vector3 oldOrigin = this.selection.getVolume().origin;
 			Vector3 oldSize = this.selection.getVolume().size;
-			System.out.println("hi hi hi");
 			float factor = (Float)obj;
 			float newSizeZ = this.getVolume().size.get(slitherAxis.ordinal()) * factor;
 			float[] newSizeArray = oldSize.toArray();
@@ -412,20 +411,6 @@ public class PointCloud implements  AttributeProvider {
 				}
 
 
-				this.slitherPositionAttribute = new Attribute.RangedAttribute("selection Depth", 0f, 1f, 0f, false);
-				this.slitherPositionAttribute.callback = (obj) -> {
-					Vector3 oldOrigin = this.selection.getVolume().origin;
-					Vector3 oldSize = this.selection.getVolume().size;
-
-					float newZ = this.getSlither(false).origin.get(this.slitherAxis.ordinal());
-					float[]pos = oldOrigin.toArray();
-					pos[slitherAxis.ordinal()] = newZ;
-
-					Vector3 newOrigin = new Vector3(pos);
-
-					Volume volume = new Volume(newOrigin, oldSize);
-					this.selection.setVolume(volume);
-				};
 			}
 
 

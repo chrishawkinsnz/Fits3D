@@ -477,7 +477,7 @@ public class RegionRepresentation {
 				}
 			}
 			System.out.println("fits file loaded " + repLengths[0] + " z " + repLengths[1] + " z " + repLengths[2] + " z " + repLengths[3]);
-			System.out.println("total non NaN points:" + pointCount);
+			System.out.println("total non NaN points loaded:" + pointCount);
 		}catch (Exception e) {
 
 			JOptionPane.showMessageDialog(null, e.getClass().getName()+": " + e.getMessage(), "Error!", JOptionPane.ERROR_MESSAGE);
@@ -492,7 +492,7 @@ public class RegionRepresentation {
 		}
 
 		long t1 = System.currentTimeMillis();
-		System.out.println("time taken to load file in " + rr.numPtsW * rr.numPtsX * rr.numPtsY * rr.numPtsZ +"points:" + (t1 - t0));
+		System.out.println("time taken to load file:" + (t1 - t0));
 
 		return rr;
 	}
