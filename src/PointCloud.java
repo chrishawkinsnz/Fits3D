@@ -582,7 +582,7 @@ public class PointCloud implements  AttributeProvider {
 
 
 	public String toString() {
-		String[] components = this.fileName.getValue().split(File.separator);
+		String[] components = this.fileName.getValue().split("/|\\\\");
 		return components[components.length - 1];
 	}
 
