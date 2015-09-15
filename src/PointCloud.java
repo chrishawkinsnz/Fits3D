@@ -73,6 +73,7 @@ public class PointCloud implements  AttributeProvider {
 	public Attribute.FilterSelectionAttribute filterSelection;
 	public Attribute.RangedAttribute frame;
 	public Attribute.RangedAttribute depth;
+	public Attribute.RangedAttribute selectionDepthAttribute;
 
 	private final Attribute.BinaryAttribute waxisCycling;
 
@@ -141,14 +142,36 @@ public class PointCloud implements  AttributeProvider {
 			this.selectionLengthAttributes[i].callback = o -> {
 				lenAttr.updateAttributeDisplayer();
 			};
+
+
+
+
+
+
 		}
+
+		this.selectionDepthAttribute = new Attribute.RangedAttribute("<html><font color="+AXES_COLOR_NAMES[2]+">dp</html>", 0f, 1f, 1f, false);
+		this.selectionDepthAttribute.callback = (obj) -> {
+			Vector3 oldOrigin = this.selection.getVolume().origin;
+			Vector3 oldSize = this.selection.getVolume().size;
+			System.out.println("hi hi hi");
+			float factor = (Float)obj;
+			float newSizeZ = this.getVolume().size.get(slitherAxis.ordinal()) * factor;
+			float[] newSizeArray = oldSize.toArray();
+			newSizeArray[slitherAxis.ordinal()] = newSizeZ;
+			Vector3 newSize = new Vector3(newSizeArray);
+
+			Volume volume = new Volume(oldOrigin, newSize);
+			this.selection.setVolume(volume);
+		};
+		this.selectionGrouping.addAttribute(this.selectionDepthAttribute,-4);
 
 
 		Attribute.Actchin cutAction = new Attribute.Actchin("Cut Selection", false);
 		cutAction.callback = obj -> {
 			FrameMaster.cutSelection();
 		};
-		this.selectionGrouping.addAttribute(cutAction, 0);
+		this.selectionGrouping.addAttribute(cutAction, -10);
 
 
 
@@ -268,7 +291,7 @@ public class PointCloud implements  AttributeProvider {
 
 
 
-		this.slitherPositionAttribute = new Attribute.RangedAttribute("Slice Depth", 0f, 1f, 0f, false);
+		this.slitherPositionAttribute = new Attribute.RangedAttribute("Slice z Pos", 0f, 1f, 0f, false);
 		this.slitherPositionAttribute.callback = (obj) -> {
 			Vector3 oldOrigin = this.selection.getVolume().origin;
 			Vector3 oldSize = this.selection.getVolume().size;
@@ -387,6 +410,22 @@ public class PointCloud implements  AttributeProvider {
 					String htmlStringLength = "<html><font color='"+AXES_COLOR_NAMES[i]+"'>"+AXES_LENGTH_NAMES[i]+"</font>(" + this.unitTypes[i].getValue() + ")</html>";
 					this.selectionLengthAttributes[i].setDisplayName(htmlStringLength);
 				}
+
+
+				this.slitherPositionAttribute = new Attribute.RangedAttribute("selection Depth", 0f, 1f, 0f, false);
+				this.slitherPositionAttribute.callback = (obj) -> {
+					Vector3 oldOrigin = this.selection.getVolume().origin;
+					Vector3 oldSize = this.selection.getVolume().size;
+
+					float newZ = this.getSlither(false).origin.get(this.slitherAxis.ordinal());
+					float[]pos = oldOrigin.toArray();
+					pos[slitherAxis.ordinal()] = newZ;
+
+					Vector3 newOrigin = new Vector3(pos);
+
+					Volume volume = new Volume(newOrigin, oldSize);
+					this.selection.setVolume(volume);
+				};
 			}
 
 

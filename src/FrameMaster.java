@@ -56,7 +56,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 
 	public FrameMaster() {
-    	super("Very Good Honours Project");
+    	super("FITS 3D");
 		singleton = this;
 
         this.setName("FITS 3D");

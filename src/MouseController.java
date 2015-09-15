@@ -156,6 +156,8 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 			Volume newVolume = new Volume(oldOrigin, newSize);
 
 			this.getSelection().setVolume(newVolume);
+			FrameMaster.getActivePointCloud().selectionDepthAttribute.notifyWithValue(newSize.z / FrameMaster.getActivePointCloud().volume.dp);
+			FrameMaster.getActivePointCloud().selectionDepthAttribute.updateAttributeDisplayer();
 			FrameMaster.setNeedsDisplay();
 		}
 		else {
