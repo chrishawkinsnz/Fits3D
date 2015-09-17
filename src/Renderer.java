@@ -326,6 +326,9 @@ public class Renderer {
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl.glUseProgram(this.shaderProgram);
 
+		if (FrameMaster.getActivePointCloud() == null) {
+			return;
+		}
 		//--figure out if looking back to front
 		float pi = (float)Math.PI;
 

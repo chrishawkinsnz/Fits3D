@@ -20,8 +20,6 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 	private int lastX = 0;
 	private int lastY = 0;
 
-	public int selectButton = 1;
-	public int camButton = 1;
 
 	public enum MouseActionType{
 		Camera,
@@ -165,7 +163,6 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 	}
 
 	public boolean isCurrentlySelectingPlaneInPointClouds(int x, int y) {
-
 		Vector3 screenPos;
 		if (this.doubleSpeed) {
 			screenPos = new Vector3(x / 2, y / 2, 3f);
@@ -197,8 +194,9 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 		this.renderer.mouseWorldPosition = this.viewer.getWorldPositionOfPixelOnPlane(screenPos, pc.getSlither(false), true);
 
+//		System.out.println("is the pushed button("+button+")  equal to the select button:"+selectButton+"?");
 		//--if this is some continuation of a drag
-		if (button == selectButton && this.getSelection().isActive()) {
+		if (this.getSelection().isActive()) {
 			Vector3 oldOrigin = this.getSelection().getVolume().origin;
 
 			Vector3 newSize = this.renderer.mouseWorldPosition.minus(oldOrigin);

@@ -1,8 +1,6 @@
 import com.jogamp.opengl.math.Matrix4;
 import com.jogamp.opengl.math.VectorUtil;
 
-import java.awt.*;
-
 public class WorldViewer {
 
 	public static boolean retinaFix = true;
@@ -13,8 +11,8 @@ public class WorldViewer {
 	public final static float orthoOrigX = 0.0f;
 	public final static float orthoOrigY = 0.0f;
 
-	private int width;
-	private int height;
+	private int widthOpenGL;
+	private int heightOpenGL;
 
 	private float ySpin = 0f;		//spin around the central column
 	private float xSpin = 0f;		//spin around the rod through the middle of the screeen
@@ -23,7 +21,6 @@ public class WorldViewer {
 
 	public final float minRadius = 0.5f;
 	public final float maxRadius = 10f;
-	
 
 	public void addySpin(float addition) {
 		if (addition > 0 && this.ySpin > yMax)
@@ -102,10 +99,11 @@ public class WorldViewer {
 
 		//--factor in the z position of the slice to work out the
 
-		float factor = retinaFix? 4f : 2f;
 
-		float orthoMouseX = WorldViewer.orthoOrigX -(WorldViewer.orthoWidth)+ factor * WorldViewer.orthoWidth * ((pixelPosition.x)/(float)this.width);
-		float orthoMouseY = WorldViewer.orthoOrigY +(WorldViewer.orthoHeight)- factor * WorldViewer.orthoHeight * (pixelPosition.y/(float)this.height);
+		float factor = (float)this.heightOpenGL / (float)FrameMaster.singleton.canvas.getHeight();
+		factor *= 2f;
+		float orthoMouseX = WorldViewer.orthoOrigX -(WorldViewer.orthoWidth)+ factor * WorldViewer.orthoWidth * ((pixelPosition.x)/(float)this.widthOpenGL);
+		float orthoMouseY = WorldViewer.orthoOrigY +(WorldViewer.orthoHeight)- factor * WorldViewer.orthoHeight * (pixelPosition.y/(float)this.heightOpenGL);
 
 
 		float proportionX = (orthoMouseX - bls[0]) /(brs[0] - bls[0]);
@@ -136,7 +134,7 @@ public class WorldViewer {
 			if (proportionY > 0f && proportionY < 1f || clamp) {
 				//--mm is the world position of the mous cursor on the selection plane
 				mm[1] += proportionY * plane.size.y;
-
+				System.out.print("new world position of cursor: " + (new Vector3(mm)));
 				return new Vector3(mm);
 			}
 		}
@@ -149,21 +147,29 @@ public class WorldViewer {
 	}
 
 
+	/**
+	 * This is the resolution of the OpenGL scene
+	 * @param width
+	 * @param height
+	 */
 	public void informOfResolution(int width, int height) {
 		//--if exactly doubled then flick the retina switch
-		if (width == this.width*2) {
+		if (width == this.widthOpenGL *2) {
 			retinaFix = true;
 			System.out.println("moved to retina screen enabling fix");
 			FrameMaster.setMouseFixOn(retinaFix);
 		}
-		else if (width * 2 == this.width) {
+		else if (width * 2 == this.widthOpenGL) {
 			retinaFix = false;
 			System.out.println("moved to non retina screen enabling fix");
 			FrameMaster.setMouseFixOn(retinaFix);
 		}
-		this.width = width;
-		this.height = height;
+		this.widthOpenGL = width;
+		this.heightOpenGL = height;
 		System.out.println("new graphics window  size:" + width+", "+height);
 	}
+
+
+
 
 }

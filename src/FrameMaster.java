@@ -19,6 +19,7 @@ import javax.swing.event.*;
 import javax.swing.tree.*;
 
 import com.jogamp.opengl.util.FPSAnimator;
+import com.sun.org.apache.xerces.internal.util.ShadowedSymbolTable;
 import net.miginfocom.swing.MigLayout;
 
 public class FrameMaster extends JFrame implements GLEventListener {
@@ -45,7 +46,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 	//VIEW
 	private Renderer renderer;
-	private GLCanvas canvas;
+	public GLCanvas canvas;
 
 	//CONTROLLER
 	private KeyboardSelectionController selectionController;
@@ -253,7 +254,11 @@ public class FrameMaster extends JFrame implements GLEventListener {
 				TreePath childPath = parentPath.pathByAddingChild(e.getChildren()[e.getChildren().length - 1]);
 
 				FrameMaster.this.tree.expandPath(e.getTreePath());
-				FrameMaster.this.tree.setSelectionPath(childPath);
+				try {
+					FrameMaster.this.tree.setSelectionPath(childPath);
+				}catch (NullPointerException npe) {
+					System.out.println("whoops");
+				}
 			}
 		});
 
@@ -599,6 +604,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 	public static PointCloud getActivePointCloud() {
 		AttributeProvider ap = singleton.selectedAttributeProvider;
+//		System.out.println("the selcted atribute provider is :" + ap);
 		if (ap instanceof  PointCloud) {
 			return (PointCloud)ap;
 		}
