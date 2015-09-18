@@ -7,14 +7,6 @@ import java.util.stream.Collectors;
 public interface AttributeProvider {
 
 
-    default List<Attribute> aggregatableAttributes() {
-        return getAttributes().stream().filter(u -> u.isAggregatable).collect(Collectors.toList());
-    }
-
-    default List<Attribute> nonAggregatable() {
-        return getAttributes().stream().filter(u -> !u.isAggregatable).collect(Collectors.toList());
-    }
-
     public List<Attribute> getAttributes();
 
     public List<AttributeProvider> getChildProviders();

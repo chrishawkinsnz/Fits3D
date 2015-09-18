@@ -479,9 +479,11 @@ public class RegionRepresentation {
 			System.out.println("fits file loaded " + repLengths[0] + " z " + repLengths[1] + " z " + repLengths[2] + " z " + repLengths[3]);
 			System.out.println("total non NaN points loaded:" + pointCount);
 		}catch (Exception e) {
-
 			JOptionPane.showMessageDialog(null, e.getClass().getName()+": " + e.getMessage(), "Error!", JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();
+		}
+		catch (java.lang.OutOfMemoryError err) {
+			JOptionPane.showMessageDialog(null, "Out of memory!  In order to run FITS 3D in high memory mode please use one of the advanced launchers provided with FITS 3D", "Error!", JOptionPane.ERROR_MESSAGE);
 		}
 		finally {
 

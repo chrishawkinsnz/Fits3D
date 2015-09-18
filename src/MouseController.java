@@ -40,6 +40,17 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 		if (this.currentDragType == MouseActionType.Select) {
 			this.registerMousePosition(e.getX(), e.getY(), e.getButton());
+			if (this.getSelection().isActive()) {
+				Vector3 oldOrigin = this.getSelection().getVolume().origin;
+				PointCloud pc = FrameMaster.getActivePointCloud();
+
+				Vector3 newSize = this.renderer.mouseWorldPosition.minus(oldOrigin);
+				float[] sizeArr = newSize.toArray();
+				sizeArr[pc.getSlitherAxis().ordinal()] = this.getSelection().getVolume().size.get(pc.getSlitherAxis().ordinal());
+				newSize = new Vector3(sizeArr);
+				Volume newVolume = new Volume(oldOrigin, newSize);
+				this.getSelection().setVolume(newVolume.clampedToVolume(pc.getVolume()));
+			}
 			FrameMaster.setNeedsDisplay();
 		}
 		else if (this.currentDragType == MouseActionType.Camera){
@@ -196,16 +207,7 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 //		System.out.println("is the pushed button("+button+")  equal to the select button:"+selectButton+"?");
 		//--if this is some continuation of a drag
-		if (this.getSelection().isActive()) {
-			Vector3 oldOrigin = this.getSelection().getVolume().origin;
 
-			Vector3 newSize = this.renderer.mouseWorldPosition.minus(oldOrigin);
-			float[] sizeArr = newSize.toArray();
-			sizeArr[pc.getSlitherAxis().ordinal()] = this.getSelection().getVolume().size.get(pc.getSlitherAxis().ordinal());
-			newSize = new Vector3(sizeArr);
-			Volume newVolume = new Volume(oldOrigin, newSize);
-			this.getSelection().setVolume(newVolume.clampedToVolume(pc.getVolume()));
-		}
 
 
 	}
