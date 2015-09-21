@@ -94,7 +94,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	//==================================================================================================================
 
     private void showOpenDialog() {
-		FileDialog fd = new FileDialog(this, "Open File");
+		FileDialog fd = new FileDialog(this, "Save File", FileDialog.LOAD);
 //		fd.setFilenameFilter();
 		fd.setVisible(true);
 		fd.setMultipleMode(false);
@@ -450,13 +450,21 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		}
 
 		if (parentCloud != null) {
-			JFileChooser jfc = new JFileChooser();
-			int result = jfc.showSaveDialog(singleton);
-			if (result == JFileChooser.APPROVE_OPTION) {
-				File file = jfc.getSelectedFile();
-				System.out.print(file.getName());
-				FitsWriter.writeFits(parentCloud, region, file);
+
+			FileDialog fd = new FileDialog(FrameMaster.singleton, "Open File", FileDialog.SAVE);
+//		fd.setFilenameFilter();
+			fd.setVisible(true);
+			fd.setMultipleMode(false);
+			if (fd.getFiles().length > 0) {
+				FitsWriter.writeFits(parentCloud, region, fd.getFiles()[0]);
 			}
+//			JFileChooser jfc = new JFileChooser();
+//			int result = jfc.showSaveDialog(singleton);
+//			if (result == JFileChooser.APPROVE_OPTION) {
+//				File file = jfc.getSelectedFile();
+//				System.out.print(file.getName());
+//				FitsWriter.writeFits(parentCloud, region, file);
+//			}
 		}
 	}
 
