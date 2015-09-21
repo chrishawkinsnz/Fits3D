@@ -168,6 +168,9 @@ public class FitsWriter {
             if (nextObj instanceof  HeaderCard) {
                 HeaderCard nextCard = (HeaderCard) nextObj;
                 if (nextCard.getKey().equals(key)) {
+                    if (nextCard.getKey().equals("HISTORY")) {
+                        return false;
+                    }
                     return true;
                 }
             }
