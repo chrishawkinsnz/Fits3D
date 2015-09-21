@@ -132,8 +132,11 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 	@Override
 	public void mouseExited(MouseEvent e) {}
 
+
+
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
+
 		if (isCurrentlySelectingPlaneInPointClouds(e.getX(), e.getY())) {
 			float selectionDepthDelta = (float)e.getWheelRotation() * 0.1f;
 

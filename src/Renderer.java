@@ -16,7 +16,7 @@ import com.jogamp.opengl.math.Matrix4;
 
 public class Renderer {
 	private static long lastTime = 0;
-
+	public static long lastFrameDelta;
 	//--SETTINGS
 	private int width;
 	private int height;
@@ -321,6 +321,9 @@ public class Renderer {
 	}
 
 	public void display() {
+		long delta = System.nanoTime() - lastTime;
+		lastFrameDelta = delta / 1000_000;
+		System.out.println(lastFrameDelta);
 		printFps();
 
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

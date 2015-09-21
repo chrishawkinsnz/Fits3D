@@ -1,6 +1,11 @@
 import com.jogamp.opengl.math.Matrix4;
 import com.jogamp.opengl.math.VectorUtil;
 
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.beans.PropertyChangeListener;
+
 public class WorldViewer {
 
 	public static boolean retinaFix = true;
@@ -51,15 +56,32 @@ public class WorldViewer {
 		return this.radius;
 	}
 
-	
+
+	float targetRadius = 0.0f;
+	boolean canGoAgain = true;
+	private Timer refreshTimer = null;
 	public void addRadiusAmount(float dist) {
 		if (dist > 0 && this.radius > this.maxRadius) 
 			return;
 		if (dist < 0 && this.radius < this.minRadius)
 			return;
-		
-		this.radius += dist;
-		FrameMaster.setNeedsDisplay();
+
+		this.radius+=dist;
+		if (this.refreshTimer == null) {
+			this.refreshTimer = new Timer(32, new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					canGoAgain = true;
+				}
+			});
+		}
+
+		if (canGoAgain) {
+			FrameMaster.setNeedsDisplay();
+			canGoAgain = false;
+			this.refreshTimer.start();
+		}
+
 	}
 
 	/**
