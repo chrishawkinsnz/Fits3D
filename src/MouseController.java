@@ -1,9 +1,6 @@
+import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
+import java.awt.event.*;
 import java.util.List;
 
 
@@ -133,6 +130,8 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 	public void mouseExited(MouseEvent e) {}
 
 
+	private Timer refreshTimer = null;
+	private boolean canGoAgain = true;
 
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
@@ -166,10 +165,27 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 			}
 			Volume newVolume = new Volume(oldOrigin, newSize);
 
-			this.getSelection().setVolume(newVolume);
+
+			if (this.refreshTimer == null) {
+				this.refreshTimer = new Timer(32, new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						canGoAgain = true;
+					}
+				});
+			}
+			if (canGoAgain) {
+				FrameMaster.setNeedsDisplay();
+				canGoAgain = false;
+				this.refreshTimer.start();
+				FrameMaster.getActivePointCloud().selectionDepthAttribute.shouldUpdateRenderer = true;
+			}
+			else {
+				FrameMaster.getActivePointCloud().selectionDepthAttribute.shouldUpdateRenderer = false;
+			}
 			FrameMaster.getActivePointCloud().selectionDepthAttribute.notifyWithValue(newSize.z / FrameMaster.getActivePointCloud().volume.dp);
 			FrameMaster.getActivePointCloud().selectionDepthAttribute.updateAttributeDisplayer();
-			FrameMaster.setNeedsDisplay();
+//			FrameMaster.setNeedsDisplay();
 		}
 		else {
 			this.viewer.addRadiusAmount((float)e.getWheelRotation() *0.1f);
