@@ -94,14 +94,24 @@ public class FrameMaster extends JFrame implements GLEventListener {
 	//==================================================================================================================
 
     private void showOpenDialog() {
-    	JFileChooser jfc = new JFileChooser();
-    	jfc.setAcceptAllFileFilterUsed(false);
-    	jfc.setFileFilter(new FileFilterFits());
-    	int returnVal = jfc.showOpenDialog(this);
-    	if (returnVal == JFileChooser.APPROVE_OPTION) {
-    		File file = jfc.getSelectedFile();
-    		loadFile(file.getAbsolutePath());
-    	}
+		FileDialog fd = new FileDialog(this, "Open File");
+//		fd.setFilenameFilter();
+		fd.setVisible(true);
+		fd.setMultipleMode(false);
+		if (fd.getFiles().length > 0) {
+			String fileName = fd.getFiles()[0].getAbsolutePath();
+			loadFile(fileName);
+		}
+
+
+//    	JFileChooser jfc = new JFileChooser();
+//    	jfc.setAcceptAllFileFilterUsed(false);
+//    	jfc.setFileFilter(new FileFilterFits());
+//    	int returnVal = jfc.showOpenDialog(this);
+//    	if (returnVal == JFileChooser.APPROVE_OPTION) {
+//    		File file = jfc.getSelectedFile();
+//    		loadFile(file.getAbsolutePath());
+//    	}
     }
 
 
