@@ -29,10 +29,13 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	private float min = 0.0f;
 	private float max = 0.0f;
 
-
+	private final int LEFT_BUTTON = 1;
+	private final int RIGHT_BUTTON = 3;
 
 	private float mouseSelectionBeginX = 0f;
 	private float mouseSelectionEndX = 0f;
+
+	private float startShiftDrag = 0f;
 
 	private ChristogramSelection selection;
 
@@ -199,7 +202,8 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	
 	private void bucketise(float[]values, int nBuckets) {
 		int []counts = new int[nBuckets];
-		float stepSize = (max - min) / (float)nBuckets; 
+		float stepSize = (max - min) / (float)nBuckets;
+
 		for (float val : values) {
 			int bucketIndex = (int)(val/stepSize);	
 			if (bucketIndex > counts.length) 
@@ -207,12 +211,11 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 			else
 				counts[bucketIndex]++;
 		}
-		
+
 		turnCountsIntoRelFreqsLol(counts);
 	}
 	
 	private void turnCountsIntoRelFreqsLol(int[]counts) {
-		
 		int totValues = 0;
 		for (int i : counts) {totValues+=i;}
 		
@@ -253,9 +256,21 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 
 	@Override
 	public void mouseDragged(MouseEvent e) {
-		if (this.tentativeSelectionBegin!=Float.MIN_VALUE) 
-			this.mouseSelectionBeginX = tentativeSelectionBegin;
-		this.mouseSelectionEndX =  proportionAtPixelX(e.getX());
+		System.out.println("mouseDrag:"+e.getButton());
+		float selectionX = proportionAtPixelX(e.getX());
+		if (e.isShiftDown()) {
+			float proportionDifference = selectionX -startShiftDrag;
+			this.mouseSelectionEndX += proportionDifference;
+			this.mouseSelectionBeginX += proportionDifference;
+			startShiftDrag = selectionX;
+		}
+		else if(e.getButton() == LEFT_BUTTON) {
+			this.mouseSelectionBeginX = selectionX;
+		}
+		else if (e.getButton() == RIGHT_BUTTON) {
+			this.mouseSelectionEndX = selectionX;
+		}
+
 		this.selection.updateWithXBounds(this.mouseSelectionBeginX, this.mouseSelectionEndX);
 		this.changeListener.stateChanged(new ChangeEvent(this));
 		this.repaint();
@@ -263,24 +278,22 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 
 
 	@Override
-	public void mouseClicked(MouseEvent e) {}
-
-	private float tentativeSelectionBegin = Float.MIN_VALUE;
+	public void mouseClicked(MouseEvent e) {
+		if (e.isShiftDown()) {
+			this.selection.cycleToNextDistributionType();
+		}
+	}
 
 	private ChangeListener changeListener;
 	@Override
 	public void mousePressed(MouseEvent e) {
-		this.tentativeSelectionBegin = proportionAtPixelX(e.getX());
+		if (e.isShiftDown()) {
+			this.startShiftDrag = proportionAtPixelX(e.getX());
+		}
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		float tentativeSelectionEnd = proportionAtPixelX(e.getX());
-		if (tentativeSelectionEnd == tentativeSelectionBegin) {
-			this.selection.cycleToNextDistributionType();
-			this.changeListener.stateChanged(new ChangeEvent(this));
-			this.repaint();
-		}
 	}
 
 	@Override

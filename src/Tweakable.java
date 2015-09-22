@@ -1,3 +1,5 @@
+import net.miginfocom.swing.MigLayout;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -246,18 +248,48 @@ public abstract class Tweakable implements  AttributeDisplayer{
 		}
 	}
 	
-	public static class ChristogramTweakable extends Tweakable implements AttributeDisplayer, ChangeListener {
+	public static class ChristogramTweakable extends Tweakable implements AttributeDisplayer, ChangeListener, ActionListener {
 		private Christogram christogram;
+		private JTextField textLeft;
+		private JTextField textRight;
+		private JComponent holder;
 		
 		public ChristogramTweakable(int[]buckets, Attribute attribute, float min, float max, String title){
 			super(attribute);
+			int width = 240;
+			Dimension christogramDimension = new Dimension(width, 200);
 	        christogram = new Christogram(buckets, min, max);
 	        christogram.setXAxisTitle(title != null ? title : " ");
-	        christogram.setMinimumSize(new Dimension(800,200));
-	        christogram.setPreferredSize(new Dimension(800,200));
+	        christogram.setMinimumSize(christogramDimension);
+//	        christogram.setPreferredSize(christogramDimension);
+//			christogram.setMaximumSize(christogramDimension);
 	        christogram.addChangeListener(this);
 	        this.attributes.add(attribute);
+
+			Dimension lilTextFieldDimension = new Dimension(50,20);
+			this.textLeft = new JTextField("hello");
+			this.textLeft.addActionListener(this);
+			this.textLeft.setText("" + christogram.getSelection().minX);
+
+			this.textRight = new JTextField("hello");
+			this.textRight.setHorizontalAlignment(SwingConstants.RIGHT);
+			this.textRight.setText("" + christogram.getSelection().maxX);
+			this.textRight.addActionListener(this);
+
+
+
+			MigLayout mlLayout = new MigLayout("wrap 3, insets 2 2 2 2", "[grow,fill]");
+			holder = new JPanel(mlLayout);
+
+//			holder.setMinimumSize(christogramDimension);
+//			holder.setMaximumSize(christogramDimension);
+//			holder.setPreferredSize(christogramDimension);
+			holder.add(christogram, "span 3");
+			holder.add(this.textLeft);
+			holder.add(new JLabel("        to"));
+			holder.add(this.textRight);
 		}
+
 		
 		@Override
 		public void setValue(Object value) {
@@ -267,7 +299,8 @@ public abstract class Tweakable implements  AttributeDisplayer{
 		
 		@Override
 		public JComponent getComponent() {
-			return christogram;
+			return holder;
+//			return christogram;
 		}
 
 		@Override
@@ -276,7 +309,28 @@ public abstract class Tweakable implements  AttributeDisplayer{
 		}
 		
 		public void stateChanged(ChangeEvent e) {
+			System.out.println(e.getSource());
+			if (e.getSource() instanceof  Christogram) {
+				String leftText = "" + this.christogram.getSelection().minX;
+				if (leftText.length() > 7) {
+					leftText = leftText.substring(0,7);
+				}
+
+				String rightText = "" + this.christogram.getSelection().maxX;
+				if (rightText.length() > 7) {
+					rightText = rightText.substring(0,7);
+				}
+				this.textLeft.setText(leftText);
+				this.textRight.setText(rightText);
+			}
+			//--update the text
 			notifyAttributes();
+		}
+		public void actionPerformed(ActionEvent e) {
+			System.out.println("hellelel");
+			this.christogram.getSelection().minX = Float.parseFloat(this.textLeft.getText());
+			this.christogram.getSelection().maxX = Float.parseFloat(this.textRight.getText());
+			this.christogram.repaint();
 		}
 
 		@Override
