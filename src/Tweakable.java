@@ -3,12 +3,14 @@ import net.miginfocom.swing.MigLayout;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.text.NumberFormatter;
 
 /**
  * Container for some tweakable UIElement
@@ -250,14 +252,14 @@ public abstract class Tweakable implements  AttributeDisplayer{
 	
 	public static class ChristogramTweakable extends Tweakable implements AttributeDisplayer, ChangeListener, ActionListener {
 		private Christogram christogram;
-		private JTextField textLeft;
-		private JTextField textRight;
+		private JFormattedTextField textLeft;
+		private JFormattedTextField textRight;
 		private JComponent holder;
 		
 		public ChristogramTweakable(int[]buckets, Attribute attribute, float min, float max, String title){
 			super(attribute);
 			int width = 240;
-			Dimension christogramDimension = new Dimension(width, 200);
+			Dimension christogramDimension = new Dimension(width, 215);
 	        christogram = new Christogram(buckets, min, max);
 	        christogram.setXAxisTitle(title != null ? title : " ");
 	        christogram.setMinimumSize(christogramDimension);
@@ -266,12 +268,14 @@ public abstract class Tweakable implements  AttributeDisplayer{
 	        christogram.addChangeListener(this);
 	        this.attributes.add(attribute);
 
+
+
 			Dimension lilTextFieldDimension = new Dimension(50,20);
-			this.textLeft = new JTextField("hello");
+			this.textLeft = new JFormattedTextField("0.0");
 			this.textLeft.addActionListener(this);
 			this.textLeft.setText("" + christogram.getSelection().minX);
 
-			this.textRight = new JTextField("hello");
+			this.textRight = new JFormattedTextField("0.0");
 			this.textRight.setHorizontalAlignment(SwingConstants.RIGHT);
 			this.textRight.setText("" + christogram.getSelection().maxX);
 			this.textRight.addActionListener(this);
@@ -285,6 +289,8 @@ public abstract class Tweakable implements  AttributeDisplayer{
 //			holder.setMaximumSize(christogramDimension);
 //			holder.setPreferredSize(christogramDimension);
 			holder.add(christogram, "span 3");
+			holder.add(new JLabel("   Left/Right mouse to move bounds"),"span 3");
+			holder.add(new JLabel("            or enter bounds below"), "span 3");
 			holder.add(this.textLeft);
 			holder.add(new JLabel("        to"));
 			holder.add(this.textRight);
@@ -328,8 +334,14 @@ public abstract class Tweakable implements  AttributeDisplayer{
 		}
 		public void actionPerformed(ActionEvent e) {
 			System.out.println("hellelel");
-			this.christogram.getSelection().minX = Float.parseFloat(this.textLeft.getText());
-			this.christogram.getSelection().maxX = Float.parseFloat(this.textRight.getText());
+			try {
+				this.christogram.getSelection().minX = Float.parseFloat(this.textLeft.getText());
+				this.christogram.getSelection().maxX = Float.parseFloat(this.textRight.getText());
+				FrameMaster.setNeedsDisplay();
+			}catch (NumberFormatException nfe) {
+				nfe.printStackTrace();
+				java.awt.Toolkit.getDefaultToolkit().beep();
+			}
 			this.christogram.repaint();
 		}
 

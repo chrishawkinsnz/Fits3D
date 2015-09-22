@@ -234,7 +234,7 @@ public class PointCloud implements  AttributeProvider {
 
 
 		Christogram.ChristogramSelection data = new Christogram.ChristogramSelection(0f, 1f, 0f, 1f, false);
-		filterSelection = new Attribute.FilterSelectionAttribute("Value Filter (drag to change)", false, data);
+		filterSelection = new Attribute.FilterSelectionAttribute("Value Filter", false, data);
 		filterSelection.setPointCloud(this);
 
 		this.filteringGrouping.addAttribute(filterSelection, 100);

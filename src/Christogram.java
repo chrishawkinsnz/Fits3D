@@ -19,7 +19,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	private static final int LEFT_INSET = 0;
 	private static final int RIGHT_INSET = 0;
 	private static final int TOP_INSET = 0;
-	private static final int BOT_INSET = 70;
+	private static final int BOT_INSET = 50;
 
 	private float[] buckets;
 	private float maxBucket;
@@ -31,9 +31,6 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 
 	private final int LEFT_BUTTON = 1;
 	private final int RIGHT_BUTTON = 3;
-
-	private float mouseSelectionBeginX = 0f;
-	private float mouseSelectionEndX = 0f;
 
 	private float startShiftDrag = 0f;
 
@@ -260,20 +257,24 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		float selectionX = proportionAtPixelX(e.getX());
 		if (e.isShiftDown()) {
 			float proportionDifference = selectionX -startShiftDrag;
-			this.mouseSelectionEndX += proportionDifference;
-			this.mouseSelectionBeginX += proportionDifference;
+			this.selection.minX += proportionDifference;
+			this.selection.maxX += proportionDifference;
 			startShiftDrag = selectionX;
-		}
-		else if(e.getButton() == LEFT_BUTTON) {
-			this.mouseSelectionBeginX = selectionX;
-		}
-		else if (e.getButton() == RIGHT_BUTTON) {
-			this.mouseSelectionEndX = selectionX;
-		}
 
-		this.selection.updateWithXBounds(this.mouseSelectionBeginX, this.mouseSelectionEndX);
+		}
+		else {
+
+			if (e.getButton() == LEFT_BUTTON) {
+				this.selection.minX = selectionX;
+			} else if (e.getButton() == RIGHT_BUTTON) {
+				this.selection.maxX = selectionX;
+			}
+
+			this.selection.updateWithXBounds(this.selection.minX, this.selection.maxX);
+		}
 		this.changeListener.stateChanged(new ChangeEvent(this));
 		this.repaint();
+
 	}
 
 
@@ -289,6 +290,18 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	public void mousePressed(MouseEvent e) {
 		if (e.isShiftDown()) {
 			this.startShiftDrag = proportionAtPixelX(e.getX());
+		}
+		else {
+			float selectionX = proportionAtPixelX(e.getX());
+			if (e.getButton() == LEFT_BUTTON) {
+				this.selection.minX = selectionX;
+			} else if (e.getButton() == RIGHT_BUTTON) {
+				this.selection.maxX = selectionX;
+			}
+
+			this.selection.updateWithXBounds(this.selection.minX, this.selection.maxX);
+			this.changeListener.stateChanged(new ChangeEvent(this));
+			this.repaint();
 		}
 	}
 
