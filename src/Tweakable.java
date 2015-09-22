@@ -266,7 +266,6 @@ public abstract class Tweakable implements  AttributeDisplayer{
 //	        christogram.setPreferredSize(christogramDimension);
 //			christogram.setMaximumSize(christogramDimension);
 	        christogram.addChangeListener(this);
-	        this.attributes.add(attribute);
 
 
 
