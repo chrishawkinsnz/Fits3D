@@ -1,7 +1,5 @@
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
@@ -23,7 +21,7 @@ import com.jogamp.opengl.util.FPSAnimator;
 import com.sun.org.apache.xerces.internal.util.ShadowedSymbolTable;
 import net.miginfocom.swing.MigLayout;
 
-public class FrameMaster extends JFrame implements GLEventListener {
+public class FrameMaster extends JFrame implements GLEventListener, KeyListener {
 
 	//CONSTANTS
 	private final static int WINDOW_WIDTH_MIN 			= 800;
@@ -232,6 +230,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		this.treeModel = new DefaultTreeModel(treeRoot);
 
 		this.tree = new JTree(treeModel);
+		tree.addKeyListener(this);
 		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 
 		tree.addTreeSelectionListener(new TreeSelectionListener() {
@@ -258,7 +257,7 @@ public class FrameMaster extends JFrame implements GLEventListener {
 				FrameMaster.this.tree.expandPath(e.getTreePath());
 				try {
 					FrameMaster.this.tree.setSelectionPath(childPath);
-				}catch (NullPointerException npe) {
+				} catch (NullPointerException npe) {
 					System.out.println("whoops");
 				}
 			}
@@ -269,6 +268,10 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		tree.setBorder(BorderFactory.createTitledBorder("Fits Files"));
 
 		filePanel.add(tree);
+
+
+		filePanel.addKeyListener(this);
+
 
 		JButton buttonAddFitsFile = new JButton("Open New Fits File");
 		buttonAddFitsFile.addActionListener(e -> this.showOpenDialog());
@@ -336,6 +339,11 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		setKeyboardShortcutTo(KeyEvent.VK_E, exportRegionItem);
 		exportRegionItem.addActionListener(e -> this.exportRegion());
 		fileMenu.add(exportRegionItem);
+
+		JMenuItem deleteCloudOrRegionItem = new JMenuItem("Delete Cloud/Region");
+		deleteCloudOrRegionItem.addActionListener(e -> this.deleteCloudOrRegion());
+		fileMenu.add(deleteCloudOrRegionItem);
+
 		return fileMenu;
 	}
 
@@ -422,6 +430,42 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		singleton.reloadAttributePanel();
 		FrameMaster.setNeedsDisplay();
 	}
+
+	private void deleteCloudOrRegion() {
+		if (!(this.selectedAttributeProvider instanceof  Region ||this.selectedAttributeProvider instanceof  PointCloud) ) {
+			JOptionPane.showMessageDialog(null, "Error: Must select a point cloud or region to delete.", "Error", JOptionPane.ERROR_MESSAGE);
+		}
+		else if (this.selectedAttributeProvider instanceof  PointCloud) {
+			PointCloud pc = (PointCloud) this.selectedAttributeProvider;
+			this.pointClouds.remove(pc);
+		}
+		else if (this.selectedAttributeProvider instanceof  Region) {
+			PointCloud parentCloud = null;
+			for (PointCloud pc : singleton.pointClouds) {
+				if (pc.getRegions().contains(this.selectedAttributeProvider)) {
+					parentCloud = pc;
+				}
+			}
+			//--if its the first region then special rules apply so instead we just hide it ok.
+			if (parentCloud.getRegions().get(0) == this.selectedAttributeProvider) {
+				((Region)this.selectedAttributeProvider).isVisible.notifyWithValue(false);
+			}
+			else {
+				parentCloud.getRegions().remove(this.selectedAttributeProvider);
+			}
+
+		}
+		DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) singleton.treeModel.getRoot();
+		Enumeration<DefaultMutableTreeNode> e = rootNode.depthFirstEnumeration();
+		while (e.hasMoreElements()) {
+			DefaultMutableTreeNode node = e.nextElement();
+			if (node.getUserObject() == this.selectedAttributeProvider) {
+				singleton.treeModel.removeNodeFromParent(node);
+			}
+		}
+//		rendererNeedsFreshPointClouds = true;
+	}
+
 
 	private void exportRegion() {
 
@@ -621,6 +665,9 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		return null;
 	}
 
+
+
+
 	public static void showOverlayDialogForPointCloud(PointCloud pc) {
 		JFrame f = new JFrame("Overlay");
 
@@ -674,5 +721,25 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
 	public static void setMouseFixOn(boolean isOn) {
 		singleton.mouseFix.setSelected(isOn);
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {
+
+
+		System.out.println("pushed the key:" + e.getKeyCode());
+		if (e.getKeyCode() == KeyEvent.VK_DELETE || e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+			deleteCloudOrRegion();
+		}
 	}
 }
