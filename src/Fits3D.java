@@ -14,8 +14,10 @@ public class Fits3D {
 
 	public static void main(String[] args){
 		try {
-			String os = System.getProperty("os.name").toLowerCase();	
-	        if (os.indexOf("mac") != -1) {
+			String os = System.getProperty("os.name").toLowerCase();
+
+
+			if (os.indexOf("mac") != -1) {
 	        	System.setProperty("apple.laf.useScreenMenuBar", "true");
 	        	System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Fits3D");	        	
 	        	System.setProperty("com.apple.mrj.application.apple.menu.about.version", "0.1");

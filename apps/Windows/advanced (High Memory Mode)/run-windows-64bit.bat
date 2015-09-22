@@ -1,0 +1,1 @@
+java -jar -Xms1G -Xmx16G  ..\Fits3D.jar
