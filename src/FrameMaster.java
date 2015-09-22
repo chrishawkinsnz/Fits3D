@@ -3,6 +3,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -95,23 +96,14 @@ public class FrameMaster extends JFrame implements GLEventListener {
 
     private void showOpenDialog() {
 		FileDialog fd = new FileDialog(this, "Save File", FileDialog.LOAD);
-//		fd.setFilenameFilter();
 		fd.setVisible(true);
+
 		fd.setMultipleMode(false);
 		if (fd.getFiles().length > 0) {
 			String fileName = fd.getFiles()[0].getAbsolutePath();
 			loadFile(fileName);
 		}
 
-
-//    	JFileChooser jfc = new JFileChooser();
-//    	jfc.setAcceptAllFileFilterUsed(false);
-//    	jfc.setFileFilter(new FileFilterFits());
-//    	int returnVal = jfc.showOpenDialog(this);
-//    	if (returnVal == JFileChooser.APPROVE_OPTION) {
-//    		File file = jfc.getSelectedFile();
-//    		loadFile(file.getAbsolutePath());
-//    	}
     }
 
 
@@ -452,19 +444,11 @@ public class FrameMaster extends JFrame implements GLEventListener {
 		if (parentCloud != null) {
 
 			FileDialog fd = new FileDialog(FrameMaster.singleton, "Open File", FileDialog.SAVE);
-//		fd.setFilenameFilter();
 			fd.setVisible(true);
 			fd.setMultipleMode(false);
 			if (fd.getFiles().length > 0) {
 				FitsWriter.writeFits(parentCloud, region, fd.getFiles()[0]);
 			}
-//			JFileChooser jfc = new JFileChooser();
-//			int result = jfc.showSaveDialog(singleton);
-//			if (result == JFileChooser.APPROVE_OPTION) {
-//				File file = jfc.getSelectedFile();
-//				System.out.print(file.getName());
-//				FitsWriter.writeFits(parentCloud, region, file);
-//			}
 		}
 	}
 
