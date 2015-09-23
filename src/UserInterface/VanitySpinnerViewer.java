@@ -1,9 +1,13 @@
-import java.awt.*;
+package UserInterface;
 
+import java.awt.*;
+import UserInterface.*;
+import Rendering.*;
+import Model.*;
 /**
  * Created by chrishawkins on 20/07/15.
  */
-public class VanitySpinnerViewer extends  WorldViewer {
+public class VanitySpinnerViewer extends WorldViewer {
 
     double speed = 0.001f;
 

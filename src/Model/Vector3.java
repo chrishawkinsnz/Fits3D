@@ -1,3 +1,4 @@
+package Model;
 
 public class Vector3 {
 	public static final Vector3 zeros = 	new Vector3( 0f, 0f, 0f);

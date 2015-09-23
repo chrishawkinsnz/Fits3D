@@ -1,3 +1,5 @@
+package Rendering;
+
 import static com.jogamp.opengl.GL.GL_ARRAY_BUFFER;
 import static com.jogamp.opengl.GL.GL_COLOR_BUFFER_BIT;
 import static com.jogamp.opengl.GL.GL_DEPTH_BUFFER_BIT;
@@ -11,6 +13,9 @@ import java.util.*;
 
 import static com.jogamp.opengl.GL2.*;
 
+import Model.*;
+import UserInterface.Christogram;
+import UserInterface.FrameMaster;
 import com.jogamp.opengl.GL3;
 import com.jogamp.opengl.math.Matrix4;
 
@@ -39,7 +44,7 @@ public class Renderer {
 	
 	//--MODEL STUFF
 	private WorldViewer viewer;
-//	public Selection selection;
+//	public Model.Selection selection;
 
 	public List<PointCloud> pointClouds;
 	public boolean isTrippy;

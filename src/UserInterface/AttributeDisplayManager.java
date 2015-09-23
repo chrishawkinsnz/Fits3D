@@ -1,4 +1,8 @@
-import com.sun.tools.doclint.HtmlTag;
+package UserInterface;
+
+import Model.Attribute;
+import Model.AttributeProvider;
+import Model.PointCloud;
 
 public class AttributeDisplayManager {
 	public static AttributeDisplayManager defaultDisplayManager = new AttributeDisplayManager();

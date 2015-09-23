@@ -1,3 +1,5 @@
+package UserInterface;
+
 import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -65,7 +67,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	}
 
 	/**
-	 * Constructs a Christogram with the supplied counts.  The counts are the frequency of values within each bucket.
+	 * Constructs a UserInterface.Christogram with the supplied counts.  The counts are the frequency of values within each bucket.
 	 * The buckets are assumed to be evenly distributed between min and max with the first element of counts corresponding to the lowest bucket.
 	 * @param counts The array of counts for each bucket.
 	 * @param min The minimum a value can be.  Represents the lower bound of the first bucket

@@ -1,5 +1,11 @@
+package UserInterface;
+
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+
+import UserInterface.*;
+import Rendering.*;
+import Model.*;
 
 /**
  * Created by chrishawkins on 20/07/15.

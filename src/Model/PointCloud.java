@@ -1,4 +1,7 @@
-import com.sun.org.apache.xpath.internal.operations.Bool;
+package Model;
+
+import UserInterface.Christogram;
+import UserInterface.FrameMaster;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
@@ -8,14 +11,13 @@ import javax.swing.*;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 
-public class PointCloud implements  AttributeProvider {
+public class PointCloud implements AttributeProvider {
 
 	public final Attribute.BinaryAttribute displaySlitherenated;
 	private Attribute.BinaryAttribute cyclingSlitherAttribute;
@@ -114,7 +116,7 @@ public class PointCloud implements  AttributeProvider {
 		this.filteringGrouping = new AttributeGrouping("Filtering");
 		this.actionsGrouping = new AttributeGrouping("");
 		this.cursorGrouping = new AttributeGrouping("Cursor");
-		this.selectionGrouping = new AttributeGrouping("Selection");
+		this.selectionGrouping = new AttributeGrouping("Model.Selection");
 
 		this.cursorPosAttributes = new Attribute.NumberAttribute[3];
 		this.selectionLengthAttributes = new Attribute.NumberAttribute[3];
@@ -166,7 +168,7 @@ public class PointCloud implements  AttributeProvider {
 		this.selectionGrouping.addAttribute(this.selectionDepthAttribute,-4);
 
 
-		Attribute.Actchin cutAction = new Attribute.Actchin("Cut Selection", false);
+		Attribute.Actchin cutAction = new Attribute.Actchin("Cut Model.Selection", false);
 		cutAction.callback = obj -> {
 			FrameMaster.cutSelection();
 		};

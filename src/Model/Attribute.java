@@ -1,5 +1,14 @@
+package Model;
+
+import UserInterface.AttributeDisplayer;
+import UserInterface.FrameMaster;
+
 import java.util.List;
 import java.util.function.Consumer;
+
+import UserInterface.*;
+import Rendering.*;
+import Model.*;
 
 public abstract class Attribute {
 	public String displayName;

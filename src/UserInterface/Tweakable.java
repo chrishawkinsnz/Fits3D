@@ -1,16 +1,17 @@
+package UserInterface;
+
+import Model.Attribute;
 import net.miginfocom.swing.MigLayout;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.text.NumberFormatter;
 
 /**
  * Container for some tweakable UIElement
@@ -83,7 +84,7 @@ public abstract class Tweakable implements  AttributeDisplayer{
 	 * @author chrishawkins
 	 *
 	 */
-	public static class Slidable extends Tweakable implements ChangeListener, AttributeDisplayer{
+	public static class Slidable extends Tweakable implements ChangeListener, AttributeDisplayer {
 		public JSlider slider;
 		
 		protected int steps;
@@ -315,7 +316,7 @@ public abstract class Tweakable implements  AttributeDisplayer{
 		
 		public void stateChanged(ChangeEvent e) {
 			System.out.println(e.getSource());
-			if (e.getSource() instanceof  Christogram) {
+			if (e.getSource() instanceof Christogram) {
 				String leftText = "" + this.christogram.getSelection().minX;
 				if (leftText.length() > 7) {
 					leftText = leftText.substring(0,7);

@@ -1,11 +1,15 @@
+package UserInterface;
+
 import java.awt.*;
 import java.awt.event.*;
-import java.io.File;
-import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
+import IO.FitsWriter;
+import Model.Attribute;
+import Model.AttributeProvider;
+import Rendering.Renderer;
 import com.jogamp.opengl.GLAutoDrawable;/**/
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLEventListener;
@@ -18,8 +22,11 @@ import javax.swing.event.*;
 import javax.swing.tree.*;
 
 import com.jogamp.opengl.util.FPSAnimator;
-import com.sun.org.apache.xerces.internal.util.ShadowedSymbolTable;
 import net.miginfocom.swing.MigLayout;
+
+import UserInterface.*;
+import Rendering.*;
+import Model.*;
 
 public class FrameMaster extends JFrame implements GLEventListener, KeyListener {
 
@@ -162,7 +169,7 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 
 				for (AttributeProvider childProvider : childProviders) {
 					JPanel subAttrPanel = new JPanel(new MigLayout("wrap 2, insets 4", "[grow,fill]"));
-//					AttributeDisplayer titleTweakable = new Tweakable.ChrisTitle(childProvider.getName());
+//					UserInterface.AttributeDisplayer titleTweakable = new UserInterface.Tweakable.ChrisTitle(childProvider.getName());
 //					attributPanel.add(titleTweakable.getComponent(), "span 2");
 					for (Attribute attribute : childProvider.getAttributes()) {
 						AttributeDisplayer attributeDisplayer = AttributeDisplayManager.defaultDisplayManager.tweakableForAttribute(attribute, childProvider);
@@ -192,7 +199,7 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 		MigLayout migLayout = new MigLayout("wrap 2");
 		JPanel selectionPanel = new JPanel(migLayout);
 
-		JLabel title = new JLabel("Selection");
+		JLabel title = new JLabel("Model.Selection");
 		title.setFont(new Font("Dialog", Font.BOLD, 24));
 		selectionPanel.add(title, "span 2");
 
@@ -335,12 +342,12 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 		cutItem.addActionListener(e -> this.cutSelection());
 		fileMenu.add(cutItem);
 
-		JMenuItem exportRegionItem = new JMenuItem("Export Region");
+		JMenuItem exportRegionItem = new JMenuItem("Export Model.Region");
 		setKeyboardShortcutTo(KeyEvent.VK_E, exportRegionItem);
 		exportRegionItem.addActionListener(e -> this.exportRegion());
 		fileMenu.add(exportRegionItem);
 
-		JMenuItem deleteCloudOrRegionItem = new JMenuItem("Delete Cloud/Region");
+		JMenuItem deleteCloudOrRegionItem = new JMenuItem("Delete Cloud/Model.Region");
 		deleteCloudOrRegionItem.addActionListener(e -> this.deleteCloudOrRegion());
 		fileMenu.add(deleteCloudOrRegionItem);
 
@@ -432,14 +439,14 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 	}
 
 	private void deleteCloudOrRegion() {
-		if (!(this.selectedAttributeProvider instanceof  Region ||this.selectedAttributeProvider instanceof  PointCloud) ) {
+		if (!(this.selectedAttributeProvider instanceof Region ||this.selectedAttributeProvider instanceof PointCloud) ) {
 			JOptionPane.showMessageDialog(null, "Error: Must select a point cloud or region to delete.", "Error", JOptionPane.ERROR_MESSAGE);
 		}
-		else if (this.selectedAttributeProvider instanceof  PointCloud) {
+		else if (this.selectedAttributeProvider instanceof PointCloud) {
 			PointCloud pc = (PointCloud) this.selectedAttributeProvider;
 			this.pointClouds.remove(pc);
 		}
-		else if (this.selectedAttributeProvider instanceof  Region) {
+		else if (this.selectedAttributeProvider instanceof Region) {
 			PointCloud parentCloud = null;
 			for (PointCloud pc : singleton.pointClouds) {
 				if (pc.getRegions().contains(this.selectedAttributeProvider)) {
@@ -469,7 +476,7 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 
 	private void exportRegion() {
 
-		if (this.selectedAttributeProvider instanceof  Region) {
+		if (this.selectedAttributeProvider instanceof Region) {
 			Region selectedRegion = (Region) this.selectedAttributeProvider;
 			exportRegion(selectedRegion);
 		} else {
@@ -607,8 +614,8 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 
 
 	/**
-	 * Creates and returns a new WorldViewer which holds the state of the view in the world
-	 * @return The created WorldViewer object
+	 * Creates and returns a new Model.WorldViewer which holds the state of the view in the world
+	 * @return The created Model.WorldViewer object
 	 */
 	private WorldViewer createViewer() {
 		if (vain)
@@ -651,7 +658,7 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 	public static PointCloud getActivePointCloud() {
 		AttributeProvider ap = singleton.selectedAttributeProvider;
 //		System.out.println("the selcted atribute provider is :" + ap);
-		if (ap instanceof  PointCloud) {
+		if (ap instanceof PointCloud) {
 			return (PointCloud)ap;
 		}
 		else if (ap instanceof Region) {
@@ -703,7 +710,7 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 		applyButton.addActionListener(e -> {
 			Object obj = pointCloudComboBox.getSelectedItem();
 			PointCloud selectedCloud = null;
-			if (obj instanceof  PointCloud) {
+			if (obj instanceof PointCloud) {
 				selectedCloud = (PointCloud)obj;
 			}
 			pc.setRelativeTo(selectedCloud);

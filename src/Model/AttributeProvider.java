@@ -1,5 +1,6 @@
+package Model;
+
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Created by chrishawkins on 18/07/15.

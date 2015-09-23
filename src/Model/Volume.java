@@ -1,3 +1,4 @@
+package Model;
 
 public class Volume {
 	public static final Volume unit = new Volume(Vector3.zeros, Vector3.ones);
@@ -147,6 +148,6 @@ public class Volume {
 	}
 
 	public String toString() {
-		return "Volume {"+this.origin.x + "," +this.origin.y + "," +this.origin.z + "," +this.size.x + "," +this.size.y + "," +this.size.z + "," +"}";
+		return "Model.Volume {"+this.origin.x + "," +this.origin.y + "," +this.origin.z + "," +this.size.x + "," +this.size.y + "," +this.size.z + "," +"}";
 	}
 }

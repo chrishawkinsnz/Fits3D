@@ -1,11 +1,12 @@
+package IO;
+
+import Model.*;
 import nom.tam.fits.*;
-import nom.tam.fits.header.IFitsHeader;
 import nom.tam.util.BufferedFile;
 import nom.tam.util.Cursor;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.function.Consumer;
 
 /**
  * Created by chrishawkins on 18/08/15.

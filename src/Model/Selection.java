@@ -1,10 +1,12 @@
+package Model;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by chrishawkins on 20/07/15.
  */
-public class Selection implements  AttributeProvider{
+public class Selection implements AttributeProvider {
     private static Volume DEFAULT_VOLUME = new Volume(-0.5f, -0.5f, -0.5f, 1f, 1f, 1f);
     private boolean active = false;
     private Volume volume;
@@ -105,6 +107,6 @@ public class Selection implements  AttributeProvider{
 
     @Override
     public String getName() {
-        return "Selection";
+        return "Model.Selection";
     }
 }

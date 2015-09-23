@@ -1,7 +1,10 @@
+package Model;
+
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
+import UserInterface.FrameMaster;
 import nom.tam.fits.Fits;
 
 
@@ -10,7 +13,7 @@ import nom.tam.fits.Fits;
  * @author chrishawkins
  *
  */
-public class Region implements  AttributeProvider{
+public class Region implements AttributeProvider {
 //	public final static float 			STARTING_FIDELITY 	= 0.15f;
 
 	private static int regionCount = 0;
@@ -18,7 +21,7 @@ public class Region implements  AttributeProvider{
 	private RegionRepresentation regionRepresentation;
 
 	/**
-	 * Volume is a region of space within the overall point cloud.  that is the largest possible volume for a region is
+	 * Model.Volume is a region of space within the overall point cloud.  that is the largest possible volume for a region is
 	 * {0, 0, 0, 1, 1, 1}
 	 */
 	private final Volume volume;
@@ -37,7 +40,7 @@ public class Region implements  AttributeProvider{
 	private Region(Volume volume, float initialFidelity) {
 		this.volume = volume;
 
-		this.nameAttribute = new Attribute.TextAttribute("Name", "Region "+regionCount++, false);
+		this.nameAttribute = new Attribute.TextAttribute("Name", "Model.Region "+regionCount++, false);
 		this.attributes.add(this.nameAttribute);
 
 		Attribute.BinaryAttribute visibleAttr = new Attribute.BinaryAttribute("Visble", true, false);
@@ -112,7 +115,7 @@ public class Region implements  AttributeProvider{
 	//==================================================================================================================
 
 	/**
-	 *	Creates a new Region that is a subregion of this one.
+	 *	Creates a new Model.Region that is a subregion of this one.
 	 *
 	 * 	Note: To be a subregion it must be able to be fully contained within the parent region.
 	 * @param subVolume volume is unit volume that is relative to the overall fits file (not the existing region)

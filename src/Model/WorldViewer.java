@@ -1,10 +1,12 @@
+package Model;
+
+import UserInterface.FrameMaster;
 import com.jogamp.opengl.math.Matrix4;
 import com.jogamp.opengl.math.VectorUtil;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeListener;
 
 public class WorldViewer {
 

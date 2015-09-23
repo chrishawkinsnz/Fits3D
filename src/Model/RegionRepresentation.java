@@ -1,8 +1,9 @@
+package Model;
+
 import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
@@ -338,7 +339,7 @@ public class RegionRepresentation {
 			DataType dataType = null;
 			if 		(hdu.getBitPix() == -64) dataType = DataType.DOUBLE;
 			else if (hdu.getBitPix() == -32) dataType = DataType.FLOAT;
-			else throw new IOException("Whoops, no support forthat file format (BitPix = "+hdu.getBitPix()+") at the moment.  Floats and Doubles only sorry.");
+			else throw new IOException("Whoops, no support forthat file format (IO.BitPix = "+hdu.getBitPix()+") at the moment.  Floats and Doubles only sorry.");
 
 			int typeSize = Math.abs(hdu.getBitPix())/8;
 			float[] storagef = new float[sourceLengths[3]];

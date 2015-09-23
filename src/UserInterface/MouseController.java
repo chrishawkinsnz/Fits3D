@@ -1,8 +1,17 @@
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.List;
+package UserInterface;
 
+import Model.*;
+
+
+import java.awt.event.*;
+
+
+import Rendering.Renderer;
+import UserInterface.*;
+import Rendering.*;
+import Model.*;
+
+import javax.swing.*;
 
 public class MouseController implements MouseMotionListener, MouseListener, MouseWheelListener {
 
@@ -185,7 +194,7 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 			}
 			FrameMaster.getActivePointCloud().selectionDepthAttribute.notifyWithValue(newSize.z / FrameMaster.getActivePointCloud().volume.dp);
 			FrameMaster.getActivePointCloud().selectionDepthAttribute.updateAttributeDisplayer();
-//			FrameMaster.setNeedsDisplay();
+//			UserInterface.FrameMaster.setNeedsDisplay();
 		}
 		else {
 			this.viewer.addRadiusAmount((float)e.getWheelRotation() *0.1f);

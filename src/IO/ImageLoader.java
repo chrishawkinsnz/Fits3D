@@ -1,4 +1,5 @@
-import com.apple.eawt.Application;
+package IO;
+
 import com.sun.istack.internal.Nullable;
 
 import javax.imageio.ImageIO;

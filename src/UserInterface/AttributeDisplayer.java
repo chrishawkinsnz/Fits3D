@@ -1,3 +1,5 @@
+package UserInterface;
+
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 

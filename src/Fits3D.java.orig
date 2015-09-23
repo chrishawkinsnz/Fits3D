@@ -20,7 +20,7 @@ public class Fits3D {
 	        	System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Fits3D");	        	
 	        	System.setProperty("com.apple.mrj.application.apple.menu.about.version", "0.1");
 <<<<<<< Updated upstream
-				Application.getApplication().setDockIconImage(ImageLoader.loadImageNamed("stupidSpaceIcon.png"));
+				Application.getApplication().setDockIconImage(IO.ImageLoader.loadImageNamed("stupidSpaceIcon.png"));
 =======
 	        	BufferedImage img = null;
 	        	try {
@@ -49,7 +49,7 @@ public class Fits3D {
 	             System.out.println("UnsupportedLookAndFeelException: " + e.getMessage());
 	     }
 	 
-		 new FrameMaster();
+		 new UserInterface.FrameMaster();
 	}
 	static class IdealBlockSize {
 	    // You could alternatively use BufferedInputStream and System.in .
