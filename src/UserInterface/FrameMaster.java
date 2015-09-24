@@ -1,7 +1,13 @@
 package UserInterface;
 
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.dnd.*;
 import java.awt.event.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -43,6 +49,7 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 
 	//ACCESSOR
     public static FrameMaster singleton;
+	private final JPanel filePanel;
 
 	//MODEL
 	private AttributeProvider selectedAttributeProvider = null;
@@ -82,11 +89,62 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 		this.viewer = createViewer();
 
 		this.getContentPane().add(canvas, BorderLayout.CENTER);
-		this.getContentPane().add(makeFilePanel(), BorderLayout.WEST);
+		this.filePanel = makeFilePanel();
+		this.getContentPane().add(this.filePanel, BorderLayout.WEST);
 		this.getContentPane().add(makeAttributePanel(), BorderLayout.EAST);
 
 		bl.getLayoutComponent(BorderLayout.WEST).setBackground(Color.WHITE);
 
+		tree.setDropMode(DropMode.INSERT);
+		tree.setDropTarget(new DropTarget() {
+			private Color normalColor;
+			public synchronized void dragOver(DropTargetDragEvent dtde) {
+				super.dragOver(dtde);
+				Color highlightColor = new Color(213.0f/255.0f, 242.0f/255.0f, 211.0f/ 255.0f);
+				if (normalColor == null) {
+					normalColor = tree.getBackground();
+				}
+				tree.setBackground(highlightColor);
+			}
+
+			@Override
+			public synchronized void dragExit(DropTargetEvent dte) {
+				super.dragExit(dte);
+				if (normalColor != null) {
+					tree.setBackground(normalColor);
+				}
+			}
+
+				@Override
+			public synchronized void drop(DropTargetDropEvent dtde) {
+				if (normalColor != null) {
+					tree.setBackground(normalColor);
+				}
+				Transferable obj = dtde.getTransferable();
+				System.out.println(obj);
+				try {
+					dtde.acceptDrop(DnDConstants.ACTION_COPY_OR_MOVE);
+					Transferable t = dtde.getTransferable();
+					List fileList = null;
+					try {
+						fileList = (List) t
+								.getTransferData(DataFlavor.javaFileListFlavor);
+					} catch (UnsupportedFlavorException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					File f = (File) fileList.get(0);
+
+					FrameMaster.this.loadFile(f.getAbsolutePath());
+				}catch (Exception e) {
+					e.printStackTrace();
+				}
+
+			}
+		});
 		this.pack();
     }
 
@@ -630,6 +688,7 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 	 */
 	private void attachControlsToCanvas() {
 		MouseController mouseController = new MouseController(this.viewer, this.renderer);
+		
 		canvas.addMouseMotionListener(mouseController);
 		canvas.addMouseListener(mouseController);
 		canvas.addMouseWheelListener(mouseController);
