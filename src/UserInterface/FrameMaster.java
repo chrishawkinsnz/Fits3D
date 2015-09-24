@@ -98,9 +98,10 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 		tree.setDropMode(DropMode.INSERT);
 		tree.setDropTarget(new DropTarget() {
 			private Color normalColor;
+
 			public synchronized void dragOver(DropTargetDragEvent dtde) {
 				super.dragOver(dtde);
-				Color highlightColor = new Color(213.0f/255.0f, 242.0f/255.0f, 211.0f/ 255.0f);
+				Color highlightColor = new Color(213.0f / 255.0f, 242.0f / 255.0f, 211.0f / 255.0f);
 				if (normalColor == null) {
 					normalColor = tree.getBackground();
 				}
@@ -115,7 +116,7 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 				}
 			}
 
-				@Override
+			@Override
 			public synchronized void drop(DropTargetDropEvent dtde) {
 				if (normalColor != null) {
 					tree.setBackground(normalColor);
@@ -136,10 +137,14 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					File f = (File) fileList.get(0);
+					for (int i = 0; i < fileList.size(); i++) {
+						File f = (File) fileList.get(i);
+						FrameMaster.this.loadFile(f.getAbsolutePath());
+					}
 
-					FrameMaster.this.loadFile(f.getAbsolutePath());
-				}catch (Exception e) {
+
+
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 
@@ -274,6 +279,7 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 
 		JLabel label = new JLabel(attribute.displayName);
 		label.setFont(new Font("Dialog", Font.BOLD, 12));
+		label.setEnabled(attribute.isEnabled);
 		if (attributeDisplayer.shouldShowDisplayName()) {
 			attributPanel.add(label, formatString);
 		}
@@ -330,7 +336,7 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 
 		tree.setMinimumSize(new Dimension(240, 200));
 		tree.setPreferredSize(new Dimension(240, 2000));
-		tree.setBorder(BorderFactory.createTitledBorder("Fits Files"));
+		tree.setBorder(BorderFactory.createTitledBorder("Fits Files (Drop Here)"));
 
 		filePanel.add(tree);
 
@@ -400,12 +406,12 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 		cutItem.addActionListener(e -> this.cutSelection());
 		fileMenu.add(cutItem);
 
-		JMenuItem exportRegionItem = new JMenuItem("Export Model.Region");
+		JMenuItem exportRegionItem = new JMenuItem("Export Region");
 		setKeyboardShortcutTo(KeyEvent.VK_E, exportRegionItem);
 		exportRegionItem.addActionListener(e -> this.exportRegion());
 		fileMenu.add(exportRegionItem);
 
-		JMenuItem deleteCloudOrRegionItem = new JMenuItem("Delete Cloud/Model.Region");
+		JMenuItem deleteCloudOrRegionItem = new JMenuItem("Delete Cloud/Region");
 		deleteCloudOrRegionItem.addActionListener(e -> this.deleteCloudOrRegion());
 		fileMenu.add(deleteCloudOrRegionItem);
 

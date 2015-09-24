@@ -107,6 +107,6 @@ public class Selection implements AttributeProvider {
 
     @Override
     public String getName() {
-        return "Model.Selection";
+        return "Selection";
     }
 }

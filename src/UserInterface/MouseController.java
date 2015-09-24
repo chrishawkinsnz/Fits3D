@@ -39,6 +39,7 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 	public MouseController(WorldViewer viewer, Renderer renderer) {
 		this.viewer = viewer;
 		this.renderer = renderer;
+
 	}
 	
 	@Override
@@ -90,13 +91,14 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
+		System.out.println("clicked:"+e.getButton());
 		Selection selection = this.getSelection();
 		if (selection != null) {
 			if (selection.isActive()) {
 				selection.setActive(false);
 				this.renderer.mouseWorldPosition = null;
 				FrameMaster.setNeedsDisplay();
-			}
+				}
 			else if (!isCurrentlySelectingPlaneInPointClouds(e.getX(), e.getY())) {
 				for (PointCloud pc: this.renderer.pointClouds) {
 					pc.setShouldDisplaySlitherenated(false);

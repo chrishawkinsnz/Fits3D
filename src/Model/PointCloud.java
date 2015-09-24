@@ -8,7 +8,7 @@ import nom.tam.fits.Header;
 import nom.tam.fits.ImageHDU;
 
 import javax.swing.*;
-import java.awt.Color;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
@@ -154,6 +154,7 @@ public class PointCloud implements AttributeProvider {
 
 		this.selectionDepthAttribute = new Attribute.RangedAttribute("<html><font color="+AXES_COLOR_NAMES[2]+">dp</html>", 0f, 1f, 1f, false);
 		this.selectionDepthAttribute.callback = (obj) -> {
+	//--ignore me if currenntly positioning relative to something else
 			Vector3 oldOrigin = this.selection.getVolume().origin;
 			Vector3 oldSize = this.selection.getVolume().size;
 			float factor = (Float)obj;
@@ -168,7 +169,7 @@ public class PointCloud implements AttributeProvider {
 		this.selectionGrouping.addAttribute(this.selectionDepthAttribute,-4);
 
 
-		Attribute.Actchin cutAction = new Attribute.Actchin("Cut Model.Selection", false);
+		Attribute.Actchin cutAction = new Attribute.Actchin("Cut Selection", false);
 		cutAction.callback = obj -> {
 			FrameMaster.cutSelection();
 		};
@@ -770,7 +771,16 @@ public class PointCloud implements AttributeProvider {
 
 
 	public void setRelativeTo(PointCloud ppc) {
+
 		if (this.pointCloudPositionedRelativeTo != null) {
+			this.depth.isEnabled = true;
+
+
+
+			FrameMaster.setNeedsAttribtueDisplay();
+
+
+
 			this.pointCloudPositionedRelativeTo.pointCloudsPositionedRelativeToThisone.remove(this);
 		}
 		if (ppc == null) {
@@ -779,6 +789,16 @@ public class PointCloud implements AttributeProvider {
 			this.setVolume(startingVolume);
 		}
 		else {
+			this.depth.isEnabled = false;
+
+
+
+
+			FrameMaster.setNeedsAttribtueDisplay();
+
+
+
+
 			ppc.pointCloudsPositionedRelativeToThisone.add(this);
 			this.pointCloudPositionedRelativeTo = ppc;
 

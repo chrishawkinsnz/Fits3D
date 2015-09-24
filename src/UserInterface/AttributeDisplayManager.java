@@ -66,6 +66,9 @@ public class AttributeDisplayManager {
 		if (tweakable != null) {
 			attribute.setListener(tweakable);
 		}
+
+		tweakable.getComponent().setEnabled(attribute.isEnabled);
+
     	return tweakable;
     }
 

@@ -20,7 +20,7 @@ public abstract class Attribute {
 	public AttributeDisplayer listeningAttributeDisplayer;
 
 	public Consumer<Object>callback = (obj)->{};
-
+	public boolean isEnabled = true;
 	private Object savedState;
 	private Attribute(String displayName, boolean isAggregatable) {
 		this.displayName = displayName;

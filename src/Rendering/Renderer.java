@@ -566,7 +566,7 @@ public class Renderer {
 		float sz =  pointWidth < pointHeight ? pointWidth : pointHeight;
 		sz = sz < pointsDepth ? sz : pointsDepth;
 
-		return sz;
+		return sz ;//* 0.5f;
 	}
 
 
