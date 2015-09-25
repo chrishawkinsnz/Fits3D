@@ -41,14 +41,14 @@ public abstract class Tweakable implements  AttributeDisplayer{
 	 * @author chrishawkins
 	 *
 	 */
-	public static class Toggleable extends Tweakable implements ChangeListener, AttributeDisplayer {
+	public static class Toggleable extends Tweakable implements ActionListener, AttributeDisplayer {
 		public JCheckBox checkBox;
 		
 		public Toggleable(Attribute attribute, boolean isOn) {
 			super(attribute);
 			this.checkBox = new JCheckBox();
 			this.checkBox.setSelected(isOn);
-			this.checkBox.addChangeListener(this);
+			this.checkBox.addActionListener(this);
 		}
 		
 		@Override
@@ -63,10 +63,8 @@ public abstract class Tweakable implements  AttributeDisplayer{
 			this.checkBox.setSelected(b);
 		}
 
-		@Override
-		public void stateChanged(ChangeEvent e) {
-			notifyAttributes();
-		}
+
+
 
 		@Override
 		public JComponent getComponent() {
@@ -77,6 +75,15 @@ public abstract class Tweakable implements  AttributeDisplayer{
 		public boolean isDoubleLiner() {
 			return false;
 		}
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			notifyAttributes();
+
+			FrameMaster.setNeedsDisplay();
+		}
+
+
 	}
 	
 	/**
@@ -291,6 +298,8 @@ public abstract class Tweakable implements  AttributeDisplayer{
 			holder.add(christogram, "span 3");
 			holder.add(new JLabel("   Left/Right mouse to move bounds"),"span 3");
 			holder.add(new JLabel("            or enter bounds below"), "span 3");
+			holder.add(new JLabel("  (Shift click to move entire window)"), "span 3");
+
 			holder.add(this.textLeft);
 			holder.add(new JLabel("        to"));
 			holder.add(this.textRight);

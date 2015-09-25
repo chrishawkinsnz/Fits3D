@@ -280,6 +280,7 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 		JLabel label = new JLabel(attribute.displayName);
 		label.setFont(new Font("Dialog", Font.BOLD, 12));
 		label.setEnabled(attribute.isEnabled);
+		attribute.associatedLabel = label;
 		if (attributeDisplayer.shouldShowDisplayName()) {
 			attributPanel.add(label, formatString);
 		}

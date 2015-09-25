@@ -2,6 +2,7 @@ package Model;
 
 import UserInterface.Christogram;
 import UserInterface.FrameMaster;
+import com.sun.tools.doclint.HtmlTag;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
@@ -20,6 +21,7 @@ import java.util.List;
 public class PointCloud implements AttributeProvider {
 
 	public final Attribute.BinaryAttribute displaySlitherenated;
+	private Attribute.Actchin cutAction;
 	private Attribute.BinaryAttribute cyclingSlitherAttribute;
 	private Attribute.RangedAttribute slitherPositionAttribute;
 
@@ -97,6 +99,10 @@ public class PointCloud implements AttributeProvider {
 
 
 	public HashMap<AttributeProvider, Boolean> shouldDisplayAttributeProvider;
+
+	private boolean dontPushTheButtonTheSecondTimeOhGodDontLookAtMeWhatHaveIBecome = false;
+	private boolean lastSelectionSliceState = false;
+
 	public PointCloud(String pathName) {
 
 
@@ -130,6 +136,7 @@ public class PointCloud implements AttributeProvider {
 			this.cursorPosAttributes[i].callback = o -> {
 				numAttr.updateAttributeDisplayer();
 			};
+			this.cursorPosAttributes[i].isEnabled = false;
 
 			Attribute.NumberAttribute origAttr = new Attribute.NumberAttribute("orig "+ AXES_NAMES[i], false);
 			this.selectionOriginAttributes[i] =  origAttr;
@@ -137,6 +144,7 @@ public class PointCloud implements AttributeProvider {
 			this.selectionOriginAttributes[i].callback = o -> {
 				origAttr.updateAttributeDisplayer();
 			};
+			this.selectionOriginAttributes[i].isEnabled = false;
 
 			Attribute.NumberAttribute lenAttr = new Attribute.NumberAttribute("length "+ AXES_NAMES[i], false);
 			this.selectionLengthAttributes[i] =  lenAttr;
@@ -144,6 +152,7 @@ public class PointCloud implements AttributeProvider {
 			this.selectionLengthAttributes[i].callback = o -> {
 				lenAttr.updateAttributeDisplayer();
 			};
+			this.selectionLengthAttributes[i].isEnabled = false;
 
 
 
@@ -166,13 +175,15 @@ public class PointCloud implements AttributeProvider {
 			Volume volume = new Volume(oldOrigin, newSize);
 			this.selection.setVolume(volume);
 		};
+		this.selectionDepthAttribute.isEnabled = false;
 		this.selectionGrouping.addAttribute(this.selectionDepthAttribute,-4);
 
 
-		Attribute.Actchin cutAction = new Attribute.Actchin("Cut Selection", false);
+		this.cutAction = new Attribute.Actchin("Cut Selection", false);
 		cutAction.callback = obj -> {
 			FrameMaster.cutSelection();
 		};
+		cutAction.isEnabled = false;
 		this.selectionGrouping.addAttribute(cutAction, -10);
 
 
@@ -307,13 +318,36 @@ public class PointCloud implements AttributeProvider {
 			Volume volume = new Volume(newOrigin, oldSize);
 			this.selection.setVolume(volume);
 		};
+		this.slitherPositionAttribute.isEnabled = false;
 
 		this.filteringGrouping.addAttribute(this.slitherPositionAttribute, 21);
 
 		this.displaySlitherenated = new Attribute.BinaryAttribute("Select Slice", false, false);
+		//--why is the renderer not updateing
+		this.displaySlitherenated.callback = (obj) -> {
+			boolean newSelectionState = ((Boolean) obj).booleanValue();
+			System.out.println(newSelectionState);System.out.println("------------------");
 
 
-		this.filteringGrouping.addAttribute(displaySlitherenated, 20);
+			this.cyclingSlitherAttribute.isEnabled = newSelectionState;
+			this.cyclingSlitherAttribute.updateAttributeDisplayer();
+//
+			this.slitherPositionAttribute.isEnabled = newSelectionState;
+			this.slitherPositionAttribute.updateAttributeDisplayer();
+
+			this.selectionDepthAttribute.isEnabled = newSelectionState;
+			this.selectionDepthAttribute.updateAttributeDisplayer();
+
+			this.cutAction.isEnabled = newSelectionState;
+			this.cutAction.updateAttributeDisplayer();
+
+			this.setAttributesEndabled(PointCloud.this.cursorPosAttributes, newSelectionState);
+			this.setAttributesEndabled(PointCloud.this.selectionOriginAttributes, newSelectionState);
+			this.setAttributesEndabled(PointCloud.this.selectionLengthAttributes, newSelectionState);
+		};
+
+
+		this.filteringGrouping.addAttribute(displaySlitherenated, 100);
 
 		this.slitherCycleTimer = new Timer(16, new ActionListener() {
 			private boolean forward = true;
@@ -334,8 +368,8 @@ public class PointCloud implements AttributeProvider {
 			}
 		});
 
-		this.cyclingSlitherAttribute = new Attribute.BinaryAttribute("Cycle Slice", false, false);
-		this.filteringGrouping.addAttribute(this.cyclingSlitherAttribute, 17);
+		this.cyclingSlitherAttribute = new Attribute.BinaryAttribute("Cycle Slices", false, false);
+		this.filteringGrouping.addAttribute(this.cyclingSlitherAttribute, 40);
 
 		this.cyclingSlitherAttribute.callback = (obj) -> {
 			boolean on = ((Boolean)obj).booleanValue();
@@ -346,6 +380,7 @@ public class PointCloud implements AttributeProvider {
 				PointCloud.this.slitherCycleTimer.stop();
 			}
 		};
+		this.cyclingSlitherAttribute.isEnabled = false;
 
 		List<Object> possiblePairings = new ArrayList<>();
 		possiblePairings.add("-");
@@ -810,8 +845,17 @@ public class PointCloud implements AttributeProvider {
 
 			Volume newVolume = new Volume(displayOrigin, displaySize);
 			this.setVolume(newVolume);
+
 		}
 	}
+
+	public void setAttributesEndabled(Attribute[]attributes, boolean isEnabled) {
+		for (Attribute attribute : attributes) {
+			attribute.isEnabled = isEnabled;
+			attribute.updateAttributeDisplayer();
+		}
+	}
+
 
 
 

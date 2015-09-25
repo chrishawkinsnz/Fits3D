@@ -10,6 +10,8 @@ import UserInterface.*;
 import Rendering.*;
 import Model.*;
 
+import javax.swing.*;
+
 public abstract class Attribute {
 	public String displayName;
 	public boolean isAggregatable;
@@ -18,6 +20,7 @@ public abstract class Attribute {
 	private Object value;
 
 	public AttributeDisplayer listeningAttributeDisplayer;
+	public JLabel associatedLabel;
 
 	public Consumer<Object>callback = (obj)->{};
 	public boolean isEnabled = true;
@@ -62,7 +65,12 @@ public abstract class Attribute {
 	}
 
 	public void updateAttributeDisplayer() {
+
 		this.listeningAttributeDisplayer.beNotifiedWithValue(this.getValue());
+		this.listeningAttributeDisplayer.getComponent().setEnabled(this.isEnabled);
+		if (this.associatedLabel != null) {
+			this.associatedLabel.setEnabled(this.isEnabled);
+		}
 	}
 
 	public static class NumberAttribute extends Attribute {
@@ -105,6 +113,10 @@ public abstract class Attribute {
 		@Override
 		public void updateAttributeDisplayer() {
 			this.listeningAttributeDisplayer.beNotifiedWithValue(this.displayString());
+			this.listeningAttributeDisplayer.getComponent().setEnabled(this.isEnabled);
+			if (this.associatedLabel != null) {
+				this.associatedLabel.setEnabled(this.isEnabled);
+			}
 		}
 	}
 	public static class RangedAttribute extends Attribute {
