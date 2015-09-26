@@ -106,55 +106,7 @@ public class Renderer {
 		this.valueBufferHandles = new int[nSlices];
 		int index = 0;
 
-		for (PointCloud cloud : this.pointClouds){
-			for (Region cr : cloud.getRegions()) {
-				for (VertexBufferSlice vbs : cr.getSlices()) {
-//					rebindSliceBuffers(vbs, index);
-
-					int[] ptr = new int[2];
-					gl.glGenBuffers(2, ptr, 0);
-					this.vertexBufferHandles[index] = ptr[0];
-					vbs.index = index;
-					vbs.isLive = true;
-					vbs.scratchPts = vbs.numberOfPts;
-
-					boolean newStyle = false;
-					if (newStyle) {
-						Christogram.ChristogramSelection christogramSelection = vbs.cloud.getFilter();
-						float minValX = christogramSelection.minX;
-						float maxValX = christogramSelection.maxX;
-
-						FloatBuffer newValueBuffer = FloatBuffer.allocate(vbs.numberOfPts);
-						ShortBuffer newVertBuffer = ShortBuffer.allocate(vbs.numberOfPts * 3);
-						for (int i = 0; i < vbs.numberOfPts; i++) {
-							float val = vbs.valueBuffer.get(i);
-							if (val >= minValX && val < maxValX) {
-								newValueBuffer.put(val);
-								newVertBuffer.put(vbs.vertexBuffer.get(i * 3));
-								newVertBuffer.put(vbs.vertexBuffer.get(i * 3 + 1));
-								newVertBuffer.put(vbs.vertexBuffer.get(i * 3 + 2));
-							}
-
-						}
-
-
-						newValueBuffer.flip();
-					}
-					else {
-						FloatBuffer valueBuffer = vbs.valueBuffer;
-						this.valueBufferHandles[index] = ptr[1];
-
-						ShortBuffer vertBuffer = vbs.vertexBuffer;
-						gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBufferHandles[index]);
-						gl.glBufferData(GL_ARRAY_BUFFER, vertBuffer.capacity() * 2, vertBuffer, GL_STATIC_DRAW);
-
-						gl.glBindBuffer(GL_ARRAY_BUFFER, this.valueBufferHandles[index]);
-						gl.glBufferData(GL_ARRAY_BUFFER, valueBuffer.capacity() * 4, valueBuffer, GL_STATIC_DRAW);
-					}
-					index++;
-				}
-			}
-		}
+		rebindAllSlices(true);
 
 		this.shaderProgram = ShaderHelper.programWithShaders2(gl, "shaderCloud.vert", "shaderCloud.frag");
 
@@ -380,11 +332,22 @@ public class Renderer {
 
 		if (freshBufferesPlox) {
 			rebindAllSlices(true);
-			gl.glEnableVertexAttribArray(0);
-			gl.glDisableVertexAttribArray(1);
+//			gl.glEnableVertexAttribArray(0);
+//			gl.glDisableVertexAttribArray(1);
+//
+//			gl.glFlush();
+//			return;
 
-			gl.glFlush();
-			return;
+		}
+		boolean atleastSomeDirty = false;
+		for (PointCloud pc: this.pointClouds) {
+			if (pc.dirtyFilter) {
+				atleastSomeDirty = true;
+				pc.dirtyFilter = false;
+			}
+		}
+		if (atleastSomeDirty) {
+			rebindAllSlices(true);
 
 		}
 
@@ -640,16 +603,23 @@ public class Renderer {
 		int index = 0;
 
 		for (PointCloud cloud : this.pointClouds){
-			for (Region cr : cloud.getRegions()) {
-				for (VertexBufferSlice vbs : cr.getSlices()) {
-					vbs.cloud = cloud;
-					rebindSliceBuffers(vbs, index, applyFilter);
-					index++;
-				}
-			}
+			index = rebindCloud(cloud, index, applyFilter);
+
 		}
 		System.out.println("rebinding slices");
 		freshBufferesPlox = false;
+	}
+
+	public int rebindCloud(PointCloud cloud,int index, boolean applyFilter) {
+		int steps = 0;
+		for (Region cr : cloud.getRegions()) {
+			for (VertexBufferSlice vbs : cr.getSlices()) {
+				vbs.cloud = cloud;
+				rebindSliceBuffers(vbs, steps + index, applyFilter);
+				steps++;
+			}
+		}
+		return steps+index;
 	}
 	public void rebindSliceBuffers(VertexBufferSlice vbs, int index, boolean applyFilter) {
 		int[] ptr = new int[2];
