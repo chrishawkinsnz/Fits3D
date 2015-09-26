@@ -378,6 +378,7 @@ public class Renderer {
 
 		PointCloud lastCloud = null;
 		Region lastRegion = null;
+		float ptArea = -1.0f;
 		for (int i = 0; i < allSlicesLikeEver.size(); i++){
 			
 			//-if Z is now pointing out of the screen take slices from the back of the list forward
@@ -392,7 +393,11 @@ public class Renderer {
 			if (region == null || cloud == null) {
 				return;
 			}
-			gl.glUniform1f(this.uniformAlphaFudgeHandle, region.intensity.getValue() * cloud.intensity.getValue());
+			if (ptArea == -1.0f) {
+				float pointRadius = this.calculatePointRadiusInPixelsForSlice(slice) * 1.0f / this.viewer.getRadius();
+				ptArea = 0.5f * pointRadius * pointRadius * (float) Math.PI;
+			}
+			gl.glUniform1f(this.uniformAlphaFudgeHandle, region.intensity.getValue() * cloud.intensity.getValue() * Math.min(ptArea, 1.0f));
 
 			if (cloud.shouldDisplaySlitherenated() && !cloud.getSelection().isActive()) {
 				gl.glUniform1i(uniformIsSelecting, GL_TRUE);
@@ -430,6 +435,8 @@ public class Renderer {
 				float gradient = (christogramSelection.maxY - christogramSelection.minY) / (christogramSelection.maxX - christogramSelection.minX);
 				float constant = christogramSelection.minY - gradient * christogramSelection.minX;
 
+				gradient *= cloud.intensity.getValue();
+				constant *= cloud.intensity.getValue();
 				gl.glUniform1f(this.uniformFilterGradient, gradient);
 				gl.glUniform1f(this.uniformFilterConstant, constant);
 
@@ -478,9 +485,9 @@ public class Renderer {
 
 				//--calculate the point radius
 				float pointRadius = this.calculatePointRadiusInPixelsForSlice(slice) * 1.0f / this.viewer.getRadius();
-				float ptArea = 0.5f * pointRadius * pointRadius * (float) Math.PI;
+				ptArea = 0.5f * pointRadius * pointRadius * (float) Math.PI;
 				gl.glPointSize(Math.max(pointRadius, 1f));
-				gl.glUniform1f(this.uniformPointAreaHandle, ptArea);
+//				gl.glUniform1f(this.uniformPointAreaHandle, ptArea);
 			}
 
 	    	Matrix4 m = new Matrix4();
@@ -564,7 +571,7 @@ public class Renderer {
 		float pointsDepth = (float)this.width* WorldViewer.orthoWidth* cr.getVolume().dp / (float)cr.getDepthInPoints();
 
 		float sz =  pointWidth < pointHeight ? pointWidth : pointHeight;
-		sz = sz < pointsDepth ? sz : pointsDepth;
+//		sz = sz < pointsDepth ? sz : pointsDepth;
 
 		return sz ;//* 0.5f;
 	}

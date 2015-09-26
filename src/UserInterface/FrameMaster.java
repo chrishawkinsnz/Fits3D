@@ -44,7 +44,7 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 
 	//FLAGS
 	private static final boolean debug = true;
-	private static boolean vain = false;
+	private static boolean vain = true;
 	static boolean rendererNeedsFreshPointClouds = false;
 
 	//ACCESSOR
