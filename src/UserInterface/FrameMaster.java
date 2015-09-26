@@ -44,7 +44,7 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 
 	//FLAGS
 	private static final boolean debug = true;
-	private static boolean vain = true;
+	private static boolean vain = false;
 	static boolean rendererNeedsFreshPointClouds = false;
 
 	//ACCESSOR
@@ -814,8 +814,6 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 		if (e.getKeyCode() == KeyEvent.VK_DELETE || e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
 			deleteCloudOrRegion();
 		}
-		else if (e.getKeyCode() == KeyEvent.VK_B) {
-			Renderer.freshBufferesPlox = true;
-		}
+
 	}
 }

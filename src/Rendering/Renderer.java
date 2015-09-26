@@ -86,7 +86,8 @@ public class Renderer {
 
 	public Vector3 mouseWorldPosition;
 
-	public static boolean freshBufferesPlox = false;
+	public static boolean getFat = false;
+	public static boolean cutTheFat = false;
 
 	public Renderer(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl){
 		setupWith(pointClouds, viewer, gl);
@@ -310,8 +311,7 @@ public class Renderer {
 	public void display() {
 		long delta = System.nanoTime() - lastTime;
 		lastFrameDelta = delta / 1000_000;
-		System.out.println(lastFrameDelta);
-		printFps();
+//		printFps();
 
 		gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl.glUseProgram(this.shaderProgram);
@@ -330,26 +330,15 @@ public class Renderer {
 
 		List<VertexBufferSlice> allSlicesLikeEver = new ArrayList<VertexBufferSlice>();
 
-		if (freshBufferesPlox) {
+		if (getFat) {
+			rebindAllSlices(false);
+			getFat = false;
+		}
+		else if (cutTheFat){
 			rebindAllSlices(true);
-//			gl.glEnableVertexAttribArray(0);
-//			gl.glDisableVertexAttribArray(1);
-//
-//			gl.glFlush();
-//			return;
+			cutTheFat = false;
+		}
 
-		}
-		boolean atleastSomeDirty = false;
-		for (PointCloud pc: this.pointClouds) {
-			if (pc.dirtyFilter) {
-				atleastSomeDirty = true;
-				pc.dirtyFilter = false;
-			}
-		}
-		if (atleastSomeDirty) {
-			rebindAllSlices(true);
-
-		}
 
 
 		for (PointCloud cloud : this.pointClouds){
@@ -607,7 +596,6 @@ public class Renderer {
 
 		}
 		System.out.println("rebinding slices");
-		freshBufferesPlox = false;
 	}
 
 	public int rebindCloud(PointCloud cloud,int index, boolean applyFilter) {
@@ -676,6 +664,7 @@ public class Renderer {
 
 			gl.glBindBuffer(GL_ARRAY_BUFFER, this.valueBufferHandles[index]);
 			gl.glBufferData(GL_ARRAY_BUFFER, valueBuffer.capacity() * 4, valueBuffer, GL_STATIC_DRAW);
+			vbs.scratchPts = vbs.numberOfPts;
 		}
 	}
 }

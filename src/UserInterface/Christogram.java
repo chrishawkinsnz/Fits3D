@@ -1,5 +1,7 @@
 package UserInterface;
 
+import Rendering.Renderer;
+
 import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -290,8 +292,11 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	private ChangeListener changeListener;
 	@Override
 	public void mousePressed(MouseEvent e) {
+		Renderer.getFat  = true;
+
 		if (e.isShiftDown()) {
 			this.startShiftDrag = proportionAtPixelX(e.getX());
+
 		}
 		else {
 			float selectionX = proportionAtPixelX(e.getX());
@@ -303,12 +308,16 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 
 			this.selection.updateWithXBounds(this.selection.minX, this.selection.maxX);
 			this.changeListener.stateChanged(new ChangeEvent(this));
+
+
+
 			this.repaint();
 		}
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
+		Renderer.cutTheFat = true;
 	}
 
 	@Override

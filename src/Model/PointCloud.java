@@ -45,7 +45,7 @@ public class PointCloud implements AttributeProvider {
 	private final static float 		BOX_ORIGIN_Z 		= -0.5f * BOX_DEPTH;
 	private final Timer waxisTimer;
 
-	public boolean dirtyFilter = false;
+//	public boolean dirtyFilter = false;
 
 	public List<PointCloud>pointCloudsPositionedRelativeToThisone = new ArrayList<>();
 	public PointCloud pointCloudPositionedRelativeTo;
@@ -251,10 +251,10 @@ public class PointCloud implements AttributeProvider {
 		Christogram.ChristogramSelection data = new Christogram.ChristogramSelection(0f, 1f, 0f, 1f, false);
 		filterSelection = new Attribute.FilterSelectionAttribute("Value Filter", false, data);
 		filterSelection.setPointCloud(this);
-		filterSelection.callback = (obj) -> {
-			System.out.println("Callback from filter");
-			this.dirtyFilter = true;
-		};
+//		filterSelection.callback = (obj) -> {
+//			System.out.println("Callback from filter");
+//			this.dirtyFilter = true;
+//		};
 
 
 		this.filteringGrouping.addAttribute(filterSelection, 100);
