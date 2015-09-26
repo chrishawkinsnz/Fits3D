@@ -163,7 +163,7 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 	//==================================================================================================================
 
     private void showOpenDialog() {
-		FileDialog fd = new FileDialog(this, "Save File", FileDialog.LOAD);
+		FileDialog fd = new FileDialog(this, "Open File", FileDialog.LOAD);
 		fd.setVisible(true);
 
 		fd.setMultipleMode(false);
@@ -559,7 +559,7 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 
 		if (parentCloud != null) {
 
-			FileDialog fd = new FileDialog(FrameMaster.singleton, "Open File", FileDialog.SAVE);
+			FileDialog fd = new FileDialog(FrameMaster.singleton, "Save File", FileDialog.SAVE);
 			fd.setVisible(true);
 			fd.setMultipleMode(false);
 			if (fd.getFiles().length > 0) {
