@@ -86,6 +86,7 @@ public class Renderer {
 
 	public Vector3 mouseWorldPosition;
 
+	public static boolean freshBufferesPlox = false;
 
 	public Renderer(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl){
 		setupWith(pointClouds, viewer, gl);
@@ -104,23 +105,52 @@ public class Renderer {
 		this.vertexBufferHandles = new int[nSlices];
 		this.valueBufferHandles = new int[nSlices];
 		int index = 0;
-		int[] ptr = new int[2];
+
 		for (PointCloud cloud : this.pointClouds){
 			for (Region cr : cloud.getRegions()) {
 				for (VertexBufferSlice vbs : cr.getSlices()) {
+//					rebindSliceBuffers(vbs, index);
+
+					int[] ptr = new int[2];
 					gl.glGenBuffers(2, ptr, 0);
 					this.vertexBufferHandles[index] = ptr[0];
 					vbs.index = index;
 					vbs.isLive = true;
+					vbs.scratchPts = vbs.numberOfPts;
 
-					ShortBuffer vertBuffer = vbs.vertexBuffer;
-					gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBufferHandles[index]);
-					gl.glBufferData(GL_ARRAY_BUFFER, vertBuffer.capacity() * 2, vertBuffer, GL_STATIC_DRAW);
+					boolean newStyle = false;
+					if (newStyle) {
+						Christogram.ChristogramSelection christogramSelection = vbs.cloud.getFilter();
+						float minValX = christogramSelection.minX;
+						float maxValX = christogramSelection.maxX;
 
-					FloatBuffer valueBuffer = vbs.valueBuffer;
-					this.valueBufferHandles[index] = ptr[1];
-					gl.glBindBuffer(GL_ARRAY_BUFFER, this.valueBufferHandles[index]);
-					gl.glBufferData(GL_ARRAY_BUFFER, valueBuffer.capacity() * 4, valueBuffer, GL_STATIC_DRAW);
+						FloatBuffer newValueBuffer = FloatBuffer.allocate(vbs.numberOfPts);
+						ShortBuffer newVertBuffer = ShortBuffer.allocate(vbs.numberOfPts * 3);
+						for (int i = 0; i < vbs.numberOfPts; i++) {
+							float val = vbs.valueBuffer.get(i);
+							if (val >= minValX && val < maxValX) {
+								newValueBuffer.put(val);
+								newVertBuffer.put(vbs.vertexBuffer.get(i * 3));
+								newVertBuffer.put(vbs.vertexBuffer.get(i * 3 + 1));
+								newVertBuffer.put(vbs.vertexBuffer.get(i * 3 + 2));
+							}
+
+						}
+
+
+						newValueBuffer.flip();
+					}
+					else {
+						FloatBuffer valueBuffer = vbs.valueBuffer;
+						this.valueBufferHandles[index] = ptr[1];
+
+						ShortBuffer vertBuffer = vbs.vertexBuffer;
+						gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBufferHandles[index]);
+						gl.glBufferData(GL_ARRAY_BUFFER, vertBuffer.capacity() * 2, vertBuffer, GL_STATIC_DRAW);
+
+						gl.glBindBuffer(GL_ARRAY_BUFFER, this.valueBufferHandles[index]);
+						gl.glBufferData(GL_ARRAY_BUFFER, valueBuffer.capacity() * 4, valueBuffer, GL_STATIC_DRAW);
+					}
 					index++;
 				}
 			}
@@ -348,6 +378,15 @@ public class Renderer {
 
 		List<VertexBufferSlice> allSlicesLikeEver = new ArrayList<VertexBufferSlice>();
 
+		if (freshBufferesPlox) {
+			rebindAllSlices(true);
+			gl.glEnableVertexAttribArray(0);
+			gl.glDisableVertexAttribArray(1);
+
+			gl.glFlush();
+			return;
+
+		}
 
 
 		for (PointCloud cloud : this.pointClouds){
@@ -507,7 +546,7 @@ public class Renderer {
 	    	gl.glBindBuffer(GL_ARRAY_BUFFER, valueBufferHandles[slice.index]);
 	    	gl.glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
 	    	
-	    	gl.glDrawArrays(GL_POINTS, 0, slice.numberOfPts);
+	    	gl.glDrawArrays(GL_POINTS, 0, slice.scratchPts);
 
 			lastCloud = cloud;
 			lastRegion = region;
@@ -590,4 +629,83 @@ public class Renderer {
 		}
 	}
 
+	public void rebindAllSlices(boolean applyFilter) {
+		int nSlices = 0;
+		for (PointCloud cloud : this.pointClouds)
+			for (Region cr : cloud.getRegions())
+				nSlices += cr.getSlices().size();
+
+		this.vertexBufferHandles = new int[nSlices];
+		this.valueBufferHandles = new int[nSlices];
+		int index = 0;
+
+		for (PointCloud cloud : this.pointClouds){
+			for (Region cr : cloud.getRegions()) {
+				for (VertexBufferSlice vbs : cr.getSlices()) {
+					vbs.cloud = cloud;
+					rebindSliceBuffers(vbs, index, applyFilter);
+					index++;
+				}
+			}
+		}
+		System.out.println("rebinding slices");
+		freshBufferesPlox = false;
+	}
+	public void rebindSliceBuffers(VertexBufferSlice vbs, int index, boolean applyFilter) {
+		int[] ptr = new int[2];
+		gl.glGenBuffers(2, ptr, 0);
+		this.vertexBufferHandles[index] = ptr[0];
+		vbs.index = index;
+		vbs.isLive = true;
+
+
+
+
+
+		boolean newStyle = true;
+		if (applyFilter) {
+
+			Christogram.ChristogramSelection christogramSelection = vbs.cloud.getFilter();
+			float 	minValX = christogramSelection.minX;
+			float maxValX = christogramSelection.maxX;
+
+			FloatBuffer newValueBuffer = FloatBuffer.allocate(vbs.numberOfPts);
+			ShortBuffer newVertBuffer = ShortBuffer.allocate(vbs.numberOfPts * 3);
+			int numPts = 0;
+			for (int i = 0; i < vbs.numberOfPts; i++) {
+				float val = vbs.valueBuffer.get(i);
+				if (val >= minValX && val < maxValX) {
+					numPts ++;
+					newValueBuffer.put(val);
+					newVertBuffer.put(vbs.vertexBuffer.get(i * 3));
+					newVertBuffer.put(vbs.vertexBuffer.get(i * 3 + 1));
+					newVertBuffer.put(vbs.vertexBuffer.get(i * 3 + 2));
+				}
+
+			}
+			newValueBuffer.flip();
+			newVertBuffer.flip();
+
+			FloatBuffer valueBuffer = vbs.valueBuffer;
+			this.valueBufferHandles[index] = ptr[1];
+
+			gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBufferHandles[index]);
+			gl.glBufferData(GL_ARRAY_BUFFER, numPts * 2 * 3, newVertBuffer, GL_STATIC_DRAW);
+
+			gl.glBindBuffer(GL_ARRAY_BUFFER, this.valueBufferHandles[index]);
+			gl.glBufferData(GL_ARRAY_BUFFER, numPts * 4, newValueBuffer, GL_STATIC_DRAW);
+			vbs.scratchPts = numPts;
+		}
+		else {
+			FloatBuffer valueBuffer = vbs.valueBuffer;
+			this.valueBufferHandles[index] = ptr[1];
+
+			ShortBuffer vertBuffer = vbs.vertexBuffer;
+			gl.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBufferHandles[index]);
+			gl.glBufferData(GL_ARRAY_BUFFER, vertBuffer.capacity() * 2, vertBuffer, GL_STATIC_DRAW);
+
+			gl.glBindBuffer(GL_ARRAY_BUFFER, this.valueBufferHandles[index]);
+			gl.glBufferData(GL_ARRAY_BUFFER, valueBuffer.capacity() * 4, valueBuffer, GL_STATIC_DRAW);
+		}
+	}
 }

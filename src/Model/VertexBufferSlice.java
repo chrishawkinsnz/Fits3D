@@ -17,6 +17,7 @@ public class VertexBufferSlice {
 	public Region region;						//The parent region
 	public PointCloud cloud;					//The parent cloud
 	public boolean isLive = false;				//--a variable indicating the slice is live and loaded in the renderer
+	public int scratchPts = 0;
 
 	public float getOverallZ() {
 		return (region.getVolume().z + region.getVolume().dp * z) * cloud.volume.dp + cloud.volume.z;
