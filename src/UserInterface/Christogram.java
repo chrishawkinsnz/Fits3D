@@ -33,6 +33,10 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 
 	private float startShiftDrag = 0f;
 
+	public Timer getCutTheFatTimer() {
+		return cutTheFatTimer;
+	}
+
 	private Timer cutTheFatTimer;
 	private ChristogramSelection selection;
 
@@ -62,6 +66,17 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		this.selection = ChristogramSelection.distributionWithLinearIncrease(0f, 1f);
 		this.selection.minX = this.min;
 		this.selection.maxX = this.max;
+
+		cutTheFatTimer = new Timer(3000, new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("cutting the fat from the timer");
+				Renderer.cutTheFat = true;
+				Renderer.getFat = false;
+				FrameMaster.setNeedsDisplay();
+			}
+
+		});
 	}
 
 	/**
@@ -80,6 +95,17 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		this.addMouseMotionListener(this);
 		this.addMouseListener(this);
 		this.selection = ChristogramSelection.distributionWithLinearIncrease(0f, 1f);
+
+		cutTheFatTimer = new Timer(3000, new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("cutting the fat from the timer");
+				Renderer.cutTheFat = true;
+				Renderer.getFat = false;
+				FrameMaster.setNeedsDisplay();
+			}
+
+		});
 	}
 	
 	
@@ -323,16 +349,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		cutTheFatTimer = new Timer(3000, new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				System.out.println("cutting the fat from the timer");
-				Renderer.cutTheFat = true;
-				Renderer.getFat = false;
-				FrameMaster.setNeedsDisplay();
-			}
 
-		});
 		cutTheFatTimer.setRepeats(false);
 		cutTheFatTimer.start();
 	}
