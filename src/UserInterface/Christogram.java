@@ -6,12 +6,10 @@ import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
+import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 
-import javax.swing.JComponent;
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -38,6 +36,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 
 	private float startShiftDrag = 0f;
 
+	private Timer cutTheFatTimer;
 	private ChristogramSelection selection;
 
 	/**
@@ -257,7 +256,6 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 
 	@Override
 	public void mouseDragged(MouseEvent e) {
-		System.out.println("mouseDrag:"+e.getButton());
 		float selectionX = proportionAtPixelX(e.getX());
 		if (e.isShiftDown()) {
 			float proportionDifference = selectionX -startShiftDrag;
@@ -292,7 +290,15 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	private ChangeListener changeListener;
 	@Override
 	public void mousePressed(MouseEvent e) {
-		Renderer.getFat  = true;
+		if (this.cutTheFatTimer!=null && this.cutTheFatTimer.isRunning()) {
+			this.cutTheFatTimer.stop();
+			System.out.println("aborting cutting the fat");
+		}
+		else {
+			Renderer.getFat  = true;
+			System.out.println("getting fat");
+		}
+
 
 		if (e.isShiftDown()) {
 			this.startShiftDrag = proportionAtPixelX(e.getX());
@@ -317,7 +323,16 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		Renderer.cutTheFat = true;
+		cutTheFatTimer = new Timer(3000, new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("cutting the fat from the timer");
+				Renderer.cutTheFat = true;
+			}
+
+		});
+		cutTheFatTimer.setRepeats(false);
+		cutTheFatTimer.start();
 	}
 
 	@Override
