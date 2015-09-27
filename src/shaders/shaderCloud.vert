@@ -48,9 +48,9 @@ void main() {
 
     if (value < filterMinX || value > filterMaxX) {
 		chuckIt = 1.0f;
-		return;
+
 	}
-	else {
+		else {
 	    chuckIt = 0.0f;
 	}
 
