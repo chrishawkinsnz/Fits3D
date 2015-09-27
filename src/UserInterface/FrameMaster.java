@@ -122,7 +122,6 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 					tree.setBackground(normalColor);
 				}
 				Transferable obj = dtde.getTransferable();
-				System.out.println(obj);
 				try {
 					dtde.acceptDrop(DnDConstants.ACTION_COPY_OR_MOVE);
 					Transferable t = dtde.getTransferable();

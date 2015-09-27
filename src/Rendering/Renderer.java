@@ -562,7 +562,7 @@ public class Renderer {
 		float pointsDepth = (float)this.width* WorldViewer.orthoWidth* cr.getVolume().dp / (float)cr.getDepthInPoints();
 
 		float sz =  pointWidth < pointHeight ? pointWidth : pointHeight;
-//		sz = sz < pointsDepth ? sz : pointsDepth;
+		sz = sz < pointsDepth ? sz : pointsDepth;
 
 		return sz ;//* 0.5f;
 	}
@@ -595,7 +595,7 @@ public class Renderer {
 			index = rebindCloud(cloud, index, applyFilter);
 
 		}
-		System.out.println("rebinding slices");
+		System.out.println("rebinding slices - filtered: " + applyFilter);
 	}
 
 	public int rebindCloud(PointCloud cloud,int index, boolean applyFilter) {

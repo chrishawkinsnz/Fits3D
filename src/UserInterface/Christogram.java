@@ -2,10 +2,7 @@ package UserInterface;
 
 import Rendering.Renderer;
 
-import java.awt.Color;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 
@@ -292,11 +289,14 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	public void mousePressed(MouseEvent e) {
 		if (this.cutTheFatTimer!=null && this.cutTheFatTimer.isRunning()) {
 			this.cutTheFatTimer.stop();
+			Renderer.cutTheFat = false;
 			System.out.println("aborting cutting the fat");
 		}
 		else {
 			Renderer.getFat  = true;
+			Renderer.cutTheFat = false;
 			System.out.println("getting fat");
+			FrameMaster.setNeedsDisplay();
 		}
 
 
@@ -328,6 +328,8 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 			public void actionPerformed(ActionEvent e) {
 				System.out.println("cutting the fat from the timer");
 				Renderer.cutTheFat = true;
+				Renderer.getFat = false;
+				FrameMaster.setNeedsDisplay();
 			}
 
 		});

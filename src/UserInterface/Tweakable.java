@@ -324,7 +324,6 @@ public abstract class Tweakable implements  AttributeDisplayer{
 		}
 		
 		public void stateChanged(ChangeEvent e) {
-			System.out.println(e.getSource());
 			if (e.getSource() instanceof Christogram) {
 				String leftText = "" + this.christogram.getSelection().minX;
 				if (leftText.length() > 7) {
