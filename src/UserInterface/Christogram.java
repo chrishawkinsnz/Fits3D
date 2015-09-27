@@ -28,9 +28,6 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 	private float min = 0.0f;
 	private float max = 0.0f;
 
-	private final int LEFT_BUTTON = 1;
-	private final int RIGHT_BUTTON = 3;
-
 	private float startShiftDrag = 0f;
 
 	public Timer getCutTheFatTimer() {
@@ -279,6 +276,7 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 
 	@Override
 	public void mouseDragged(MouseEvent e) {
+		System.out.println("mouse dragged:" + e);
 		float selectionX = proportionAtPixelX(e.getX());
 		if (e.isShiftDown()) {
 			float proportionDifference = selectionX -startShiftDrag;
@@ -288,10 +286,9 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 
 		}
 		else {
-
-			if (e.getButton() == LEFT_BUTTON) {
+			if (SwingUtilities.isLeftMouseButton(e)) {
 				this.selection.minX = selectionX;
-			} else if (e.getButton() == RIGHT_BUTTON) {
+			} if (SwingUtilities.isRightMouseButton(e)) {
 				this.selection.maxX = selectionX;
 			}
 
@@ -332,9 +329,9 @@ public class Christogram extends JComponent implements MouseMotionListener, Mous
 		}
 		else {
 			float selectionX = proportionAtPixelX(e.getX());
-			if (e.getButton() == LEFT_BUTTON) {
+			if (SwingUtilities.isLeftMouseButton(e)) {
 				this.selection.minX = selectionX;
-			} else if (e.getButton() == RIGHT_BUTTON) {
+			} else if (SwingUtilities.isRightMouseButton(e)) {
 				this.selection.maxX = selectionX;
 			}
 

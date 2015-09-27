@@ -14,7 +14,8 @@ uniform int isSelecting;
 
 void main(){
 	if (chuckIt > 0.0f) {
-    	discard;
+
+   	discard;
     }
 
     color = pointColor;
