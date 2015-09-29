@@ -31,6 +31,8 @@ public class WorldViewer {
 	public final float minRadius = 0.5f;
 	public final float maxRadius = 10f;
 
+	private Timer animationTimer = null;
+
 	public void addySpin(float addition) {
 		if (addition > 0 && this.ySpin > yMax)
 			return;
@@ -90,11 +92,82 @@ public class WorldViewer {
 
 	}
 
+	private Region lastRegion = null;
+	private PointCloud lastCloud = null;
+	private float animationFraction = 1f;
+	private float animationTime = 0f;
+	private final float targetAnimationLength = 0.4f;
+	private long animationStart;
 	/**
 	 * Gets a copy of the rotation matrix for the current viewer.
 	 * @return The Rotation Matrix for the view
 	 */
 	public Matrix4 getBaseMatrix() {
+		PointCloud cloud = FrameMaster.getActivePointCloud();
+		Region region = FrameMaster.getActiveRegion();
+
+		if (lastCloud == null) {
+			lastCloud = cloud;
+			lastRegion = region;
+		}
+		if ((lastRegion != region || lastCloud != cloud) && (this.animationTimer == null || !this.animationTimer.isRunning())) {
+
+			this.animationStart = System.currentTimeMillis();
+			if (this.animationTimer != null) {
+				this.animationTimer.stop();
+			}
+			this.animationFraction = 0.0f;
+			this.animationTimer = new Timer(16, new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					long animationNow = System.currentTimeMillis();
+					float currentAnimLength = (float)(animationNow - animationStart)/1000f;
+
+
+
+
+					animationFraction = currentAnimLength / targetAnimationLength;
+					System.out.println(animationFraction);
+					FrameMaster.setNeedsDisplay();
+					if (animationFraction > 1.0f) {
+						animationFraction = 1.0f;
+						lastCloud = cloud;
+						lastRegion = region;
+						((Timer)e.getSource()).stop();
+					}
+				}
+			});
+			this.animationTimer.start();
+		}
+
+		Matrix4 baseMatrix = getBaseMatrixRelativeTo(cloud, region);
+
+		return baseMatrix;
+//		Matrix4 baseMatrix = new Matrix4();
+//		baseMatrix.makeOrtho(orthoOrigX - orthoWidth, orthoOrigX + orthoWidth, orthoOrigY - orthoHeight, orthoOrigY + orthoHeight, -6f, 6f);
+//
+//		baseMatrix.rotate(this.getySpin(), 1f, 0f, 0f);
+//		baseMatrix.rotate(this.getxSpin(), 0f, 1f, 0f);
+//		float baseScale = 1.0f / this.getRadius();
+//		baseMatrix.scale(baseScale, baseScale, baseScale);
+//		baseMatrix.translate(2.0f, 0.0f, 0.0f);
+//		return baseMatrix;
+	}
+
+	public Matrix4 getBaseMatrixRelativeTo(PointCloud cloud, Region region) {
+		Vector3 midPoint;
+		if (region == null) {
+			midPoint = cloud.volume.origin.add(cloud.volume.size.scale(0.5f));
+		}
+		else {
+			Vector3 regionOrigin = cloud.getVolume().origin.add(region.getVolume().origin.scale(cloud.getVolume().size));
+			Vector3 regionCenter = regionOrigin.add(region.getVolume().size.scale(0.5f).scale(cloud.getVolume().size));
+			midPoint = regionCenter;
+		}
+
+
+
+		Vector3 fudgePoint = new Vector3(1f,1f,1f);
 		Matrix4 baseMatrix = new Matrix4();
 		baseMatrix.makeOrtho(orthoOrigX - orthoWidth, orthoOrigX + orthoWidth, orthoOrigY - orthoHeight, orthoOrigY + orthoHeight, -6f, 6f);
 		baseMatrix.rotate(this.getySpin(), 1f, 0f, 0f);
@@ -102,7 +175,33 @@ public class WorldViewer {
 		float baseScale = 1.0f / this.getRadius();
 		baseMatrix.scale(baseScale, baseScale, baseScale);
 
+		midPoint = midPoint.scale(this.animationFraction);
+		Vector3 animPoint;
+		if (lastCloud != null) {
+			Vector3 lastMidPoint = getMidPointFor(lastCloud, lastRegion);
+
+		 	animPoint = (lastMidPoint.scale(1.0f - animationFraction).add(midPoint.scale(animationFraction))).scale(0.5f);
+		}
+		else {
+			animPoint = midPoint;
+		}
+
+//		baseMatrix.translate(-midPoint.x, -midPoint.y, -midPoint.z);
+		baseMatrix.translate(-animPoint.x, -animPoint.y, -animPoint.z);
 		return baseMatrix;
+	}
+
+	public Vector3 getMidPointFor(PointCloud cloud, Region region) {
+		Vector3 midPoint = null;
+		if (region == null) {
+			midPoint = cloud.volume.origin.add(cloud.volume.size.scale(0.5f));
+		}
+		else {
+			Vector3 regionOrigin = cloud.getVolume().origin.add(region.getVolume().origin.scale(cloud.getVolume().size));
+			Vector3 regionCenter = regionOrigin.add(region.getVolume().size.scale(0.5f).scale(cloud.getVolume().size));
+			midPoint = regionCenter;
+		}
+		return midPoint;
 	}
 
 	public Vector3 getWorldPositionOfPixelOnPlane(Vector3 pixelPosition, Volume plane, boolean clamp) {

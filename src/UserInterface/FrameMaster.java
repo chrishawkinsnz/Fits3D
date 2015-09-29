@@ -737,6 +737,16 @@ public class FrameMaster extends JFrame implements GLEventListener, KeyListener 
 		return null;
 	}
 
+	public static Region getActiveRegion() {
+		AttributeProvider ap = singleton.selectedAttributeProvider;
+		if (ap instanceof Region) {
+			return (Region)ap;
+		}
+		else {
+			return null;
+		}
+	}
+
 
 
 
