@@ -96,7 +96,7 @@ public class WorldViewer {
 	private PointCloud lastCloud = null;
 	private float animationFraction = 1f;
 	private float animationTime = 0f;
-	private final float targetAnimationLength = 0.4f;
+	private final float targetAnimationLength = 0.25f;
 	private long animationStart;
 	/**
 	 * Gets a copy of the rotation matrix for the current viewer.
@@ -124,12 +124,12 @@ public class WorldViewer {
 					float currentAnimLength = (float)(animationNow - animationStart)/1000f;
 
 
-
+					animationFraction = ((-((float)Math.cos((currentAnimLength/targetAnimationLength) * Math.PI))) + 1.0f)/2.0f;
 
 					animationFraction = currentAnimLength / targetAnimationLength;
 					System.out.println(animationFraction);
 					FrameMaster.setNeedsDisplay();
-					if (animationFraction > 1.0f) {
+					if (currentAnimLength > targetAnimationLength) {
 						animationFraction = 1.0f;
 						lastCloud = cloud;
 						lastRegion = region;
