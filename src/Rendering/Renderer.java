@@ -41,7 +41,8 @@ public class Renderer {
 	private int[] vertexBufferHandles;
 	private int[] valueBufferHandles;
 	
-	
+	private boolean printNumVerts = true;
+
 	//--MODEL STUFF
 	private WorldViewer viewer;
 //	public Model.Selection selection;
@@ -88,6 +89,8 @@ public class Renderer {
 
 	public static boolean getFat = false;
 	public static boolean cutTheFat = false;
+
+	public static boolean isFat = false;
 
 	public Renderer(List<PointCloud> pointClouds, WorldViewer viewer, GL3 gl){
 		setupWith(pointClouds, viewer, gl);
@@ -340,7 +343,7 @@ public class Renderer {
 		}
 
 
-
+		int vertCount = 0;
 		for (PointCloud cloud : this.pointClouds){
 			if (cloud.isVisible.getValue() == false) {continue;}
 			boolean isTheCurrentPointCloud = FrameMaster.getActivePointCloud() == cloud;
@@ -356,11 +359,13 @@ public class Renderer {
 
 					slice.region = cr;
 					slice.cloud = cloud;
-
+					vertCount += slice.scratchPts;
 					allSlicesLikeEver.add(slice);
 				}
 			}
 		}
+
+		System.out.println("Number of Points in GPU: " + vertCount);
 		Collections.sort(allSlicesLikeEver, new RegionOrderer());
 
 		Matrix4 baseMatrix = viewer.getBaseMatrix();
@@ -653,6 +658,7 @@ public class Renderer {
 			gl.glBindBuffer(GL_ARRAY_BUFFER, this.valueBufferHandles[index]);
 			gl.glBufferData(GL_ARRAY_BUFFER, numPts * 4, newValueBuffer, GL_STATIC_DRAW);
 			vbs.scratchPts = numPts;
+
 		}
 		else {
 			FloatBuffer valueBuffer = vbs.valueBuffer;
@@ -666,5 +672,7 @@ public class Renderer {
 			gl.glBufferData(GL_ARRAY_BUFFER, valueBuffer.capacity() * 4, valueBuffer, GL_STATIC_DRAW);
 			vbs.scratchPts = vbs.numberOfPts;
 		}
+		isFat = !applyFilter;
+
 	}
 }

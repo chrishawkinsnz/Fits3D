@@ -2,6 +2,7 @@ package Model;
 
 import UserInterface.Christogram;
 import UserInterface.FrameMaster;
+import com.sun.javaws.exceptions.InvalidArgumentException;
 import com.sun.tools.doclint.HtmlTag;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
@@ -10,6 +11,7 @@ import nom.tam.fits.ImageHDU;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.dnd.InvalidDnDOperationException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
@@ -205,6 +207,10 @@ public class PointCloud implements AttributeProvider {
 		float fidelity = STARTING_FIDELITY;
 		try {
 			this.fits = new Fits(this.fileName.getValue());
+			if (((ImageHDU) fits.getHDU(0)).getAxes().length < 3){
+				JOptionPane.showMessageDialog(null, "Error: FITS 3D does not support 2D FITS files.", "Error - 2D Image", JOptionPane.ERROR_MESSAGE);
+			}
+
 			fidelity = fidelityToGetTargetPixels(fits, STARTING_TARGET_PIX);
 		}catch (Exception e) {
 			e.printStackTrace();
@@ -631,7 +637,7 @@ public class PointCloud implements AttributeProvider {
 	}
 
 
-	public static float fidelityToGetTargetPixels(Fits fits, int targetPixels) {
+	public static float fidelityToGetTargetPixels(Fits fits, int targetPixels){
 		try {
 			ImageHDU hdu = (ImageHDU) fits.getHDU(0);
 			int totalPixels = hdu.getAxes()[0] * hdu.getAxes()[1] * hdu.getAxes()[2];

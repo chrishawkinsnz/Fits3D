@@ -347,14 +347,17 @@ public abstract class Tweakable implements  AttributeDisplayer{
 			try {
 				this.christogram.getSelection().minX = Float.parseFloat(this.textLeft.getText());
 				this.christogram.getSelection().maxX = Float.parseFloat(this.textRight.getText());
-				if (this.christogram.getCutTheFatTimer().isRunning()) {
-					this.christogram.getCutTheFatTimer().restart();
-				}
-				else {
+				if (Renderer.isFat == false) {
 					Renderer.getFat = true;
-					Renderer.cutTheFat = false;
-					this.christogram.getCutTheFatTimer().start();
 				}
+//				if (this.christogram.getCutTheFatTimer().isRunning()) {
+//					this.christogram.getCutTheFatTimer().restart();
+//				}
+//				else {
+//					Renderer.getFat = true;
+//					Renderer.cutTheFat = false;
+//					this.christogram.getCutTheFatTimer().start();
+//				}
 				FrameMaster.setNeedsDisplay();
 			}catch (NumberFormatException nfe) {
 				nfe.printStackTrace();

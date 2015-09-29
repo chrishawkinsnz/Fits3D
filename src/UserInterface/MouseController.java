@@ -44,7 +44,7 @@ public class MouseController implements MouseMotionListener, MouseListener, Mous
 	
 	@Override
 	public void mouseDragged(java.awt.event.MouseEvent e) {
-
+		System.out.println(e);
 		if (this.currentDragType == MouseActionType.Select) {
 			this.registerMousePosition(e.getX(), e.getY(), e.getButton());
 			if (this.getSelection().isActive()) {

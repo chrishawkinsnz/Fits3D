@@ -1,5 +1,7 @@
 package Model;
 
+import Rendering.*;
+import Rendering.Renderer;
 import UserInterface.FrameMaster;
 import com.jogamp.opengl.math.Matrix4;
 import com.jogamp.opengl.math.VectorUtil;
@@ -36,6 +38,7 @@ public class WorldViewer {
 			return;
 		
 		this.ySpin += addition;
+		makeSureRendererIsReadyForThis();
 		FrameMaster.setNeedsDisplay();
 	}
 
@@ -51,6 +54,7 @@ public class WorldViewer {
 	
 	public void addxSpin(float addition) {
 		this.xSpin += addition;
+		makeSureRendererIsReadyForThis();
 	}
 	
 	
@@ -193,6 +197,14 @@ public class WorldViewer {
 		System.out.println("new graphics window  size:" + width+", "+height);
 	}
 
+	/**
+	 * If the camera moves then we needa
+	 */
+	private void makeSureRendererIsReadyForThis() {
+		if (Rendering.Renderer.isFat) {
+			Renderer.cutTheFat = true;
+		}
+	}
 
 
 
